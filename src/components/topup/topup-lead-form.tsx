@@ -75,13 +75,7 @@ export function TopupLeadForm() {
     setStatus("sending");
 
     try {
-      const endpoint = process.env.NEXT_PUBLIC_N8N_TOPUP_WEBHOOK_URL;
-
-      if (!endpoint) {
-        throw new Error("NEXT_PUBLIC_N8N_TOPUP_WEBHOOK_URL is not configured");
-      }
-
-      const response = await fetch(endpoint, {
+      const response = await fetch("/api/n8n/topup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

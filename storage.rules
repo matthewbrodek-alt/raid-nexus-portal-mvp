@@ -6,9 +6,17 @@ service firebase.storage {
       return request.auth != null;
     }
 
+    function profile() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return signedIn() && profile().role in ["admin", "owner"] && profile().status == "active";
+    }
+
     match /heroes/{allPaths=**} {
       allow read: if true;
-      allow write: if signedIn();
+      allow write: if isAdmin();
     }
 
     match /chat/{uid}/{allPaths=**} {

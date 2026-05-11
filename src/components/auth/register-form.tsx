@@ -8,7 +8,6 @@ import { useState } from "react";
 import { auth, db } from "@/lib/firebase/client";
 import { normalizeEmail } from "@/lib/auth/role-utils";
 import { collections } from "@/lib/firebase/collections";
-import { encryptGameAccountData } from "@/lib/security/encryption";
 import { GlassPanel } from "@/components/ui/glass-panel";
 
 type GameAccountDraft = {
@@ -38,16 +37,26 @@ export function RegisterForm() {
 
   async function saveEncryptedGameData(uid: string) {
     const hasPayload = Object.values(gameAccount).some((value) => value.trim().length > 0);
-    const encryptionKey = process.env.NEXT_PUBLIC_GAME_DATA_ENCRYPTION_KEY;
-
     if (!hasPayload) {
       return;
     }
 
-    if (!encryptionKey) {
+    const response = await fetch("/api/game-account", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ payload: gameAccount })
+    });
+
+    if (!response.ok) {
+      throw new Error("Не удалось защитить игровые данные.");
+    }
+
+    const encrypted = await response.json();
+
+    if (encrypted.encryptionStatus === "missing-server-key") {
       await setDoc(doc(db, collections.encryptedGameAccounts, uid), {
         algorithm: "AES-GCM",
-        encryptionStatus: "missing-client-key",
+        encryptionStatus: "missing-server-key",
         uid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -55,10 +64,9 @@ export function RegisterForm() {
       return;
     }
 
-    const encrypted = await encryptGameAccountData(gameAccount, encryptionKey);
     await setDoc(doc(db, collections.encryptedGameAccounts, uid), {
       ...encrypted,
-      keyVersion: "client-v1",
+      keyVersion: "server-v1",
       uid,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
@@ -124,8 +132,8 @@ export function RegisterForm() {
         <div className="rounded-lg border border-white/10 bg-black/25 p-4">
           <p className="text-sm font-semibold text-white">Игровые данные</p>
           <p className="mt-1 text-xs leading-5 text-zinc-500">
-            Поля необязательные. При наличии ключа `NEXT_PUBLIC_GAME_DATA_ENCRYPTION_KEY` данные сохраняются в
-            `encryptedGameAccounts` через AES-GCM.
+            Поля необязательные. Данные передаются на серверный маршрут и сохраняются в `encryptedGameAccounts`
+            через AES-GCM без раскрытия ключа в браузере.
           </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <input

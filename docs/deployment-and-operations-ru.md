@@ -81,16 +81,18 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
 NEXT_PUBLIC_FIREBASE_APP_ID=...
-NEXT_PUBLIC_N8N_TOPUP_WEBHOOK_URL=https://your-n8n-domain/webhook/raid/topup-lead
-NEXT_PUBLIC_N8N_CRM_WEBHOOK_URL=https://your-n8n-domain/webhook/raid/crm
 NEXT_PUBLIC_BTC_WALLET=...
 NEXT_PUBLIC_USDT_TRC20_WALLET=...
+N8N_TOPUP_WEBHOOK_URL=https://your-n8n-domain/webhook/raid/topup-lead
+N8N_CRM_WEBHOOK_URL=https://your-n8n-domain/webhook/raid/crm
+GAME_DATA_ENCRYPTION_KEY=...
 ```
 
 Важно:
 
 - Не вставляйте реальные значения в `.env.example`.
 - Не коммитьте `.env.local`.
+- Не добавляйте `NEXT_PUBLIC_` к n8n webhook URL и encryption key: эти значения должны быть доступны только серверным API routes.
 - Для теста n8n используйте `webhook-test`.
 - Для продакшена используйте обычный `webhook`, workflow должен быть активирован.
 
@@ -137,7 +139,7 @@ n8n/workflows/raid-portal-automation.json
 3. Импортируйте `raid-portal-automation.json`.
 4. Откройте node `Portal Webhook - Top-up Lead`.
 5. Скопируйте Production URL.
-6. Вставьте Production URL в `NEXT_PUBLIC_N8N_TOPUP_WEBHOOK_URL`.
+6. Вставьте Production URL в `N8N_TOPUP_WEBHOOK_URL`.
 7. Убедитесь, что workflow активирован.
 
 Если вы уже подключили Bitrix webhook:
@@ -330,10 +332,11 @@ heroes/{heroId}
 
 1. Пользователь открывает `/topup`.
 2. Заполняет Telegram, пакет, оплату и комментарий.
-3. Сайт отправляет POST в n8n.
-4. n8n отправляет уведомление менеджеру.
-5. n8n создает лид в Bitrix CRM.
-6. Менеджер ведет сделку в CRM.
+3. Сайт отправляет POST в `/api/n8n/topup`.
+4. Серверный route отправляет заявку в n8n, не раскрывая webhook URL в браузере.
+5. n8n отправляет уведомление менеджеру.
+6. n8n создает лид в Bitrix CRM.
+7. Менеджер ведет сделку в CRM.
 
 ### Герои
 
@@ -396,7 +399,7 @@ Vercel автоматически сделает redeploy после push в `ma
 
 - workflow активирован;
 - используется Production URL, а не Test URL;
-- `NEXT_PUBLIC_N8N_TOPUP_WEBHOOK_URL` задан в Vercel;
+- `N8N_TOPUP_WEBHOOK_URL` задан в Vercel;
 - после изменения env был redeploy.
 
 ### Bitrix не создает лид

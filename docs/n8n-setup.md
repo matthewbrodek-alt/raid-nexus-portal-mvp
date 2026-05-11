@@ -64,18 +64,19 @@ Production alternative:
 - n8n calls the proxy with a private token.
 - The proxy writes to Firestore through Firebase Admin SDK.
 
-## Portal Environment Variable
+## Portal Environment Variables
 
 In `.env.local` set:
 
 ```bash
-NEXT_PUBLIC_N8N_TOPUP_WEBHOOK_URL=https://your-n8n-domain/webhook/raid/topup-lead
+N8N_TOPUP_WEBHOOK_URL=https://your-n8n-domain/webhook/raid/topup-lead
+N8N_CRM_WEBHOOK_URL=https://your-n8n-domain/webhook/raid/crm
 ```
 
 For local n8n testing:
 
 ```bash
-NEXT_PUBLIC_N8N_TOPUP_WEBHOOK_URL=http://localhost:5678/webhook-test/raid/topup-lead
+N8N_TOPUP_WEBHOOK_URL=http://localhost:5678/webhook-test/raid/topup-lead
 ```
 
 ## Request Payload From Portal
@@ -135,6 +136,7 @@ If your CRM uses different fields, edit only node `CRM - Create Lead`.
 ## Security Notes
 
 - Do not expose CRM tokens in the Next.js app.
+- Do not expose n8n webhook URLs with `NEXT_PUBLIC_`; the portal calls `/api/n8n/topup`, and that server route forwards to n8n.
 - Keep wallets in n8n environment variables or protected admin settings.
 - Prefer Firebase Admin SDK proxy for production Firestore writes.
 - Restrict CORS on the webhook to your real portal domain before production.

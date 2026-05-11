@@ -6,7 +6,7 @@ import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from "firebase/firest
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { auth, db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
-import { emailToDocId, isBootstrapOwner, normalizeEmail } from "@/lib/auth/role-utils";
+import { emailToDocId, normalizeEmail } from "@/lib/auth/role-utils";
 import type { UserProfile, UserRole } from "@/lib/auth/types";
 
 type AuthContextValue = {
@@ -31,9 +31,7 @@ async function loadOrCreateProfile(user: User): Promise<UserProfile> {
     const profile = existingProfile.data() as UserProfile;
     let nextRole = profile.role;
 
-    if (isBootstrapOwner(email) && profile.role !== "owner") {
-      nextRole = "owner";
-    } else if (profile.role === "user" && invitedAdmin?.exists() && invitedAdmin.data().status === "pending") {
+    if (profile.role === "user" && invitedAdmin?.exists() && invitedAdmin.data().status === "pending") {
       nextRole = "admin";
     }
 
@@ -67,11 +65,7 @@ async function loadOrCreateProfile(user: User): Promise<UserProfile> {
     };
   }
 
-  const role: UserRole = isBootstrapOwner(email)
-    ? "owner"
-    : invitedAdmin?.exists() && invitedAdmin.data().status === "pending"
-      ? "admin"
-      : "user";
+  const role: UserRole = invitedAdmin?.exists() && invitedAdmin.data().status === "pending" ? "admin" : "user";
   const profile: UserProfile = {
     uid: user.uid,
     email,

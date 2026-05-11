@@ -6,7 +6,6 @@ import { RecommendedDonation } from "@/components/dashboard/recommended-donation
 import { StatCard } from "@/components/dashboard/stat-card";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { userDashboard } from "@/lib/data/dashboard";
-import Link from 'next/link';
 
 export default function UserDashboardPage() {
   return (
@@ -39,24 +38,15 @@ export default function UserDashboardPage() {
               <p className="mt-4 text-sm text-relic">Resonance score: {userDashboard.commander.resonance}%</p>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3">
-  {/* Заменили <a> на <Link> */}
-  <Link 
-    href="/chat" 
-    className="rounded-lg border border-white/10 bg-white/[0.04] p-4 text-sm text-zinc-300 transition hover:text-white"
-  >
-    <MessageSquare className="mb-3 text-relic" />
-    Быстро открыть чат
-  </Link>
-
-  {/* Заменили <a> на <Link> */}
-  <Link 
-    href="/heroes" 
-    className="rounded-lg border border-white/10 bg-white/[0.04] p-4 text-sm text-zinc-300 transition hover:text-white"
-  >
-    <ScrollText className="mb-3 text-relic" />
-    Вернуться в Hero DB
-  </Link>
-</div>
+              <a className="rounded-lg border border-white/10 bg-white/[0.04] p-4 text-sm text-zinc-300 transition hover:text-white" href="/chat">
+                <MessageSquare className="mb-3 text-relic" />
+                Быстро открыть чат
+              </a>
+              <a className="rounded-lg border border-white/10 bg-white/[0.04] p-4 text-sm text-zinc-300 transition hover:text-white" href="/heroes">
+                <ScrollText className="mb-3 text-relic" />
+                Вернуться в Hero DB
+              </a>
+            </div>
           </GlassPanel>
 
           <GlassPanel className="p-6">

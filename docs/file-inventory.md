@@ -268,7 +268,7 @@ Owner-only admin invitation form and active admin/invite overview.
 src/components/auth/auth-provider.tsx
 ```
 
-Firebase Auth state provider. Creates user profiles and applies bootstrap owner/admin invites.
+Firebase Auth state provider. Creates user profiles and applies admin invites. The first owner is assigned manually in Firebase Console.
 
 ```text
 src/components/auth/protected-route.tsx
@@ -352,7 +352,7 @@ Marketplace filter UI for Void, Legendary count and Level.
 src/components/topup/topup-lead-form.tsx
 ```
 
-Client-side top-up lead form that posts to `NEXT_PUBLIC_N8N_TOPUP_WEBHOOK_URL`.
+Client-side top-up lead form that posts to `/api/n8n/topup`; the server route forwards to the private `N8N_TOPUP_WEBHOOK_URL`.
 
 ```text
 src/components/dashboard/dashboard-shell.tsx

@@ -18,13 +18,11 @@ export async function createTopupLead(input: TopupLeadInput) {
     updatedAt: serverTimestamp()
   });
 
-  if (process.env.NEXT_PUBLIC_N8N_TOPUP_WEBHOOK_URL) {
-    await fetch(process.env.NEXT_PUBLIC_N8N_TOPUP_WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ leadId: docRef.id, ...input })
-    });
-  }
+  await fetch("/api/n8n/topup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ leadId: docRef.id, ...input })
+  }).catch(() => undefined);
 
   return docRef.id;
 }

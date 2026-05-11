@@ -25,10 +25,7 @@ export function AdminUserManagement() {
   const isOwner = profile?.role === "owner";
 
   async function loadUsersAndInvites() {
-    const [usersSnapshot, invitesSnapshot] = await Promise.all([
-      getDocs(collection(db, collections.users)),
-      getDocs(collection(db, collections.adminInvites))
-    ]);
+    const usersSnapshot = await getDocs(collection(db, collections.users));
 
     setAdmins(
       usersSnapshot.docs
@@ -36,7 +33,13 @@ export function AdminUserManagement() {
         .filter((item) => item.role === "admin" || item.role === "owner")
         .sort((a, b) => a.email.localeCompare(b.email))
     );
-    setInvites(invitesSnapshot.docs.map((item) => item.data() as AdminInvite));
+
+    if (isOwner) {
+      const invitesSnapshot = await getDocs(collection(db, collections.adminInvites));
+      setInvites(invitesSnapshot.docs.map((item) => item.data() as AdminInvite));
+    } else {
+      setInvites([]);
+    }
   }
 
   useEffect(() => {

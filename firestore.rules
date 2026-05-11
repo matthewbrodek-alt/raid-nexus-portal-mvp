@@ -31,15 +31,17 @@ service cloud.firestore {
     match /users/{uid} {
       allow create: if signedIn()
         && request.auth.uid == uid
+        && request.resource.data.uid == uid
+        && request.resource.data.email == request.auth.token.email
         && (
-          request.resource.data.role in ["user", "owner"]
+          request.resource.data.role == "user"
           || (request.resource.data.role == "admin" && hasPendingAdminInvite())
         );
 
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
 
       allow update: if signedIn() && (
-        isAdmin()
+        isOwner()
         || (
           request.auth.uid == uid
           && request.resource.data.role == resource.data.role
@@ -55,14 +57,20 @@ service cloud.firestore {
     }
 
     match /adminInvites/{emailId} {
-      allow read: if signedIn();
-      allow create, delete: if isOwner();
+      allow read: if signedIn() && (isOwner() || emailId == request.auth.token.email);
+      allow create: if isOwner() && request.resource.data.email == emailId;
+      allow delete: if isOwner();
       allow update: if isOwner()
         || (
           signedIn()
           && resource.data.email == request.auth.token.email
+          && resource.data.status == "pending"
           && request.resource.data.status == "accepted"
           && request.resource.data.acceptedBy == request.auth.uid
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.email == resource.data.email
+          && request.resource.data.createdBy == resource.data.createdBy
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly(["acceptedAt", "acceptedBy", "status"])
         );
     }
 
