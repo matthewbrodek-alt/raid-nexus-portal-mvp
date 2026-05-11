@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { MessageSquare, ScrollText, Swords } from "lucide-react";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { CryptoWalletCard } from "@/components/dashboard/crypto-wallet-card";
@@ -38,14 +39,14 @@ export default function UserDashboardPage() {
               <p className="mt-4 text-sm text-relic">Resonance score: {userDashboard.commander.resonance}%</p>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3">
-              <a className="rounded-lg border border-white/10 bg-white/[0.04] p-4 text-sm text-zinc-300 transition hover:text-white" href="/chat">
+              <Link className="rounded-lg border border-white/10 bg-white/[0.04] p-4 text-sm text-zinc-300 transition hover:text-white" href="/chat">
                 <MessageSquare className="mb-3 text-relic" />
                 Быстро открыть чат
-              </a>
-              <a className="rounded-lg border border-white/10 bg-white/[0.04] p-4 text-sm text-zinc-300 transition hover:text-white" href="/heroes">
+              </Link>
+              <Link className="rounded-lg border border-white/10 bg-white/[0.04] p-4 text-sm text-zinc-300 transition hover:text-white" href="/heroes">
                 <ScrollText className="mb-3 text-relic" />
                 Вернуться в Hero DB
-              </a>
+              </Link>
             </div>
           </GlassPanel>
 

@@ -2,7 +2,7 @@
 
 import { MailPlus, ShieldCheck } from "lucide-react";
 import { collection, doc, getDocs, serverTimestamp, setDoc } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { emailToDocId, normalizeEmail } from "@/lib/auth/role-utils";
@@ -24,7 +24,7 @@ export function AdminUserManagement() {
   const [loading, setLoading] = useState(false);
   const isOwner = profile?.role === "owner";
 
-  async function loadUsersAndInvites() {
+  const loadUsersAndInvites = useCallback(async () => {
     const usersSnapshot = await getDocs(collection(db, collections.users));
 
     setAdmins(
@@ -40,13 +40,13 @@ export function AdminUserManagement() {
     } else {
       setInvites([]);
     }
-  }
+  }, [isOwner]);
 
   useEffect(() => {
     if (profile?.role === "admin" || profile?.role === "owner") {
       void loadUsersAndInvites();
     }
-  }, [profile?.role]);
+  }, [loadUsersAndInvites, profile?.role]);
 
   async function handleInvite(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
