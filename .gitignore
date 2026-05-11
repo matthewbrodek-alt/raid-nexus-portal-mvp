@@ -1,0 +1,11 @@
+.next
+.cache
+node_modules
+dist
+out
+.env
+.env.local
+*.log
+coverage
+raid-dark-portal-mvp.zip
+raid-nexus-portal-mvp.zip

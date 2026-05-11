@@ -1,0 +1,130 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasRole(roles) {
+      return signedIn() && profile().role in roles && profile().status == "active";
+    }
+
+    function isAdmin() {
+      return hasRole(["admin", "owner"]);
+    }
+
+    function isOwner() {
+      return hasRole(["owner"]);
+    }
+
+    function hasPendingAdminInvite() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/adminInvites/$(request.auth.token.email))
+        && get(/databases/$(database)/documents/adminInvites/$(request.auth.token.email)).data.status == "pending";
+    }
+
+    match /users/{uid} {
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && (
+          request.resource.data.role in ["user", "owner"]
+          || (request.resource.data.role == "admin" && hasPendingAdminInvite())
+        );
+
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+
+      allow update: if signedIn() && (
+        isAdmin()
+        || (
+          request.auth.uid == uid
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.status == resource.data.status
+        )
+        || (
+          request.auth.uid == uid
+          && resource.data.role == "user"
+          && request.resource.data.role == "admin"
+          && hasPendingAdminInvite()
+        )
+      );
+    }
+
+    match /adminInvites/{emailId} {
+      allow read: if signedIn();
+      allow create, delete: if isOwner();
+      allow update: if isOwner()
+        || (
+          signedIn()
+          && resource.data.email == request.auth.token.email
+          && request.resource.data.status == "accepted"
+          && request.resource.data.acceptedBy == request.auth.uid
+        );
+    }
+
+    match /encryptedGameAccounts/{uid} {
+      allow read, write: if signedIn() && (request.auth.uid == uid || isAdmin());
+    }
+
+    match /heroes/{heroId} {
+      allow read: if resource.data.isPublished == true || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /heroCalendar/{eventId} {
+      allow read: if resource.data.isPublished == true || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /news/{newsId} {
+      allow read: if resource.data.status == "published" || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /marketplaceAccounts/{accountId} {
+      allow read: if resource.data.status in ["available", "reserved"] || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /topupLeads/{leadId} {
+      allow create: if signedIn();
+      allow read: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
+    }
+
+    match /chatRooms/{roomId} {
+      allow read: if true;
+      allow write: if isAdmin();
+
+      match /messages/{messageId} {
+        allow read: if true;
+        allow create: if signedIn();
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    match /forumThreads/{threadId} {
+      allow read: if true;
+      allow create: if signedIn();
+      allow update, delete: if isAdmin() || resource.data.authorId == request.auth.uid;
+
+      match /posts/{postId} {
+        allow read: if true;
+        allow create: if signedIn();
+        allow update, delete: if isAdmin() || resource.data.authorId == request.auth.uid;
+      }
+    }
+
+    match /crmTables/{tableId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /moderationQueue/{itemId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

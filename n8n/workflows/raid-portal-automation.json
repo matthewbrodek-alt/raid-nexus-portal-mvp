@@ -1,0 +1,411 @@
+{
+  "name": "Raid Nexus Portal - Top-up, Telegram, CRM",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "raid/topup-lead",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "1d1c0b47-3061-4934-9071-2a22c9fc0001",
+      "name": "Portal Webhook - Top-up Lead",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "raid-topup-lead"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "telegram",
+              "name": "telegram",
+              "type": "string",
+              "value": "={{ $json.body.telegram }}"
+            },
+            {
+              "id": "packageId",
+              "name": "packageId",
+              "type": "string",
+              "value": "={{ $json.body.packageId }}"
+            },
+            {
+              "id": "paymentMethod",
+              "name": "paymentMethod",
+              "type": "string",
+              "value": "={{ $json.body.paymentMethod || 'manager' }}"
+            },
+            {
+              "id": "comment",
+              "name": "comment",
+              "type": "string",
+              "value": "={{ $json.body.comment || '' }}"
+            },
+            {
+              "id": "uid",
+              "name": "uid",
+              "type": "string",
+              "value": "={{ $json.body.uid || 'guest' }}"
+            },
+            {
+              "id": "leadId",
+              "name": "leadId",
+              "type": "string",
+              "value": "={{ 'lead_' + Date.now() }}"
+            },
+            {
+              "id": "createdAt",
+              "name": "createdAt",
+              "type": "string",
+              "value": "={{ new Date().toISOString() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1d1c0b47-3061-4934-9071-2a22c9fc0002",
+      "name": "Normalize Lead Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        260,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "crypto-check",
+              "leftValue": "={{ $json.paymentMethod }}",
+              "rightValue": "btc",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "usdt-check",
+              "leftValue": "={{ $json.paymentMethod }}",
+              "rightValue": "usdt",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "1d1c0b47-3061-4934-9071-2a22c9fc0003",
+      "name": "Is Crypto Payment",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        520,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "wallet",
+              "name": "wallet",
+              "type": "string",
+              "value": "={{ $json.paymentMethod === 'btc' ? $env.RAID_BTC_WALLET : $env.RAID_USDT_TRC20_WALLET }}"
+            },
+            {
+              "id": "invoiceStatus",
+              "name": "invoiceStatus",
+              "type": "string",
+              "value": "waiting_crypto_payment"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1d1c0b47-3061-4934-9071-2a22c9fc0004",
+      "name": "Attach Crypto Invoice",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        780,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "invoiceStatus",
+              "name": "invoiceStatus",
+              "type": "string",
+              "value": "manager_contact_required"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1d1c0b47-3061-4934-9071-2a22c9fc0005",
+      "name": "Manager Invoice",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        780,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.RAID_MANAGER_TELEGRAM_CHAT_ID }}",
+        "text": "=New Raid top-up lead\nLead: {{ $json.leadId }}\nTelegram: {{ $json.telegram }}\nPackage: {{ $json.packageId }}\nPayment: {{ $json.paymentMethod }}\nInvoice: {{ $json.invoiceStatus }}\nComment: {{ $json.comment }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "1d1c0b47-3061-4934-9071-2a22c9fc0006",
+      "name": "Telegram - Notify Manager",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1040,
+        0
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "PUT_TELEGRAM_CREDENTIAL_ID_HERE",
+          "name": "Raid Manager Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.RAID_CRM_LEADS_ENDPOINT }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ 'Bearer ' + $env.RAID_CRM_API_TOKEN }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "externalId",
+              "value": "={{ $json.leadId }}"
+            },
+            {
+              "name": "telegram",
+              "value": "={{ $json.telegram }}"
+            },
+            {
+              "name": "packageId",
+              "value": "={{ $json.packageId }}"
+            },
+            {
+              "name": "paymentMethod",
+              "value": "={{ $json.paymentMethod }}"
+            },
+            {
+              "name": "status",
+              "value": "={{ $json.invoiceStatus }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1d1c0b47-3061-4934-9071-2a22c9fc0007",
+      "name": "CRM - Create Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1300,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://firestore.googleapis.com/v1/projects/{{ $env.RAID_FIREBASE_PROJECT_ID }}/databases/(default)/documents/topupLeads/{{ $json.leadId }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"fields\": {\n    \"telegram\": { \"stringValue\": \"{{ $json.telegram }}\" },\n    \"packageId\": { \"stringValue\": \"{{ $json.packageId }}\" },\n    \"paymentMethod\": { \"stringValue\": \"{{ $json.paymentMethod }}\" },\n    \"status\": { \"stringValue\": \"{{ $json.invoiceStatus }}\" },\n    \"source\": { \"stringValue\": \"n8n\" },\n    \"createdAt\": { \"timestampValue\": \"{{ $json.createdAt }}\" }\n  }\n}",
+        "options": {}
+      },
+      "id": "1d1c0b47-3061-4934-9071-2a22c9fc0008",
+      "name": "Firestore - Upsert Lead",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1560,
+        0
+      ],
+      "credentials": {
+        "googleOAuth2Api": {
+          "id": "PUT_GOOGLE_OAUTH_CREDENTIAL_ID_HERE",
+          "name": "Firebase Firestore OAuth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"ok\": true,\n  \"leadId\": \"{{ $json.leadId }}\",\n  \"status\": \"{{ $json.invoiceStatus }}\",\n  \"wallet\": \"{{ $json.wallet || '' }}\"\n}",
+        "options": {}
+      },
+      "id": "1d1c0b47-3061-4934-9071-2a22c9fc0009",
+      "name": "Respond to Portal",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1820,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Portal Webhook - Top-up Lead": {
+      "main": [
+        [
+          {
+            "node": "Normalize Lead Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Lead Payload": {
+      "main": [
+        [
+          {
+            "node": "Is Crypto Payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Crypto Payment": {
+      "main": [
+        [
+          {
+            "node": "Attach Crypto Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Manager Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Crypto Invoice": {
+      "main": [
+        [
+          {
+            "node": "Telegram - Notify Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manager Invoice": {
+      "main": [
+        [
+          {
+            "node": "Telegram - Notify Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram - Notify Manager": {
+      "main": [
+        [
+          {
+            "node": "CRM - Create Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CRM - Create Lead": {
+      "main": [
+        [
+          {
+            "node": "Firestore - Upsert Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Firestore - Upsert Lead": {
+      "main": [
+        [
+          {
+            "node": "Respond to Portal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "raid"
+    },
+    {
+      "name": "topup"
+    },
+    {
+      "name": "mvp"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2026-05-09T00:00:00.000Z",
+  "versionId": "raid-nexus-portal-mvp-001"
+}
