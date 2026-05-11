@@ -14,6 +14,10 @@ service cloud.firestore {
       return signedIn() && profile().role in roles && profile().status == "active";
     }
 
+    function activeUser() {
+      return signedIn() && profile().status == "active";
+    }
+
     function isAdmin() {
       return hasRole(["admin", "owner"]);
     }
@@ -42,6 +46,10 @@ service cloud.firestore {
 
       allow update: if signedIn() && (
         isOwner()
+        || (
+          isAdmin()
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly(["status"])
+        )
         || (
           request.auth.uid == uid
           && request.resource.data.role == resource.data.role
@@ -99,31 +107,31 @@ service cloud.firestore {
     }
 
     match /topupLeads/{leadId} {
-      allow create: if signedIn();
+      allow create: if activeUser();
       allow read: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
       allow update, delete: if isAdmin();
     }
 
     match /chatRooms/{roomId} {
       allow read: if true;
-      allow write: if signedIn();
+      allow write: if activeUser();
 
       match /messages/{messageId} {
         allow read: if true;
-        allow create: if signedIn();
+        allow create: if activeUser();
         allow update, delete: if isAdmin();
       }
     }
 
     match /directThreads/{threadId} {
       allow read: if signedIn() && request.auth.uid in resource.data.participants;
-      allow create, update: if signedIn() && request.auth.uid in request.resource.data.participants;
+      allow create, update: if activeUser() && request.auth.uid in request.resource.data.participants;
       allow delete: if isAdmin();
 
       match /messages/{messageId} {
         allow read: if signedIn()
           && request.auth.uid in get(/databases/$(database)/documents/directThreads/$(threadId)).data.participants;
-        allow create: if signedIn()
+        allow create: if activeUser()
           && request.resource.data.uid == request.auth.uid
           && request.auth.uid in get(/databases/$(database)/documents/directThreads/$(threadId)).data.participants;
         allow update, delete: if isAdmin();

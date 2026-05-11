@@ -51,6 +51,31 @@ body {
   box-shadow: inset 0 0 0 1px rgba(159, 29, 34, 0.42), 0 0 28px rgba(159, 29, 34, 0.16);
 }
 
+.raid-hero-art {
+  background:
+    linear-gradient(90deg, rgba(3, 7, 18, 0.88), rgba(3, 7, 18, 0.24)),
+    radial-gradient(circle at 72% 28%, rgba(124, 58, 237, 0.46), transparent 32%),
+    radial-gradient(circle at 83% 70%, rgba(216, 168, 71, 0.28), transparent 34%),
+    linear-gradient(135deg, #07101f 0%, #101827 46%, #2a0c14 100%);
+}
+
+.raid-news-track {
+  animation: raid-news-scroll 28s linear infinite;
+}
+
+.raid-news-marquee:hover .raid-news-track {
+  animation-play-state: paused;
+}
+
+@keyframes raid-news-scroll {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+
 @media (max-width: 640px) {
   h1,
   h2,

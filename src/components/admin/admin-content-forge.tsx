@@ -18,10 +18,10 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
-async function uploadImage(file: File, publicId: string) {
+async function uploadImage(file: File, publicId: string, folder = "heroes") {
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("folder", "heroes");
+  formData.append("folder", folder);
   formData.append("publicId", publicId);
 
   const response = await fetch("/api/cloudinary/upload", {
@@ -41,6 +41,7 @@ export function AdminContentForge() {
   const [newsTitle, setNewsTitle] = useState("");
   const [newsSummary, setNewsSummary] = useState("");
   const [newsBody, setNewsBody] = useState("");
+  const [newsImage, setNewsImage] = useState<File | null>(null);
   const [heroName, setHeroName] = useState("");
   const [heroFaction, setHeroFaction] = useState("");
   const [heroRole, setHeroRole] = useState("support");
@@ -63,12 +64,20 @@ export function AdminContentForge() {
 
     try {
       const title = newsTitle.trim();
+      const slug = slugify(title);
+      const coverImage = newsImage ? await uploadImage(newsImage, `${slug}/cover`, "news") : null;
 
       await addDoc(collection(db, collections.news), {
         title,
-        slug: slugify(title),
+        slug,
         summary: newsSummary.trim(),
         markdownBody: newsBody.trim(),
+        coverImage: coverImage
+          ? {
+              ...coverImage,
+              alt: title
+            }
+          : null,
         tags: ["hero"],
         status: "published",
         createdBy: profile.uid,
@@ -92,6 +101,7 @@ export function AdminContentForge() {
       setNewsTitle("");
       setNewsSummary("");
       setNewsBody("");
+      setNewsImage(null);
       setStatus("Новость добавлена в news и heroCalendar.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Не удалось добавить новость.");
@@ -193,6 +203,10 @@ export function AdminContentForge() {
           </div>
           <input value={newsTitle} onChange={(event) => setNewsTitle(event.target.value)} required placeholder="Заголовок новости" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
           <input value={newsSummary} onChange={(event) => setNewsSummary(event.target.value)} required placeholder="Краткое описание" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+          <label className="block text-sm text-zinc-300">
+            Картинка новости
+            <input type="file" accept="image/*" onChange={(event) => setNewsImage(event.target.files?.[0] ?? null)} className="mt-2 block w-full text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-white/10 file:px-3 file:py-2 file:font-bold file:text-white" />
+          </label>
           <textarea value={newsBody} onChange={(event) => setNewsBody(event.target.value)} rows={5} placeholder="Текст новости / markdown" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
           <button disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
             <Save size={16} />

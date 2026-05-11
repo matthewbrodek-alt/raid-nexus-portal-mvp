@@ -1,15 +1,13 @@
 import Link from "next/link";
 import {
-  Bot,
   Coins,
   Database,
   MessageSquare,
-  Shield,
   ShoppingBag,
-  Sparkles,
   Zap
 } from "lucide-react";
 import { ActionCalendar } from "@/components/calendar/action-calendar";
+import { LatestNewsRail } from "@/components/home/latest-news-rail";
 import { Navigation } from "@/components/layout/navigation";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { getEnabledModules } from "@/lib/config/site-modules";
@@ -54,42 +52,22 @@ export default function Home() {
       <section className="relative mx-auto grid min-h-[calc(100vh-72px)] max-w-7xl grid-cols-1 items-center gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1.02fr_0.98fr] lg:px-8">
         <div className="absolute inset-x-0 bottom-0 h-px gold-line" />
 
-        <div className="space-y-8">
-          <div className="inline-flex items-center gap-2 rounded-full border border-relic/30 bg-relic/10 px-4 py-2 text-sm text-relic">
-            <Sparkles size={16} />
-            Raid Nexus Portal MVP
-          </div>
-
-          <div className="max-w-3xl space-y-5">
-            <h1 className="font-[var(--font-cinzel)] text-4xl font-black leading-tight text-white sm:text-6xl lg:text-7xl">
-              Raid Nexus
-            </h1>
-            <p className="max-w-2xl text-base leading-8 text-zinc-300 sm:text-lg">
-              Dark fantasy портал по Raid: Shadow Legends с отдельными страницами
-              для залива, гайдов, маркетплейса, базы героев, чата и кабинетов.
-            </p>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Link href="/dashboard" className="rounded-lg border border-relic/30 bg-relic/10 p-4 text-relic transition hover:bg-relic/15">
-              <Shield className="mb-3" />
-              <p className="font-semibold">Личный кабинет</p>
-              <p className="mt-1 text-sm text-zinc-400">Статистика, заявки, crypto wallet.</p>
-            </Link>
-            <Link href="/admin" className="rounded-lg border border-white/10 bg-white/[0.04] p-4 text-zinc-300 transition hover:text-white">
-              <Bot className="mb-3 text-relic" />
-              <p className="font-semibold">Admin War Room</p>
-              <p className="mt-1 text-sm text-zinc-400">Контент, модерация, CRM.</p>
-            </Link>
-            <Link href="/heroes" className="rounded-lg border border-white/10 bg-white/[0.04] p-4 text-zinc-300 transition hover:text-white">
-              <Database className="mb-3 text-relic" />
-              <p className="font-semibold">Hero DB</p>
-              <p className="mt-1 text-sm text-zinc-400">Карточки, видео и галерея.</p>
-            </Link>
-          </div>
+        <div>
+          <LatestNewsRail />
         </div>
 
-        <ActionCalendar events={raidEvents} />
+        <div className="grid gap-5">
+          <div className="raid-hero-art min-h-[280px] rounded-lg border border-white/10 bg-[#07101f] p-6 shadow-2xl sm:min-h-[360px]">
+            <div className="flex h-full flex-col justify-end">
+              <p className="text-xs uppercase tracking-[0.26em] text-relic">Raid Shadow Legends</p>
+              <h2 className="mt-2 max-w-xl text-3xl font-black text-white sm:text-5xl">Командный центр портала</h2>
+              <p className="mt-3 max-w-lg text-sm leading-6 text-zinc-300">
+                Новости, герои, чат, заявки и CRM собраны в темной игровой панели.
+              </p>
+            </div>
+          </div>
+          <ActionCalendar events={raidEvents} />
+        </div>
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
