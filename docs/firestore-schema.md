@@ -5,7 +5,7 @@
 - All documents use `createdAt`, `updatedAt`, `createdBy` where relevant.
 - Server-generated timestamps must use `serverTimestamp()`.
 - Public read models are separated from sensitive encrypted data.
-- Store large files in Firebase Storage and reference them by URL/path in Firestore.
+- Store large files in Cloudinary and reference them by `publicId`/URL in Firestore.
 - Use composite indexes for marketplace filters and chat/forum queries.
 
 ## Collections
@@ -90,6 +90,23 @@ Plain payload before encryption:
 }
 ```
 
+### Shared Cloudinary asset shape
+
+Use this shape for hero avatars, galleries, marketplace screenshots, chat attachments and user images:
+
+```ts
+{
+  publicId: string;
+  secureUrl: string;
+  url: string;
+  alt?: string;
+  width?: number;
+  height?: number;
+  format?: string;
+  bytes?: number;
+}
+```
+
 ### `heroes/{heroId}`
 
 Hero DB document managed from admin panel.
@@ -103,13 +120,15 @@ Hero DB document managed from admin panel.
   rarity: "rare" | "epic" | "legendary" | "mythical";
   role: "support" | "nuker" | "speedLead" | "control" | "tank";
   avatar: {
-    storagePath: string;
+    publicId: string;
+    secureUrl: string;
     url: string;
     alt: string;
   };
   gallery: [
     {
-      storagePath: string;
+      publicId: string;
+      secureUrl: string;
       url: string;
       alt: string;
       sortOrder: number;
@@ -132,11 +151,11 @@ Hero DB document managed from admin panel.
 }
 ```
 
-Storage layout:
+Cloudinary folder layout:
 
 ```text
-heroes/{heroId}/avatar.webp
-heroes/{heroId}/gallery/{imageId}.webp
+raid-nexus/heroes/{heroId}/avatar
+raid-nexus/heroes/{heroId}/gallery/{imageId}
 ```
 
 ### `heroCalendar/{eventId}`
@@ -170,7 +189,8 @@ Useful news feed.
   summary: string;
   markdownBody: string;
   coverImage?: {
-    storagePath: string;
+    publicId: string;
+    secureUrl: string;
     url: string;
   };
   tags: string[];
@@ -200,7 +220,8 @@ Marketplace account card with advanced filtering.
   hasVoid: boolean;
   screenshots: [
     {
-      storagePath: string;
+      publicId: string;
+      secureUrl: string;
       url: string;
       alt: string;
     }
@@ -276,7 +297,8 @@ Room messages with attachments and emoji reactions.
   attachments: [
     {
       type: "image";
-      storagePath: string;
+      publicId: string;
+      secureUrl: string;
       url: string;
       width?: number;
       height?: number;
@@ -319,7 +341,8 @@ Forum threads for tactics and bragging.
   attachments: [
     {
       type: "image";
-      storagePath: string;
+      publicId: string;
+      secureUrl: string;
       url: string;
     }
   ];

@@ -2,30 +2,8 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    function signedIn() {
-      return request.auth != null;
-    }
-
-    function profile() {
-      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data;
-    }
-
-    function isAdmin() {
-      return signedIn() && profile().role in ["admin", "owner"] && profile().status == "active";
-    }
-
-    match /heroes/{allPaths=**} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /chat/{uid}/{allPaths=**} {
-      allow read: if true;
-      allow write: if signedIn() && request.auth.uid == uid;
-    }
-
-    match /users/{uid}/{allPaths=**} {
-      allow read, write: if signedIn() && request.auth.uid == uid;
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }

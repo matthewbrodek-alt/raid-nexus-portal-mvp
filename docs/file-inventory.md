@@ -74,7 +74,7 @@ Next.js generated type declarations.
 firebase.json
 ```
 
-Firebase rules deployment config for Firestore and Storage.
+Firebase rules deployment config for Firestore. Media storage is handled by Cloudinary.
 
 ```text
 firestore.rules
@@ -86,7 +86,7 @@ Firestore security rules for users, admin invites, dashboards, chat, content and
 storage.rules
 ```
 
-Firebase Storage rules for hero assets, chat uploads and user files.
+Legacy safety rules that deny Firebase Storage access. Media storage now uses Cloudinary.
 
 ```text
 raid-nexus-portal-mvp.zip
@@ -107,6 +107,12 @@ docs/firestore-schema.md
 ```
 
 Firestore collections, field shapes, indexes and security rules draft.
+
+```text
+docs/cloudinary-media-setup-ru.md
+```
+
+Cloudinary setup guide, environment variable split and media storage conventions.
 
 ```text
 docs/flexible-architecture.md
@@ -420,7 +426,25 @@ Temporary mock data for user and admin dashboards.
 src/lib/firebase/client.ts
 ```
 
-Firebase app, Auth, Firestore and Storage bootstrap.
+Firebase app, Auth and Firestore bootstrap.
+
+```text
+src/lib/cloudinary/client.ts
+```
+
+Public Cloudinary URL helpers that only use `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`.
+
+```text
+src/lib/cloudinary/server.ts
+```
+
+Server-only Cloudinary helper configured with `CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET`.
+
+```text
+src/lib/cloudinary/types.ts
+```
+
+Shared Cloudinary asset and folder types for hero, marketplace, chat, forum and user media.
 
 ```text
 src/lib/firebase/collections.ts

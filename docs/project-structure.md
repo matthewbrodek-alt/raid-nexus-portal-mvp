@@ -11,6 +11,7 @@ raid-nexus-portal-mvp/
   storage.rules
   docs/
     auth-admin-test-ru.md
+    cloudinary-media-setup-ru.md
     flexible-architecture.md
     firestore-schema.md
     github-vercel-deploy-ru.md
@@ -92,6 +93,10 @@ raid-nexus-portal-mvp/
         site-context.ts
       auth/
         role-utils.ts
+        types.ts
+      cloudinary/
+        client.ts
+        server.ts
         types.ts
       config/
         site-modules.ts

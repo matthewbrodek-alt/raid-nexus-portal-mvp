@@ -9,7 +9,8 @@
 - Next.js App Router на Vercel деплоится почти без настройки.
 - После подключения GitHub каждый `push` в `main` автоматически обновляет сайт.
 - Vercel дает бесплатный тестовый домен вида `project-name.vercel.app`.
-- Firebase остается backend-частью: Auth, Firestore, Storage.
+- Firebase остается backend-частью для Auth и Firestore.
+- Cloudinary используется для изображений и медиа вместо Firebase Storage.
 
 Firebase App Hosting тоже поддерживает Next.js и GitHub, но по официальной документации требует Blaze-план. Для первого бесплатного теста проще Vercel.
 
@@ -35,7 +36,6 @@ next.config.ts
 package.json
 postcss.config.mjs
 README.md
-storage.rules
 tailwind.config.ts
 tsconfig.json
 ```
@@ -74,12 +74,10 @@ git push
 1. Firebase Console -> Authentication -> Sign-in method.
 2. Включи `Email/Password`.
 3. Firebase Console -> Firestore Database -> Create database.
-4. Firebase Console -> Storage -> Get started.
-5. Rules можно загрузить из файлов:
+4. Rules можно загрузить из файла:
 
 ```text
 firestore.rules
-storage.rules
 ```
 
 ## Настройка Vercel
@@ -89,9 +87,10 @@ storage.rules
 3. Выбери GitHub-репозиторий.
 4. Framework должен определиться как `Next.js`.
 5. В `Environment Variables` добавь значения из `.env.local`.
-6. Секретные переменные добавляй без `NEXT_PUBLIC_`: `N8N_TOPUP_WEBHOOK_URL`, `N8N_CRM_WEBHOOK_URL`, `GAME_DATA_ENCRYPTION_KEY`.
-7. Нажми `Deploy`.
-8. После деплоя сайт будет доступен по бесплатному домену Vercel.
+6. Секретные переменные добавляй без `NEXT_PUBLIC_`: `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `N8N_TOPUP_WEBHOOK_URL`, `N8N_CRM_WEBHOOK_URL`, `GAME_DATA_ENCRYPTION_KEY`.
+7. Публичный Cloudinary cloud name добавь как `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`.
+8. Нажми `Deploy`.
+9. После деплоя сайт будет доступен по бесплатному домену Vercel.
 
 ## Проверка после деплоя
 

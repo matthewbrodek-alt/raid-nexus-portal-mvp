@@ -55,7 +55,7 @@ export const siteModules: SiteModule[] = [
     route: "/heroes",
     navGroup: "public",
     enabled: true,
-    featureFlags: ["adminHeroEditor", "storageGallery", "markdownComments"],
+    featureFlags: ["adminHeroEditor", "cloudinaryGallery", "markdownComments"],
     aiCapabilities: ["searchHero", "summarizeHero", "openHeroGallery"],
     description: "Dynamic hero database with avatar, gallery and markdown comments."
   },

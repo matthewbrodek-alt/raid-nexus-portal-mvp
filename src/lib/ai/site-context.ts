@@ -29,7 +29,7 @@ export const siteContext = {
     chat: {
       activeRoomId: "string?",
       activeThreadId: "string?",
-      attachmentDrafts: "storagePath[]"
+      attachmentDrafts: "cloudinaryPublicId[]"
     },
     topup: {
       selectedPackageId: "string?",

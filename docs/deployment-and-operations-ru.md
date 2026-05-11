@@ -78,9 +78,11 @@ NEXT_PUBLIC_SITE_URL=https://your-domain.com
 NEXT_PUBLIC_FIREBASE_API_KEY=...
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=...
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
 NEXT_PUBLIC_FIREBASE_APP_ID=...
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
 NEXT_PUBLIC_BTC_WALLET=...
 NEXT_PUBLIC_USDT_TRC20_WALLET=...
 N8N_TOPUP_WEBHOOK_URL=https://your-n8n-domain/webhook/raid/topup-lead
@@ -92,7 +94,7 @@ GAME_DATA_ENCRYPTION_KEY=...
 
 - Не вставляйте реальные значения в `.env.example`.
 - Не коммитьте `.env.local`.
-- Не добавляйте `NEXT_PUBLIC_` к n8n webhook URL и encryption key: эти значения должны быть доступны только серверным API routes.
+- Не добавляйте `NEXT_PUBLIC_` к Cloudinary API key/secret, n8n webhook URL и encryption key: эти значения должны быть доступны только серверным API routes.
 - Для теста n8n используйте `webhook-test`.
 - Для продакшена используйте обычный `webhook`, workflow должен быть активирован.
 
@@ -107,8 +109,8 @@ GAME_DATA_ENCRYPTION_KEY=...
 5. Включите Email/Password auth.
 6. Подключите популярные OAuth providers, если нужны: Google, Apple, Microsoft.
 7. Создайте Firestore Database.
-8. Создайте Firebase Storage.
-9. Настройте Firestore rules из `docs/firestore-schema.md`.
+8. Настройте Firestore rules из `docs/firestore-schema.md`.
+9. Для изображений используйте Cloudinary, Firebase Storage включать не нужно.
 
 Рекомендуемые коллекции:
 
@@ -343,7 +345,7 @@ heroes/{heroId}
 В MVP герои находятся в mock-файле. Для рабочей версии:
 
 1. Создайте админ-форму.
-2. Загружайте avatar и screenshots в Firebase Storage.
+2. Загружайте avatar и screenshots в Cloudinary.
 3. Метаданные пишите в `heroes`.
 4. Markdown-комментарий храните в `markdownComment`.
 5. YouTube храните как `youtubeVideoId`.
@@ -363,7 +365,7 @@ heroes/{heroId}
 
 - комнаты: `chatRooms`
 - сообщения: `chatRooms/{roomId}/messages`
-- вложения: Firebase Storage
+- вложения: Cloudinary
 - жалобы/модерация: `moderationQueue`
 
 ## 12. Обновление сайта
@@ -435,7 +437,7 @@ Vercel автоматически сделает redeploy после push в `ma
 - [ ] `.env.local` не загружен.
 - [ ] Firebase Auth включен.
 - [ ] Firestore создан.
-- [ ] Storage создан.
+- [ ] Cloudinary env заполнены.
 - [ ] n8n workflow активирован.
 - [ ] Bitrix CRM создает тестовый lead.
 - [ ] Vercel build проходит.

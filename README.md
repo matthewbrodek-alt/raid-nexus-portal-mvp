@@ -15,7 +15,8 @@ npm run dev
 ## Технический стек
 
 - Frontend: Next.js App Router, React, TypeScript, Tailwind CSS, Lucide Icons.
-- Backend/DB: Firebase Auth, Firestore, Storage.
+- Backend/DB: Firebase Auth, Firestore.
+- Media storage: Cloudinary for hero, marketplace, chat/forum and user images.
 - Automation: n8n webhooks для Telegram-бота, менеджера и CRM.
 - AI-ready: `src/lib/ai/site-context.ts` и `src/lib/ai/context.ts` описывают навигацию, capability map и контракт прямых запросов.
 
@@ -53,5 +54,6 @@ npm run dev
 1. Создать Firebase project и заполнить `.env.local`.
 2. Включить Firebase Auth email/password и нужные OAuth providers.
 3. Настроить Firestore security rules из `docs/firestore-schema.md`.
-4. Подключить n8n webhook URLs в `.env.local`.
-5. Расширить рабочие CRUD routes: `/forum`, `/dashboard/topups`, `/admin/heroes`, `/admin/news`.
+4. Заполнить Cloudinary переменные для изображений: `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`.
+5. Подключить n8n webhook URLs в `.env.local`.
+6. Расширить рабочие CRUD routes: `/forum`, `/dashboard/topups`, `/admin/heroes`, `/admin/news`.
