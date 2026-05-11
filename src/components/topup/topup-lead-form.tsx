@@ -1,8 +1,12 @@
 "use client";
 
 import { Camera, CreditCard, Send, ShieldCheck, Timer, WalletCards } from "lucide-react";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { useMemo, useState } from "react";
+import { useAuth } from "@/components/auth/auth-provider";
 import { GlassPanel } from "@/components/ui/glass-panel";
+import { db } from "@/lib/firebase/client";
+import { collections } from "@/lib/firebase/collections";
 import { useLanguage } from "@/lib/i18n/use-language";
 
 const donationPackages = [
@@ -53,6 +57,7 @@ const copy = {
 
 export function TopupLeadForm() {
   const { language, isRu } = useLanguage();
+  const { user } = useAuth();
   const t = copy[language];
   const [telegram, setTelegram] = useState("");
   const [packageId, setPackageId] = useState(donationPackages[0].id);
@@ -75,18 +80,30 @@ export function TopupLeadForm() {
     setStatus("sending");
 
     try {
+      const payload = {
+        uid: user?.uid ?? "guest",
+        telegram,
+        packageId,
+        packageName: isRu ? selectedPackage.ru : selectedPackage.en,
+        amountRub: selectedPackage.priceRub,
+        paymentMethod,
+        comment,
+        status: "new",
+        source: "portal"
+      };
+
+      if (user?.uid) {
+        await addDoc(collection(db, collections.topupLeads), {
+          ...payload,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      }
+
       const response = await fetch("/api/n8n/topup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          uid: "guest",
-          telegram,
-          packageId,
-          packageName: isRu ? selectedPackage.ru : selectedPackage.en,
-          amountRub: selectedPackage.priceRub,
-          paymentMethod,
-          comment
-        })
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {

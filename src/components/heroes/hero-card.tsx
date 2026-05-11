@@ -9,11 +9,14 @@ type HeroCardProps = {
 export function HeroCard({ hero }: HeroCardProps) {
   return (
     <GlassPanel className="overflow-hidden">
-      <div className="aspect-[16/10] bg-gradient-to-br from-charcoal via-black to-blood/35 p-5">
-        <div className="flex h-full items-end justify-between">
+      <div
+        className="aspect-[16/10] bg-gradient-to-br from-charcoal via-black to-blood/35 bg-cover bg-center p-5"
+        style={hero.avatarUrl ? { backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.78)), url(${hero.avatarUrl})` } : undefined}
+      >
+        <div className="flex h-full items-end justify-between gap-3">
           <div>
             <p className="text-sm text-relic">{hero.faction}</p>
-            <h3 className="text-2xl font-bold text-white">{hero.name}</h3>
+            <h3 className="break-words text-xl font-bold text-white sm:text-2xl">{hero.name}</h3>
           </div>
           <span className="rounded-md border border-relic/30 bg-black/30 px-2 py-1 text-xs text-relic">
             {hero.rarity}

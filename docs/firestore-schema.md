@@ -311,6 +311,31 @@ Room messages with attachments and emoji reactions.
 }
 ```
 
+### `directThreads/{threadId}`
+
+Private 1-on-1 chat between users and admins.
+
+```ts
+{
+  participants: string[];
+  participantEmails: string[];
+  lastMessageText: string;
+  lastMessageAt: Timestamp;
+  updatedAt: Timestamp;
+}
+```
+
+### `directThreads/{threadId}/messages/{messageId}`
+
+```ts
+{
+  uid: string;
+  displayName: string;
+  text: string;
+  createdAt: Timestamp;
+}
+```
+
 ### `forumThreads/{threadId}`
 
 Forum threads for tactics and bragging.

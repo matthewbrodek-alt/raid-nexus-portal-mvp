@@ -24,7 +24,7 @@ export function PageShell({ eyebrow, title, description, children, compact = fal
         {!compact ? (
           <div className="mb-8 max-w-4xl">
             <p className="text-sm uppercase tracking-[0.24em] text-relic">{eyebrow}</p>
-            <h1 className="mt-3 font-[var(--font-cinzel)] text-4xl font-black text-white sm:text-5xl">{title}</h1>
+            <h1 className="mt-3 break-words font-[var(--font-cinzel)] text-3xl font-black text-white sm:text-5xl">{title}</h1>
             <p className="mt-4 text-base leading-8 text-zinc-300">{description}</p>
           </div>
         ) : null}

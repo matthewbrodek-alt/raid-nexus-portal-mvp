@@ -1,4 +1,4 @@
-import { createCipheriv, randomBytes } from "crypto";
+import { createCipheriv, randomBytes, type CipherGCMTypes } from "crypto";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -38,7 +38,8 @@ export async function POST(request: Request) {
   }
 
   const iv = randomBytes(12);
-  const cipher = createCipheriv(`aes-${key.length * 8}-gcm`, key, iv);
+  const algorithm = `aes-${key.length * 8}-gcm` as CipherGCMTypes;
+  const cipher = createCipheriv(algorithm, key, iv);
   const encrypted = Buffer.concat([cipher.update(encodedPayload, "utf8"), cipher.final(), cipher.getAuthTag()]);
 
   return NextResponse.json({

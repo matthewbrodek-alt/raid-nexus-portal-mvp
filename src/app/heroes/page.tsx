@@ -1,10 +1,8 @@
-import Link from "next/link";
 import { Search, Star } from "lucide-react";
 import { ChampionMultiplierSearch } from "@/components/heroes/champion-multiplier-search";
-import { HeroCard } from "@/components/heroes/hero-card";
+import { HeroesCatalog } from "@/components/heroes/heroes-catalog";
 import { PageShell } from "@/components/layout/page-shell";
 import { GlassPanel } from "@/components/ui/glass-panel";
-import { featuredHeroes } from "@/lib/data/mock";
 
 export default function HeroesPage() {
   return (
@@ -39,13 +37,7 @@ export default function HeroesPage() {
 
       <ChampionMultiplierSearch />
 
-      <div className="grid gap-4 md:grid-cols-3">
-        {featuredHeroes.map((hero) => (
-          <Link key={hero.id} href={`/heroes/${hero.slug ?? hero.id}`} className="block transition hover:-translate-y-1">
-            <HeroCard hero={hero} />
-          </Link>
-        ))}
-      </div>
+      <HeroesCatalog />
 
       <GlassPanel className="mt-6 p-6">
         <div className="flex items-center gap-3">

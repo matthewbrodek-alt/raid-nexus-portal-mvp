@@ -27,7 +27,7 @@ export function DashboardShell({ title, subtitle, mode, children }: DashboardShe
               <p className="text-xs uppercase tracking-[0.24em] text-relic">
                 {mode === "admin" ? "Admin War Room" : "Player Sanctum"}
               </p>
-              <h1 className="text-xl font-bold text-white">{title}</h1>
+              <h1 className="text-lg font-bold text-white sm:text-xl">{title}</h1>
             </div>
           </div>
 

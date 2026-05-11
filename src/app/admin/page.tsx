@@ -1,4 +1,6 @@
-import { Bot, DatabaseZap, RadioTower, ShieldAlert } from "lucide-react";
+import { Bot, RadioTower, ShieldAlert } from "lucide-react";
+import Link from "next/link";
+import { AdminContentForge } from "@/components/admin/admin-content-forge";
 import { AdminUserManagement } from "@/components/admin/admin-user-management";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
@@ -27,24 +29,12 @@ export default function AdminDashboardPage() {
           <AdminUserManagement />
         </div>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_1fr]">
-          <GlassPanel className="p-6">
-            <div className="mb-5 flex items-center gap-3">
-              <DatabaseZap className="text-relic" />
-              <h2 className="text-2xl font-bold text-white">Content Forge</h2>
-            </div>
-            <div className="space-y-3">
-              {adminDashboard.contentOps.map((item) => (
-                <div key={item.title} className="grid grid-cols-[1fr_auto_auto] items-center gap-3 rounded-lg border border-white/10 bg-black/25 p-4">
-                  <p className="font-semibold text-white">{item.title}</p>
-                  <span className="rounded-full border border-relic/20 px-3 py-1 text-xs text-relic">{item.type}</span>
-                  <span className="text-xs text-zinc-400">{item.status}</span>
-                </div>
-              ))}
-            </div>
-          </GlassPanel>
+        <div className="mt-6">
+          <AdminContentForge />
+        </div>
 
-          <GlassPanel className="p-6">
+        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_1fr]">
+          <GlassPanel className="p-5 sm:p-6">
             <div className="mb-5 flex items-center gap-3">
               <ShieldAlert className="text-ember" />
               <h2 className="text-2xl font-bold text-white">Moderation Radar</h2>
@@ -76,6 +66,14 @@ export default function AdminDashboardPage() {
             <div className="mt-5 rounded-lg border border-relic/20 bg-relic/[0.08] p-4 text-sm text-zinc-300">
               Workflow file: <span className="font-semibold text-relic">n8n/workflows/raid-portal-automation.json</span>
             </div>
+            <Link
+              href={process.env.NEXT_PUBLIC_CRM_URL ?? "#"}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-4 inline-flex w-full items-center justify-center rounded-md border border-relic/30 bg-relic/10 px-4 py-3 text-sm font-bold text-relic transition hover:bg-relic/15"
+            >
+              Открыть CRM / n8n
+            </Link>
           </GlassPanel>
 
           <GlassPanel className="p-6">
