@@ -73,6 +73,20 @@ export function ChatWindow() {
   }, [user]);
 
   useEffect(() => {
+    const targetUid = new URLSearchParams(window.location.search).get("user");
+
+    if (!targetUid || selectedUser?.uid === targetUid) {
+      return;
+    }
+
+    const targetUser = users.find((item) => item.uid === targetUid);
+
+    if (targetUser) {
+      setSelectedUser(targetUser);
+    }
+  }, [selectedUser?.uid, users]);
+
+  useEffect(() => {
     const messagesRef = selectedUser && user
       ? collection(db, "directThreads", directThreadId(user.uid, selectedUser.uid), "messages")
       : collection(db, collections.chatRooms, "global", "messages");

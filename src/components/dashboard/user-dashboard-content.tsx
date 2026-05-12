@@ -16,6 +16,8 @@ type TopupLead = {
   packageId?: string;
   amountRub?: number;
   status?: string;
+  managerUid?: string;
+  threadId?: string;
   createdAt?: { seconds?: number };
 };
 
@@ -156,6 +158,11 @@ export function UserDashboardContent() {
                 <div className="text-left sm:text-right">
                   <p className="font-bold text-relic">{formatLeadAmount(lead)}</p>
                   <p className="mt-1 text-xs text-zinc-400">{lead.status ?? "new"}</p>
+                  {lead.managerUid ? (
+                    <Link className="mt-2 inline-flex text-xs font-semibold text-relic hover:text-white" href={`/chat?user=${lead.managerUid}`}>
+                      Открыть чат
+                    </Link>
+                  ) : null}
                 </div>
               </div>
             ))}

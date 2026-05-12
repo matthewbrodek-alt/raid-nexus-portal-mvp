@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { Camera, CreditCard, Send, ShieldCheck, Timer, WalletCards } from "lucide-react";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, doc, getDocs, query, serverTimestamp, setDoc, where } from "firebase/firestore";
 import { useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { GlassPanel } from "@/components/ui/glass-panel";
@@ -55,15 +56,43 @@ const copy = {
   }
 };
 
+type ManagerProfile = {
+  uid: string;
+  email: string;
+  displayName?: string;
+  role?: string;
+};
+
+function directThreadId(firstUid: string, secondUid: string) {
+  return [firstUid, secondUid].sort().join("__");
+}
+
+async function findManager() {
+  const usersSnapshot = await getDocs(query(collection(db, collections.users), where("status", "==", "active")));
+  const managers = usersSnapshot.docs
+    .map((item) => item.data() as ManagerProfile)
+    .filter((item) => item.role === "owner" || item.role === "admin")
+    .sort((a, b) => {
+      if (a.role === b.role) {
+        return (a.email ?? "").localeCompare(b.email ?? "");
+      }
+
+      return a.role === "owner" ? -1 : 1;
+    });
+
+  return managers[0] ?? null;
+}
+
 export function TopupLeadForm() {
   const { language, isRu } = useLanguage();
   const { user } = useAuth();
   const t = copy[language];
   const [telegram, setTelegram] = useState("");
   const [packageId, setPackageId] = useState(donationPackages[0].id);
-  const [paymentMethod, setPaymentMethod] = useState("usdt");
+  const [paymentMethod, setPaymentMethod] = useState("manager");
   const [comment, setComment] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [activeManagerUid, setActiveManagerUid] = useState("");
 
   const selectedPackage = useMemo(
     () => donationPackages.find((item) => item.id === packageId) ?? donationPackages[0],
@@ -77,11 +106,24 @@ export function TopupLeadForm() {
 
   async function submitLead(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (!user?.uid) {
+      setStatus("error");
+      return;
+    }
+
     setStatus("sending");
 
     try {
+      const manager = await findManager();
+      setActiveManagerUid(manager?.uid ?? "");
+      const topupRef = doc(collection(db, collections.topupLeads));
+      const threadId = manager ? directThreadId(user.uid, manager.uid) : "";
       const payload = {
-        uid: user?.uid ?? "guest",
+        uid: user.uid,
+        leadId: topupRef.id,
+        managerUid: manager?.uid ?? "",
+        threadId,
         telegram,
         packageId,
         packageName: isRu ? selectedPackage.ru : selectedPackage.en,
@@ -92,11 +134,32 @@ export function TopupLeadForm() {
         source: "portal"
       };
 
-      if (user?.uid) {
-        await addDoc(collection(db, collections.topupLeads), {
-          ...payload,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
+      await setDoc(topupRef, {
+        ...payload,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
+      if (manager) {
+        await setDoc(
+          doc(db, "directThreads", threadId),
+          {
+            participants: [user.uid, manager.uid],
+            participantEmails: [user.email ?? "", manager.email],
+            topupLeadIds: [topupRef.id],
+            lastMessageText: `Donation request: ${payload.packageName}`,
+            lastMessageAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          },
+          { merge: true }
+        );
+
+        await addDoc(collection(db, "directThreads", threadId, "messages"), {
+          uid: user.uid,
+          displayName: user.email ?? telegram,
+          text: `Donation request sent.\nPack: ${payload.packageName}\nPayment: ${paymentMethod}\nComment: ${comment || "-"}`,
+          topupLeadId: topupRef.id,
+          createdAt: serverTimestamp()
         });
       }
 
@@ -127,6 +190,19 @@ export function TopupLeadForm() {
           <p className="text-sm text-zinc-400">{t.subtitle}</p>
         </div>
       </div>
+
+      {!user ? (
+        <div className="mb-5 rounded-lg border border-relic/25 bg-relic/[0.08] p-4 text-sm leading-6 text-zinc-300">
+          <p>
+            {isRu
+              ? "Для заявки нужно войти в аккаунт. После отправки менеджер сможет ответить вам в личном чате на сайте."
+              : "Sign in to send a request. After submitting it, the manager can reply in your private site chat."}
+          </p>
+          <Link href="/login" className="mt-3 inline-flex rounded-md bg-relic px-4 py-2 font-bold text-black">
+            {isRu ? "Войти" : "Sign in"}
+          </Link>
+        </div>
+      ) : null}
 
       <div className="mb-5 grid gap-3 sm:grid-cols-3">
         {serviceSteps.map(({ Icon, label }) => (
@@ -172,8 +248,6 @@ export function TopupLeadForm() {
               onChange={(event) => setPaymentMethod(event.target.value)}
               className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic"
             >
-              <option value="usdt">USDT TRC20</option>
-              <option value="btc">BTC</option>
               <option value="manager">{t.manager}</option>
             </select>
           </label>
@@ -191,7 +265,7 @@ export function TopupLeadForm() {
         </label>
 
         <button
-          disabled={status === "sending"}
+          disabled={status === "sending" || !user}
           className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-semibold text-black transition hover:bg-[#f0c766] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Send size={18} />
@@ -201,6 +275,11 @@ export function TopupLeadForm() {
         {status === "sent" ? (
           <p className="rounded-md border border-relic/20 bg-relic/[0.08] px-3 py-2 text-sm text-relic">
             {t.sent}
+            {activeManagerUid ? (
+              <Link className="ml-2 font-bold underline underline-offset-4" href={`/chat?user=${activeManagerUid}`}>
+                {isRu ? "Открыть чат" : "Open chat"}
+              </Link>
+            ) : null}
           </p>
         ) : null}
         {status === "error" ? (
