@@ -3,6 +3,7 @@
 import { CheckCircle2, Gauge, ShieldAlert, Zap } from "lucide-react";
 import { useMemo, useState } from "react";
 import { GlassPanel } from "@/components/ui/glass-panel";
+import { useLanguage } from "@/lib/i18n/use-language";
 
 type NumberFieldProps = {
   label: string;
@@ -20,6 +21,83 @@ type SlotResult = {
   neededShownSpeed: number;
   slot: string;
   tuned: boolean;
+};
+
+const copy = {
+  ru: {
+    eyebrow: "Настройка арены",
+    title: "Калькулятор хода без разрыва",
+    description:
+      "Введи скорость первого заливщика. Калькулятор покажет минимальную скорость 2, 3 и 4 героя, чтобы они ходили сразу после заливщика без вклинивания противника.",
+    boosterTitle: "1 герой / заливщик шкалы хода",
+    shownSpeed: "Скорость в статах",
+    baseSpeed: "Базовая скорость",
+    aura: "Аура скорости",
+    safety: "Запас скорости",
+    effectiveBooster: "Скорость 1 героя с учетом ауры",
+    auraBonus: "Бонус ауры",
+    boostsTitle: "Залив шкалы хода по очереди",
+    afterHero1: "После 1 героя",
+    afterHero2: "После 2 героя",
+    afterHero3: "После 3 героя",
+    boostHint:
+      "Пример: Arbiter дает 30% после первого хода. Если 2 герой тоже заливает шкалу, добавь его процент в поле После 2 героя.",
+    currentTitle: "Проверить текущие скорости",
+    hero2Shown: "2 герой: скорость",
+    hero3Shown: "3 герой: скорость",
+    hero4Shown: "4 герой: скорость",
+    baseTitle: "Базовая скорость героев",
+    hero2Base: "2 герой: base",
+    hero3Base: "3 герой: base",
+    hero4Base: "4 герой: base",
+    hero2: "2 герой",
+    hero3: "3 герой",
+    hero4: "4 герой",
+    needs: "Нужно",
+    speed: "скорости",
+    current: "Текущая скорость",
+    totalBoost: "Суммарный залив",
+    effectiveNeeded: "Нужно с учетом ауры",
+    tuned: "Скорости хватает для хода без разрыва.",
+    addAtLeast: "Добавь минимум"
+  },
+  en: {
+    eyebrow: "Arena speed tune",
+    title: "No-cut arena calculator",
+    description:
+      "Enter the speed of your first turn meter booster. The calculator shows the minimum stat speed needed for heroes 2, 3 and 4 to move right after the booster with no gap.",
+    boosterTitle: "Hero 1 / turn meter booster",
+    shownSpeed: "Shown speed",
+    baseSpeed: "Base speed",
+    aura: "Speed aura",
+    safety: "Safety margin",
+    effectiveBooster: "Hero 1 effective speed with aura",
+    auraBonus: "Aura bonus",
+    boostsTitle: "Turn meter boosts in order",
+    afterHero1: "After hero 1",
+    afterHero2: "After hero 2",
+    afterHero3: "After hero 3",
+    boostHint:
+      "Example: Arbiter gives 30% after the first move. If hero 2 also boosts turn meter, add that value in After hero 2.",
+    currentTitle: "Check your current speeds",
+    hero2Shown: "Hero 2 shown speed",
+    hero3Shown: "Hero 3 shown speed",
+    hero4Shown: "Hero 4 shown speed",
+    baseTitle: "Follower base speeds",
+    hero2Base: "Hero 2 base",
+    hero3Base: "Hero 3 base",
+    hero4Base: "Hero 4 base",
+    hero2: "Hero 2",
+    hero3: "Hero 3",
+    hero4: "Hero 4",
+    needs: "Needs",
+    speed: "speed",
+    current: "Current speed",
+    totalBoost: "Total TM boost",
+    effectiveNeeded: "Effective needed",
+    tuned: "Speed is enough for a no-cut turn order.",
+    addAtLeast: "Add at least"
+  }
 };
 
 function toNumber(value: string) {
@@ -90,6 +168,8 @@ function calculateSlot({
 }
 
 export function DeadwoodArenaCalculator() {
+  const { language } = useLanguage();
+  const t = copy[language];
   const [boosterShownSpeed, setBoosterShownSpeed] = useState(330);
   const [boosterBaseSpeed, setBoosterBaseSpeed] = useState(110);
   const [speedAura, setSpeedAura] = useState(30);
@@ -121,7 +201,7 @@ export function DeadwoodArenaCalculator() {
         boosterEffectiveSpeed,
         cumulativeBoost: secondBoost,
         safetySpeed,
-        slot: "Hero 2",
+        slot: t.hero2,
         speedAura: safeAura
       }),
       calculateSlot({
@@ -130,7 +210,7 @@ export function DeadwoodArenaCalculator() {
         boosterEffectiveSpeed,
         cumulativeBoost: thirdBoost,
         safetySpeed,
-        slot: "Hero 3",
+        slot: t.hero3,
         speedAura: safeAura
       }),
       calculateSlot({
@@ -139,7 +219,7 @@ export function DeadwoodArenaCalculator() {
         boosterEffectiveSpeed,
         cumulativeBoost: fourthBoost,
         safetySpeed,
-        slot: "Hero 4",
+        slot: t.hero4,
         speedAura: safeAura
       })
     ];
@@ -161,6 +241,9 @@ export function DeadwoodArenaCalculator() {
     secondBaseSpeed,
     secondShownSpeed,
     speedAura,
+    t.hero2,
+    t.hero3,
+    t.hero4,
     thirdBaseSpeed,
     thirdShownSpeed
   ]);
@@ -173,11 +256,9 @@ export function DeadwoodArenaCalculator() {
             <Zap />
           </span>
           <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-relic">Arena speed tune</p>
-            <h2 className="mt-1 text-2xl font-bold text-white">No-cut arena calculator</h2>
-            <p className="mt-2 text-sm leading-6 text-zinc-400">
-              Enter the speed of your first turn meter booster. The calculator shows the minimum stat speed needed for heroes 2, 3 and 4 to move right after the booster with no gap. Inspired by DeadwoodJedi Arena Calculator.
-            </p>
+            <p className="text-xs uppercase tracking-[0.22em] text-relic">{t.eyebrow}</p>
+            <h2 className="mt-1 text-2xl font-bold text-white">{t.title}</h2>
+            <p className="mt-2 text-sm leading-6 text-zinc-400">{t.description}</p>
           </div>
         </div>
       </div>
@@ -187,50 +268,50 @@ export function DeadwoodArenaCalculator() {
           <div className="rounded-lg border border-relic/20 bg-relic/[0.06] p-4">
             <div className="mb-4 flex items-center gap-2">
               <Gauge className="h-5 w-5 text-relic" />
-              <h3 className="text-lg font-black text-white">Hero 1 / turn meter booster</h3>
+              <h3 className="text-lg font-black text-white">{t.boosterTitle}</h3>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <NumberField label="Shown speed" value={boosterShownSpeed} onChange={setBoosterShownSpeed} />
-              <NumberField label="Base speed" value={boosterBaseSpeed} onChange={setBoosterBaseSpeed} />
-              <NumberField label="Speed aura" value={speedAura} onChange={setSpeedAura} max={50} suffix="%" />
-              <NumberField label="Safety margin" value={safetySpeed} onChange={setSafetySpeed} max={20} suffix="spd" />
+              <NumberField label={t.shownSpeed} value={boosterShownSpeed} onChange={setBoosterShownSpeed} />
+              <NumberField label={t.baseSpeed} value={boosterBaseSpeed} onChange={setBoosterBaseSpeed} />
+              <NumberField label={t.aura} value={speedAura} onChange={setSpeedAura} max={50} suffix="%" />
+              <NumberField label={t.safety} value={safetySpeed} onChange={setSafetySpeed} max={20} suffix="spd" />
             </div>
             <div className="mt-4 rounded-md border border-white/10 bg-black/25 p-3">
-              <p className="text-sm text-zinc-400">Hero 1 effective speed with aura</p>
+              <p className="text-sm text-zinc-400">{t.effectiveBooster}</p>
               <p className="mt-1 text-3xl font-black text-relic">{formatNumber(result.boosterEffectiveSpeed)}</p>
-              <p className="mt-1 text-xs text-zinc-500">Aura bonus: +{formatNumber(result.boosterAuraBonus)}</p>
+              <p className="mt-1 text-xs text-zinc-500">
+                {t.auraBonus}: +{formatNumber(result.boosterAuraBonus)}
+              </p>
             </div>
           </div>
 
           <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
-            <h3 className="mb-4 text-lg font-black text-white">Turn meter boosts in order</h3>
+            <h3 className="mb-4 text-lg font-black text-white">{t.boostsTitle}</h3>
             <div className="grid gap-4 sm:grid-cols-3">
-              <NumberField label="After hero 1" value={boostAfterFirst} onChange={setBoostAfterFirst} max={99} suffix="%" />
-              <NumberField label="After hero 2" value={boostAfterSecond} onChange={setBoostAfterSecond} max={99} suffix="%" />
-              <NumberField label="After hero 3" value={boostAfterThird} onChange={setBoostAfterThird} max={99} suffix="%" />
+              <NumberField label={t.afterHero1} value={boostAfterFirst} onChange={setBoostAfterFirst} max={99} suffix="%" />
+              <NumberField label={t.afterHero2} value={boostAfterSecond} onChange={setBoostAfterSecond} max={99} suffix="%" />
+              <NumberField label={t.afterHero3} value={boostAfterThird} onChange={setBoostAfterThird} max={99} suffix="%" />
             </div>
-            <p className="mt-3 text-xs leading-5 text-zinc-500">
-              Example: Arbiter gives 30% after the first move. If hero 2 also boosts turn meter, add that value in &quot;After hero 2&quot;.
-            </p>
+            <p className="mt-3 text-xs leading-5 text-zinc-500">{t.boostHint}</p>
           </div>
 
           <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
-            <h3 className="mb-4 text-lg font-black text-white">Check your current speeds</h3>
+            <h3 className="mb-4 text-lg font-black text-white">{t.currentTitle}</h3>
             <div className="grid gap-4 sm:grid-cols-3">
-              <NumberField label="Hero 2 shown speed" value={secondShownSpeed} onChange={setSecondShownSpeed} />
-              <NumberField label="Hero 3 shown speed" value={thirdShownSpeed} onChange={setThirdShownSpeed} />
-              <NumberField label="Hero 4 shown speed" value={fourthShownSpeed} onChange={setFourthShownSpeed} />
+              <NumberField label={t.hero2Shown} value={secondShownSpeed} onChange={setSecondShownSpeed} />
+              <NumberField label={t.hero3Shown} value={thirdShownSpeed} onChange={setThirdShownSpeed} />
+              <NumberField label={t.hero4Shown} value={fourthShownSpeed} onChange={setFourthShownSpeed} />
             </div>
           </div>
         </div>
 
         <div className="space-y-4">
           <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
-            <h3 className="mb-4 text-lg font-black text-white">Follower base speeds</h3>
+            <h3 className="mb-4 text-lg font-black text-white">{t.baseTitle}</h3>
             <div className="grid gap-4 sm:grid-cols-3">
-              <NumberField label="Hero 2 base" value={secondBaseSpeed} onChange={setSecondBaseSpeed} />
-              <NumberField label="Hero 3 base" value={thirdBaseSpeed} onChange={setThirdBaseSpeed} />
-              <NumberField label="Hero 4 base" value={fourthBaseSpeed} onChange={setFourthBaseSpeed} />
+              <NumberField label={t.hero2Base} value={secondBaseSpeed} onChange={setSecondBaseSpeed} />
+              <NumberField label={t.hero3Base} value={thirdBaseSpeed} onChange={setThirdBaseSpeed} />
+              <NumberField label={t.hero4Base} value={fourthBaseSpeed} onChange={setFourthBaseSpeed} />
             </div>
           </div>
 
@@ -240,7 +321,9 @@ export function DeadwoodArenaCalculator() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs uppercase tracking-[0.18em] text-relic">{slot.slot}</p>
-                    <h3 className="mt-1 text-2xl font-black text-white">Needs {slot.neededShownSpeed} speed</h3>
+                    <h3 className="mt-1 text-2xl font-black text-white">
+                      {t.needs} {slot.neededShownSpeed} {t.speed}
+                    </h3>
                   </div>
                   <span className={slot.tuned ? "text-emerald-300" : "text-rose-300"}>
                     {slot.tuned ? <CheckCircle2 /> : <ShieldAlert />}
@@ -248,20 +331,20 @@ export function DeadwoodArenaCalculator() {
                 </div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-3">
                   <div className="rounded-md border border-white/10 bg-white/[0.035] p-3">
-                    <p className="text-xs text-zinc-500">Current speed</p>
+                    <p className="text-xs text-zinc-500">{t.current}</p>
                     <p className="mt-1 text-xl font-black text-white">{slot.actualShownSpeed}</p>
                   </div>
                   <div className="rounded-md border border-white/10 bg-white/[0.035] p-3">
-                    <p className="text-xs text-zinc-500">Total TM boost</p>
+                    <p className="text-xs text-zinc-500">{t.totalBoost}</p>
                     <p className="mt-1 text-xl font-black text-relic">{slot.cumulativeBoost}%</p>
                   </div>
                   <div className="rounded-md border border-white/10 bg-white/[0.035] p-3">
-                    <p className="text-xs text-zinc-500">Effective needed</p>
+                    <p className="text-xs text-zinc-500">{t.effectiveNeeded}</p>
                     <p className="mt-1 text-xl font-black text-ember">{formatNumber(slot.neededEffectiveSpeed)}</p>
                   </div>
                 </div>
                 <p className={slot.tuned ? "mt-3 text-sm text-emerald-300" : "mt-3 text-sm text-rose-300"}>
-                  {slot.tuned ? "Speed is enough for a no-cut turn order." : `Add at least ${Math.max(0, slot.neededShownSpeed - slot.actualShownSpeed)} speed.`}
+                  {slot.tuned ? t.tuned : `${t.addAtLeast} ${Math.max(0, slot.neededShownSpeed - slot.actualShownSpeed)} ${t.speed}.`}
                 </p>
               </div>
             ))}
