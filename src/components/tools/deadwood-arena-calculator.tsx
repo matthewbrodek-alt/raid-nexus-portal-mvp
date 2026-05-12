@@ -210,7 +210,7 @@ export function DeadwoodArenaCalculator() {
               <NumberField label="After hero 3" value={boostAfterThird} onChange={setBoostAfterThird} max={99} suffix="%" />
             </div>
             <p className="mt-3 text-xs leading-5 text-zinc-500">
-              Example: Arbiter gives 30% after the first move. If hero 2 also boosts turn meter, add that value in "After hero 2".
+              Example: Arbiter gives 30% after the first move. If hero 2 also boosts turn meter, add that value in &quot;After hero 2&quot;.
             </p>
           </div>
 
