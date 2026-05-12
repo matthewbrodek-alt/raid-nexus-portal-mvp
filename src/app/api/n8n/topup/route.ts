@@ -25,7 +25,6 @@ async function forwardJson(endpoint: string, payload: unknown) {
 
 export async function POST(request: Request) {
   const topupWebhookUrl = process.env.N8N_TOPUP_WEBHOOK_URL;
-  const crmWebhookUrl = process.env.N8N_CRM_WEBHOOK_URL;
 
   if (!topupWebhookUrl) {
     return NextResponse.json({ error: "Top-up webhook is not configured." }, { status: 500 });
@@ -53,10 +52,6 @@ export async function POST(request: Request) {
 
   if (!topupResponse.ok) {
     return NextResponse.json({ error: "Top-up webhook rejected the request." }, { status: 502 });
-  }
-
-  if (crmWebhookUrl) {
-    await forwardJson(crmWebhookUrl, payload).catch(() => undefined);
   }
 
   return NextResponse.json({ ok: true });

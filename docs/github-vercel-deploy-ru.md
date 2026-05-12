@@ -87,7 +87,7 @@ firestore.rules
 3. Выбери GitHub-репозиторий.
 4. Framework должен определиться как `Next.js`.
 5. В `Environment Variables` добавь значения из `.env.local`.
-6. Секретные переменные добавляй без `NEXT_PUBLIC_`: `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `N8N_TOPUP_WEBHOOK_URL`, `N8N_CRM_WEBHOOK_URL`, `GAME_DATA_ENCRYPTION_KEY`.
+6. Секретные переменные добавляй без `NEXT_PUBLIC_`: `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `N8N_TOPUP_WEBHOOK_URL`, `GAME_DATA_ENCRYPTION_KEY`.
 7. Публичный Cloudinary cloud name добавь как `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`.
 8. Нажми `Deploy`.
 9. После деплоя сайт будет доступен по бесплатному домену Vercel.

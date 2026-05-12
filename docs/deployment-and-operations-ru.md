@@ -87,7 +87,6 @@ CLOUDINARY_API_SECRET=...
 NEXT_PUBLIC_BTC_WALLET=...
 NEXT_PUBLIC_USDT_TRC20_WALLET=...
 N8N_TOPUP_WEBHOOK_URL=https://your-n8n-domain/webhook/raid/topup-lead
-N8N_CRM_WEBHOOK_URL=https://your-n8n-domain/webhook/raid/crm
 GAME_DATA_ENCRYPTION_KEY=...
 ```
 
@@ -147,7 +146,7 @@ n8n/workflows/raid-portal-automation.json
 
 Если вы уже подключили Bitrix webhook:
 
-- в node `CRM - Create Lead` используйте Bitrix REST URL напрямую;
+- в n8n environment variable `RAID_BITRIX_LEAD_WEBHOOK_URL` добавьте Bitrix REST URL;
 - authentication оставьте `None`;
 - `Authorization` header не нужен, если Bitrix webhook уже содержит секрет в URL;
 - endpoint должен быть вида:
