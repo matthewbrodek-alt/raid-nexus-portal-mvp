@@ -25,8 +25,8 @@ export const siteModules: SiteModule[] = [
     route: "/donate",
     navGroup: "public",
     enabled: true,
-    featureFlags: ["n8nWebhook", "managerRouting", "cryptoPayments"],
-    aiCapabilities: ["createTopupLead", "recommendDonationPack", "sendManagerWebhook"],
+    featureFlags: ["n8nWebhook", "managerRouting", "directChat"],
+    aiCapabilities: ["createTopupLead", "sendManagerWebhook", "openDirectChat"],
     description: "Dark fantasy donation flow with manager contact, n8n and Bitrix CRM."
   },
   {
@@ -35,9 +35,9 @@ export const siteModules: SiteModule[] = [
     route: "/useful",
     navGroup: "public",
     enabled: true,
-    featureFlags: ["newsFeed", "speedCalculator", "markdownGuides"],
-    aiCapabilities: ["calculateSpeed", "findGuide", "explainAuraMath"],
-    description: "News, calculators, guides and tactical tools."
+    featureFlags: ["arenaCalculator", "damageCalculator", "markdownGuides"],
+    aiCapabilities: ["calculateArenaTurnMeter", "compareDamageBuilds", "findGuide"],
+    description: "Calculators, guides and tactical tools."
   },
   {
     id: "marketplace",
@@ -67,7 +67,7 @@ export const siteModules: SiteModule[] = [
     enabled: true,
     featureFlags: ["realtimeFirestore", "attachments", "threads", "moderation"],
     aiCapabilities: ["createThread", "moderateMessage", "uploadAttachment"],
-    description: "Global realtime chat and forum threads."
+    description: "Global realtime chat and private 1-on-1 dialogs."
   },
   {
     id: "dashboard",
@@ -75,9 +75,9 @@ export const siteModules: SiteModule[] = [
     route: "/dashboard",
     navGroup: "user",
     enabled: true,
-    featureFlags: ["activityStats", "topupHistory", "recommendedDonation", "cryptoWallet"],
-    aiCapabilities: ["summarizeUserActivity", "recommendNextAction", "explainPaymentOptions"],
-    description: "Personal command room for user progress, requests, recommendations and wallet."
+    featureFlags: ["activityStats", "topupHistory", "directChat", "profileAvatar"],
+    aiCapabilities: ["summarizeUserActivity", "recommendNextAction", "openDirectChat"],
+    description: "Personal command room for user progress, requests and direct communication."
   },
   {
     id: "admin",

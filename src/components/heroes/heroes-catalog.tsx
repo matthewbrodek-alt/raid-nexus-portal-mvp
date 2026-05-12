@@ -2,12 +2,11 @@
 
 import { X } from "lucide-react";
 import { collection, deleteDoc, doc, onSnapshot, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { HeroCard } from "@/components/heroes/hero-card";
 import { useAuth } from "@/components/auth/auth-provider";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
-import { featuredHeroes } from "@/lib/data/mock";
 import type { HeroProfile } from "@/lib/types";
 
 type FirestoreHero = {
@@ -41,7 +40,7 @@ function normalizeRarity(value?: string): HeroProfile["rarity"] {
 
 export function HeroesCatalog() {
   const { profile } = useAuth();
-  const [firestoreHeroes, setFirestoreHeroes] = useState<HeroProfile[]>([]);
+  const [heroes, setHeroes] = useState<HeroProfile[]>([]);
   const [selectedHero, setSelectedHero] = useState<HeroProfile | null>(null);
   const [editName, setEditName] = useState("");
   const [editComment, setEditComment] = useState("");
@@ -51,7 +50,7 @@ export function HeroesCatalog() {
     const heroesQuery = query(collection(db, collections.heroes), where("isPublished", "==", true));
 
     return onSnapshot(heroesQuery, (snapshot) => {
-      setFirestoreHeroes(
+      setHeroes(
         snapshot.docs.map((item) => {
           const data = item.data() as FirestoreHero;
 
@@ -72,9 +71,6 @@ export function HeroesCatalog() {
     });
   }, []);
 
-  const heroes = useMemo(() => [...firestoreHeroes, ...featuredHeroes], [firestoreHeroes]);
-  const selectedIsFirestoreHero = Boolean(selectedHero && firestoreHeroes.some((hero) => hero.id === selectedHero.id));
-
   function openHero(hero: HeroProfile) {
     setSelectedHero(hero);
     setEditName(hero.name);
@@ -82,7 +78,7 @@ export function HeroesCatalog() {
   }
 
   async function saveSelectedHero() {
-    if (!selectedHero || !selectedIsFirestoreHero) {
+    if (!selectedHero) {
       return;
     }
 
@@ -94,7 +90,7 @@ export function HeroesCatalog() {
   }
 
   async function deleteSelectedHero() {
-    if (!selectedHero || !selectedIsFirestoreHero || !window.confirm("Удалить героя из базы?")) {
+    if (!selectedHero || !window.confirm("Удалить героя из базы?")) {
       return;
     }
 
@@ -104,13 +100,22 @@ export function HeroesCatalog() {
 
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {heroes.map((hero) => (
-          <button key={hero.id} type="button" onClick={() => openHero(hero)} className="block text-left transition hover:-translate-y-1">
-            <HeroCard hero={hero} />
-          </button>
-        ))}
-      </div>
+      {heroes.length > 0 ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {heroes.map((hero) => (
+            <button key={hero.id} type="button" onClick={() => openHero(hero)} className="block text-left transition hover:-translate-y-1">
+              <HeroCard hero={hero} />
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-lg border border-white/10 bg-black/25 p-6 text-center">
+          <h2 className="text-2xl font-black text-white">База героев пока пустая</h2>
+          <p className="mt-2 text-sm leading-6 text-zinc-400">
+            Добавь героев через Content Forge в админ-панели. После этого их можно будет открывать, редактировать и удалять здесь.
+          </p>
+        </div>
+      )}
 
       {selectedHero ? (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/78 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true">
@@ -143,7 +148,7 @@ export function HeroesCatalog() {
                 </button>
               </div>
 
-              {canManageHeroes && selectedIsFirestoreHero ? (
+              {canManageHeroes ? (
                 <div className="space-y-3 rounded-lg border border-relic/20 bg-relic/[0.06] p-5">
                   <h3 className="text-xl font-black text-white">Админ-правка</h3>
                   <input value={editName} onChange={(event) => setEditName(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic" />
@@ -163,9 +168,9 @@ export function HeroesCatalog() {
                 <h3 className="text-2xl font-black text-white">Галерея</h3>
                 <div className="mt-4 grid gap-3 sm:grid-cols-3">
                   {selectedHero.galleryUrls.slice(0, 3).map((url, index) => (
-                    <a key={url} href={url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg border border-white/10 bg-white/[0.04]">
+                    <div key={url} className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.04]">
                       <img src={url} alt={`${selectedHero.name} ${index + 1}`} className="aspect-[4/3] w-full object-cover" />
-                    </a>
+                    </div>
                   ))}
                   {selectedHero.galleryUrls.length === 0 ? (
                     <p className="col-span-full rounded-lg border border-white/10 bg-black/20 p-4 text-sm text-zinc-400">Галерея пока не заполнена.</p>
