@@ -37,6 +37,18 @@
                                                                                      "value":  "={{ $json.body.packageId }}"
                                                                                  },
                                                                                  {
+                                                                                     "id":  "packageName",
+                                                                                     "name":  "packageName",
+                                                                                     "type":  "string",
+                                                                                     "value":  "={{ $json.body.packageName || $json.body.packageId }}"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "amountRub",
+                                                                                     "name":  "amountRub",
+                                                                                     "type":  "number",
+                                                                                     "value":  "={{ $json.body.amountRub || 0 }}"
+                                                                                 },
+                                                                                 {
                                                                                      "id":  "paymentMethod",
                                                                                      "name":  "paymentMethod",
                                                                                      "type":  "string",
@@ -55,10 +67,16 @@
                                                                                      "value":  "={{ $json.body.uid || \u0027guest\u0027 }}"
                                                                                  },
                                                                                  {
+                                                                                     "id":  "source",
+                                                                                     "name":  "source",
+                                                                                     "type":  "string",
+                                                                                     "value":  "={{ $json.body.source || \u0027portal\u0027 }}"
+                                                                                 },
+                                                                                 {
                                                                                      "id":  "leadId",
                                                                                      "name":  "leadId",
                                                                                      "type":  "string",
-                                                                                     "value":  "={{ \u0027lead_\u0027 + Date.now() }}"
+                                                                                     "value":  "={{ $json.body.leadId || \u0027lead_\u0027 + Date.now() }}"
                                                                                  },
                                                                                  {
                                                                                      "id":  "createdAt",
@@ -91,7 +109,7 @@
                                                                         },
                                                             "conditions":  [
                                                                                {
-                                                                                   "id":  "crypto-check",
+                                                                                   "id":  "crypto-check-btc",
                                                                                    "leftValue":  "={{ $json.paymentMethod }}",
                                                                                    "rightValue":  "btc",
                                                                                    "operator":  {
@@ -100,7 +118,7 @@
                                                                                                 }
                                                                                },
                                                                                {
-                                                                                   "id":  "usdt-check",
+                                                                                   "id":  "crypto-check-usdt",
                                                                                    "leftValue":  "={{ $json.paymentMethod }}",
                                                                                    "rightValue":  "usdt",
                                                                                    "operator":  {
@@ -152,13 +170,19 @@
                       "typeVersion":  3.4,
                       "position":  [
                                        780,
-                                       -120
+                                       -180
                                    ]
                   },
                   {
                       "parameters":  {
                                          "assignments":  {
                                                              "assignments":  [
+                                                                                 {
+                                                                                     "id":  "wallet",
+                                                                                     "name":  "wallet",
+                                                                                     "type":  "string",
+                                                                                     "value":  ""
+                                                                                 },
                                                                                  {
                                                                                      "id":  "invoiceStatus",
                                                                                      "name":  "invoiceStatus",
@@ -177,31 +201,8 @@
                       "typeVersion":  3.4,
                       "position":  [
                                        780,
-                                       120
+                                       180
                                    ]
-                  },
-                  {
-                      "parameters":  {
-                                         "chatId":  "={{ $env.RAID_MANAGER_TELEGRAM_CHAT_ID }}",
-                                         "text":  "=New Raid top-up lead\nLead: {{ $json.leadId }}\nTelegram: {{ $json.telegram }}\nPackage: {{ $json.packageId }}\nPayment: {{ $json.paymentMethod }}\nInvoice: {{ $json.invoiceStatus }}\nComment: {{ $json.comment }}",
-                                         "additionalFields":  {
-                                                                  "parse_mode":  "Markdown"
-                                                              }
-                                     },
-                      "id":  "1d1c0b47-3061-4934-9071-2a22c9fc0006",
-                      "name":  "Telegram - Notify Manager",
-                      "type":  "n8n-nodes-base.telegram",
-                      "typeVersion":  1.2,
-                      "position":  [
-                                       1040,
-                                       0
-                                   ],
-                      "credentials":  {
-                                          "telegramApi":  {
-                                                              "id":  "PUT_TELEGRAM_CREDENTIAL_ID_HERE",
-                                                              "name":  "Raid Manager Telegram Bot"
-                                                          }
-                                      }
                   },
                   {
                       "parameters":  {
@@ -217,37 +218,130 @@
                                                                                  ]
                                                               },
                                          "sendBody":  true,
-                                         "options":  {
-
-                                                     },
                                          "bodyContentType":  "json",
                                          "specifyBody":  "json",
-                                         "jsonBody":  "={\n  \"fields\": {\n    \"TITLE\": \"Raid Nexus: {{ $json.packageId }}\",\n    \"NAME\": \"{{ $json.telegram }}\",\n    \"SOURCE_ID\": \"WEB\",\n    \"STATUS_ID\": \"NEW\",\n    \"COMMENTS\": \"Lead: {{ $json.leadId }}\\nTelegram: {{ $json.telegram }}\\nPackage: {{ $json.packageId }}\\nPayment: {{ $json.paymentMethod }}\\nInvoice: {{ $json.invoiceStatus }}\\nComment: {{ $json.comment }}\"\n  },\n  \"params\": {\n    \"REGISTER_SONET_EVENT\": \"Y\"\n  }\n}"
+                                         "jsonBody":  "={\n  \"fields\": {\n    \"TITLE\": \"Raid Nexus: {{ $json.packageName || $json.packageId }}\",\n    \"NAME\": \"{{ $json.telegram }}\",\n    \"SOURCE_ID\": \"WEB\",\n    \"STATUS_ID\": \"NEW\",\n    \"OPPORTUNITY\": \"{{ $json.amountRub || 0 }}\",\n    \"CURRENCY_ID\": \"RUB\",\n    \"COMMENTS\": \"Lead: {{ $json.leadId }}\\nUID: {{ $json.uid }}\\nTelegram: {{ $json.telegram }}\\nPackage: {{ $json.packageName || $json.packageId }}\\nAmount RUB: {{ $json.amountRub || 0 }}\\nPayment: {{ $json.paymentMethod }}\\nInvoice: {{ $json.invoiceStatus }}\\nWallet: {{ $json.wallet || \u0027\u0027 }}\\nSource: {{ $json.source }}\\nComment: {{ $json.comment }}\"\n  },\n  \"params\": {\n    \"REGISTER_SONET_EVENT\": \"Y\"\n  }\n}",
+                                         "options":  {
+
+                                                     }
                                      },
-                      "id":  "1d1c0b47-3061-4934-9071-2a22c9fc0007",
-                      "name":  "CRM - Create Lead",
+                      "id":  "1d1c0b47-3061-4934-9071-2a22c9fc0010",
+                      "name":  "Bitrix - Create Crypto Lead",
                       "type":  "n8n-nodes-base.httpRequest",
                       "typeVersion":  4.2,
                       "position":  [
-                                       1300,
-                                       0
+                                       1060,
+                                       -180
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "={{ $env.RAID_BITRIX_LEAD_WEBHOOK_URL }}",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "Content-Type",
+                                                                                         "value":  "application/json"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "bodyContentType":  "json",
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={\n  \"fields\": {\n    \"TITLE\": \"Raid Nexus: {{ $json.packageName || $json.packageId }}\",\n    \"NAME\": \"{{ $json.telegram }}\",\n    \"SOURCE_ID\": \"WEB\",\n    \"STATUS_ID\": \"NEW\",\n    \"OPPORTUNITY\": \"{{ $json.amountRub || 0 }}\",\n    \"CURRENCY_ID\": \"RUB\",\n    \"COMMENTS\": \"Lead: {{ $json.leadId }}\\nUID: {{ $json.uid }}\\nTelegram: {{ $json.telegram }}\\nPackage: {{ $json.packageName || $json.packageId }}\\nAmount RUB: {{ $json.amountRub || 0 }}\\nPayment: {{ $json.paymentMethod }}\\nInvoice: {{ $json.invoiceStatus }}\\nWallet: {{ $json.wallet || \u0027\u0027 }}\\nSource: {{ $json.source }}\\nComment: {{ $json.comment }}\"\n  },\n  \"params\": {\n    \"REGISTER_SONET_EVENT\": \"Y\"\n  }\n}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "1d1c0b47-3061-4934-9071-2a22c9fc0011",
+                      "name":  "Bitrix - Create Manager Lead",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       1060,
+                                       180
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "chatId":  "={{ $env.RAID_MANAGER_TELEGRAM_CHAT_ID }}",
+                                         "text":  "=New Raid top-up lead\\nLead: {{ $(\"Attach Crypto Invoice\").item.json.leadId }}\\nTelegram: {{ $(\"Attach Crypto Invoice\").item.json.telegram }}\\nPackage: {{ $(\"Attach Crypto Invoice\").item.json.packageName || $(\"Attach Crypto Invoice\").item.json.packageId }}\\nAmount RUB: {{ $(\"Attach Crypto Invoice\").item.json.amountRub || 0 }}\\nPayment: {{ $(\"Attach Crypto Invoice\").item.json.paymentMethod }}\\nInvoice: {{ $(\"Attach Crypto Invoice\").item.json.invoiceStatus }}\\nWallet: {{ $(\"Attach Crypto Invoice\").item.json.wallet }}\\nBitrix lead: {{ $(\"Bitrix - Create Crypto Lead\").item.json.result || \"created\" }}\\nComment: {{ $(\"Attach Crypto Invoice\").item.json.comment }}",
+                                         "additionalFields":  {
+                                                                  "parse_mode":  "Markdown"
+                                                              }
+                                     },
+                      "id":  "1d1c0b47-3061-4934-9071-2a22c9fc0012",
+                      "name":  "Telegram - Notify Crypto Lead",
+                      "type":  "n8n-nodes-base.telegram",
+                      "typeVersion":  1.2,
+                      "position":  [
+                                       1340,
+                                       -180
+                                   ],
+                      "credentials":  {
+                                          "telegramApi":  {
+                                                              "id":  "PUT_TELEGRAM_CREDENTIAL_ID_HERE",
+                                                              "name":  "Raid Manager Telegram Bot"
+                                                          }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "chatId":  "={{ $env.RAID_MANAGER_TELEGRAM_CHAT_ID }}",
+                                         "text":  "=New Raid manager lead\\nLead: {{ $(\"Manager Invoice\").item.json.leadId }}\\nTelegram: {{ $(\"Manager Invoice\").item.json.telegram }}\\nPackage: {{ $(\"Manager Invoice\").item.json.packageName || $(\"Manager Invoice\").item.json.packageId }}\\nAmount RUB: {{ $(\"Manager Invoice\").item.json.amountRub || 0 }}\\nPayment: {{ $(\"Manager Invoice\").item.json.paymentMethod }}\\nInvoice: {{ $(\"Manager Invoice\").item.json.invoiceStatus }}\\nBitrix lead: {{ $(\"Bitrix - Create Manager Lead\").item.json.result || \"created\" }}\\nComment: {{ $(\"Manager Invoice\").item.json.comment }}",
+                                         "additionalFields":  {
+                                                                  "parse_mode":  "Markdown"
+                                                              }
+                                     },
+                      "id":  "1d1c0b47-3061-4934-9071-2a22c9fc0013",
+                      "name":  "Telegram - Notify Manager Lead",
+                      "type":  "n8n-nodes-base.telegram",
+                      "typeVersion":  1.2,
+                      "position":  [
+                                       1340,
+                                       180
+                                   ],
+                      "credentials":  {
+                                          "telegramApi":  {
+                                                              "id":  "PUT_TELEGRAM_CREDENTIAL_ID_HERE",
+                                                              "name":  "Raid Manager Telegram Bot"
+                                                          }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "respondWith":  "json",
+                                         "responseBody":  "={\n  \"ok\": true,\n  \"leadId\": \"{{ $(\"Attach Crypto Invoice\").item.json.leadId }}\",\n  \"status\": \"{{ $(\"Attach Crypto Invoice\").item.json.invoiceStatus }}\",\n  \"wallet\": \"{{ $(\"Attach Crypto Invoice\").item.json.wallet }}\",\n  \"bitrixLeadId\": \"{{ $(\"Bitrix - Create Crypto Lead\").item.json.result || \u0027\u0027 }}\"\n}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "1d1c0b47-3061-4934-9071-2a22c9fc0014",
+                      "name":  "Respond Crypto to Portal",
+                      "type":  "n8n-nodes-base.respondToWebhook",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       1620,
+                                       -180
                                    ]
                   },
                   {
                       "parameters":  {
                                          "respondWith":  "json",
-                                         "responseBody":  "={\n  \"ok\": true,\n  \"leadId\": \"{{ $json.leadId }}\",\n  \"status\": \"{{ $json.invoiceStatus }}\",\n  \"wallet\": \"{{ $json.wallet || \u0027\u0027 }}\"\n}",
+                                         "responseBody":  "={\n  \"ok\": true,\n  \"leadId\": \"{{ $(\"Manager Invoice\").item.json.leadId }}\",\n  \"status\": \"{{ $(\"Manager Invoice\").item.json.invoiceStatus }}\",\n  \"wallet\": \"\",\n  \"bitrixLeadId\": \"{{ $(\"Bitrix - Create Manager Lead\").item.json.result || \u0027\u0027 }}\"\n}",
                                          "options":  {
 
                                                      }
                                      },
-                      "id":  "1d1c0b47-3061-4934-9071-2a22c9fc0009",
-                      "name":  "Respond to Portal",
+                      "id":  "1d1c0b47-3061-4934-9071-2a22c9fc0015",
+                      "name":  "Respond Manager to Portal",
                       "type":  "n8n-nodes-base.respondToWebhook",
                       "typeVersion":  1.1,
                       "position":  [
-                                       1820,
-                                       0
+                                       1620,
+                                       180
                                    ]
                   }
               ],
@@ -296,7 +390,7 @@
                                                       "main":  [
                                                                    [
                                                                        {
-                                                                           "node":  "Telegram - Notify Manager",
+                                                                           "node":  "Bitrix - Create Crypto Lead",
                                                                            "type":  "main",
                                                                            "index":  0
                                                                        }
@@ -307,33 +401,57 @@
                                                 "main":  [
                                                              [
                                                                  {
-                                                                     "node":  "Telegram - Notify Manager",
+                                                                     "node":  "Bitrix - Create Manager Lead",
                                                                      "type":  "main",
                                                                      "index":  0
                                                                  }
                                                              ]
                                                          ]
                                             },
-                        "Telegram - Notify Manager":  {
-                                                          "main":  [
-                                                                       [
-                                                                           {
-                                                                               "node":  "CRM - Create Lead",
-                                                                               "type":  "main",
-                                                                               "index":  0
-                                                                           }
+                        "Bitrix - Create Crypto Lead":  {
+                                                            "main":  [
+                                                                         [
+                                                                             {
+                                                                                 "node":  "Telegram - Notify Crypto Lead",
+                                                                                 "type":  "main",
+                                                                                 "index":  0
+                                                                             }
+                                                                         ]
+                                                                     ]
+                                                        },
+                        "Bitrix - Create Manager Lead":  {
+                                                             "main":  [
+                                                                          [
+                                                                              {
+                                                                                  "node":  "Telegram - Notify Manager Lead",
+                                                                                  "type":  "main",
+                                                                                  "index":  0
+                                                                              }
+                                                                          ]
+                                                                      ]
+                                                         },
+                        "Telegram - Notify Crypto Lead":  {
+                                                              "main":  [
+                                                                           [
+                                                                               {
+                                                                                   "node":  "Respond Crypto to Portal",
+                                                                                   "type":  "main",
+                                                                                   "index":  0
+                                                                               }
+                                                                           ]
                                                                        ]
-                                                                   ]
-                                                      },
-                        "CRM - Create Lead":  {
-                                                  "main":  [
-                                                               {
-                                                                   "node":  "Respond to Portal",
-                                                                   "type":  "main",
-                                                                   "index":  0
-                                                               }
-                                                           ]
-                                              }
+                                                          },
+                        "Telegram - Notify Manager Lead":  {
+                                                               "main":  [
+                                                                            [
+                                                                                {
+                                                                                    "node":  "Respond Manager to Portal",
+                                                                                    "type":  "main",
+                                                                                    "index":  0
+                                                                                }
+                                                                            ]
+                                                                        ]
+                                                           }
                     },
     "pinData":  {
 
@@ -352,10 +470,10 @@
                      "name":  "topup"
                  },
                  {
-                     "name":  "mvp"
+                     "name":  "bitrix"
                  }
              ],
     "triggerCount":  1,
-    "updatedAt":  "2026-05-09T00:00:00.000Z",
-    "versionId":  "raid-nexus-portal-mvp-001"
+    "updatedAt":  "2026-05-12T00:00:00.000Z",
+    "versionId":  "raid-nexus-portal-topup-bitrix-002"
 }

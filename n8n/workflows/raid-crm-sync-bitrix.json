@@ -1,0 +1,479 @@
+﻿{
+    "name":  "Raid CRM Sync - Bitrix Contacts and Leads",
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "httpMethod":  "POST",
+                                         "path":  "raid/crm-sync",
+                                         "responseMode":  "responseNode",
+                                         "options":  {
+                                                         "allowedOrigins":  "*"
+                                                     }
+                                     },
+                      "id":  "d81a4573-9fd9-424f-8ff3-92d9d72b33ea",
+                      "name":  "Portal Webhook - CRM Sync",
+                      "type":  "n8n-nodes-base.webhook",
+                      "typeVersion":  2.1,
+                      "position":  [
+                                       -520,
+                                       0
+                                   ],
+                      "webhookId":  "raid-crm-sync"
+                  },
+                  {
+                      "parameters":  {
+                                         "assignments":  {
+                                                             "assignments":  [
+                                                                                 {
+                                                                                     "id":  "action",
+                                                                                     "name":  "action",
+                                                                                     "type":  "string",
+                                                                                     "value":  "={{ ([\"signup\", \"contact.create\"].includes($json.body.action) ? \"contact.create\" : ([\"update\", \"contact.update\"].includes($json.body.action) ? \"contact.update\" : ([\"lead\", \"lead.create\"].includes($json.body.action) ? \"lead.create\" : \"unsupported\"))) }}"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "uid",
+                                                                                     "name":  "uid",
+                                                                                     "type":  "string",
+                                                                                     "value":  "={{ $json.body.uid || \"guest\" }}"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "name",
+                                                                                     "name":  "name",
+                                                                                     "type":  "string",
+                                                                                     "value":  "={{ $json.body.name || $json.body.clientName || $json.body.telegram || \"Raid user\" }}"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "email",
+                                                                                     "name":  "email",
+                                                                                     "type":  "string",
+                                                                                     "value":  "={{ $json.body.email || \"\" }}"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "phone",
+                                                                                     "name":  "phone",
+                                                                                     "type":  "string",
+                                                                                     "value":  "={{ $json.body.phone || \"\" }}"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "telegram",
+                                                                                     "name":  "telegram",
+                                                                                     "type":  "string",
+                                                                                     "value":  "={{ $json.body.telegram || \"\" }}"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "bitrixId",
+                                                                                     "name":  "bitrixId",
+                                                                                     "type":  "string",
+                                                                                     "value":  "={{ $json.body.bitrixId || $json.body.bitrix_id || \"\" }}"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "packageId",
+                                                                                     "name":  "packageId",
+                                                                                     "type":  "string",
+                                                                                     "value":  "={{ $json.body.packageId || \"\" }}"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "comment",
+                                                                                     "name":  "comment",
+                                                                                     "type":  "string",
+                                                                                     "value":  "={{ $json.body.comment || \"\" }}"
+                                                                                 },
+                                                                                 {
+                                                                                     "id":  "source",
+                                                                                     "name":  "source",
+                                                                                     "type":  "string",
+                                                                                     "value":  "={{ $json.body.source || \"portal\" }}"
+                                                                                 }
+                                                                             ]
+                                                         },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "crm-sync-normalize-0001",
+                      "name":  "Normalize CRM Payload",
+                      "type":  "n8n-nodes-base.set",
+                      "typeVersion":  3.4,
+                      "position":  [
+                                       -260,
+                                       0
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "rules":  {
+                                                       "values":  [
+                                                                      {
+                                                                          "conditions":  {
+                                                                                             "options":  {
+                                                                                                             "caseSensitive":  true,
+                                                                                                             "leftValue":  "",
+                                                                                                             "typeValidation":  "strict",
+                                                                                                             "version":  3
+                                                                                                         },
+                                                                                             "conditions":  [
+                                                                                                                {
+                                                                                                                    "id":  "contact-create",
+                                                                                                                    "leftValue":  "={{ $json.action }}",
+                                                                                                                    "rightValue":  "contact.create",
+                                                                                                                    "operator":  {
+                                                                                                                                     "type":  "string",
+                                                                                                                                     "operation":  "equals"
+                                                                                                                                 }
+                                                                                                                }
+                                                                                                            ],
+                                                                                             "combinator":  "and"
+                                                                                         }
+                                                                      },
+                                                                      {
+                                                                          "conditions":  {
+                                                                                             "options":  {
+                                                                                                             "caseSensitive":  true,
+                                                                                                             "leftValue":  "",
+                                                                                                             "typeValidation":  "strict",
+                                                                                                             "version":  3
+                                                                                                         },
+                                                                                             "conditions":  [
+                                                                                                                {
+                                                                                                                    "id":  "contact-update",
+                                                                                                                    "leftValue":  "={{ $json.action }}",
+                                                                                                                    "rightValue":  "contact.update",
+                                                                                                                    "operator":  {
+                                                                                                                                     "type":  "string",
+                                                                                                                                     "operation":  "equals"
+                                                                                                                                 }
+                                                                                                                }
+                                                                                                            ],
+                                                                                             "combinator":  "and"
+                                                                                         }
+                                                                      },
+                                                                      {
+                                                                          "conditions":  {
+                                                                                             "options":  {
+                                                                                                             "caseSensitive":  true,
+                                                                                                             "leftValue":  "",
+                                                                                                             "typeValidation":  "strict",
+                                                                                                             "version":  3
+                                                                                                         },
+                                                                                             "conditions":  [
+                                                                                                                {
+                                                                                                                    "id":  "lead-create",
+                                                                                                                    "leftValue":  "={{ $json.action }}",
+                                                                                                                    "rightValue":  "lead.create",
+                                                                                                                    "operator":  {
+                                                                                                                                     "type":  "string",
+                                                                                                                                     "operation":  "equals"
+                                                                                                                                 }
+                                                                                                                }
+                                                                                                            ],
+                                                                                             "combinator":  "and"
+                                                                                         }
+                                                                      },
+                                                                      {
+                                                                          "conditions":  {
+                                                                                             "options":  {
+                                                                                                             "caseSensitive":  true,
+                                                                                                             "leftValue":  "",
+                                                                                                             "typeValidation":  "strict",
+                                                                                                             "version":  3
+                                                                                                         },
+                                                                                             "conditions":  [
+                                                                                                                {
+                                                                                                                    "id":  "unsupported",
+                                                                                                                    "leftValue":  "={{ $json.action }}",
+                                                                                                                    "rightValue":  "unsupported",
+                                                                                                                    "operator":  {
+                                                                                                                                     "type":  "string",
+                                                                                                                                     "operation":  "equals"
+                                                                                                                                 }
+                                                                                                                }
+                                                                                                            ],
+                                                                                             "combinator":  "and"
+                                                                                         }
+                                                                      }
+                                                                  ]
+                                                   },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "crm-sync-switch-0001",
+                      "name":  "Route CRM Action",
+                      "type":  "n8n-nodes-base.switch",
+                      "typeVersion":  3.4,
+                      "position":  [
+                                       0,
+                                       0
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "={{ $env.RAID_BITRIX_CONTACT_ADD_WEBHOOK_URL }}",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "Content-Type",
+                                                                                         "value":  "application/json"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "bodyContentType":  "json",
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={\n  \"fields\": {\n    \"NAME\": \"{{ $json.name }}\",\n    \"EMAIL\": [{ \"VALUE\": \"{{ $json.email }}\", \"VALUE_TYPE\": \"WORK\" }],\n    \"PHONE\": [{ \"VALUE\": \"{{ $json.phone }}\", \"VALUE_TYPE\": \"WORK\" }],\n    \"SOURCE_ID\": \"WEB\",\n    \"COMMENTS\": \"UID: {{ $json.uid }}\\nTelegram: {{ $json.telegram }}\\nSource: {{ $json.source }}\\nComment: {{ $json.comment }}\"\n  }\n}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "crm-sync-contact-add-0001",
+                      "name":  "Bitrix - Create Contact",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       280,
+                                       -220
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "={{ $env.RAID_BITRIX_CONTACT_UPDATE_WEBHOOK_URL }}",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "Content-Type",
+                                                                                         "value":  "application/json"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "bodyContentType":  "json",
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={\n  \"id\": \"{{ $json.bitrixId }}\",\n  \"fields\": {\n    \"NAME\": \"{{ $json.name }}\",\n    \"EMAIL\": [{ \"VALUE\": \"{{ $json.email }}\", \"VALUE_TYPE\": \"WORK\" }],\n    \"PHONE\": [{ \"VALUE\": \"{{ $json.phone }}\", \"VALUE_TYPE\": \"WORK\" }],\n    \"COMMENTS\": \"UID: {{ $json.uid }}\\nTelegram: {{ $json.telegram }}\\nSource: {{ $json.source }}\\nComment: {{ $json.comment }}\"\n  }\n}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "crm-sync-contact-update-0001",
+                      "name":  "Bitrix - Update Contact",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       280,
+                                       0
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "={{ $env.RAID_BITRIX_LEAD_WEBHOOK_URL }}",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "Content-Type",
+                                                                                         "value":  "application/json"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "bodyContentType":  "json",
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={\n  \"fields\": {\n    \"TITLE\": \"Raid Nexus CRM: {{ $json.packageId || $json.name }}\",\n    \"NAME\": \"{{ $json.name }}\",\n    \"SOURCE_ID\": \"WEB\",\n    \"STATUS_ID\": \"NEW\",\n    \"COMMENTS\": \"UID: {{ $json.uid }}\\nTelegram: {{ $json.telegram }}\\nEmail: {{ $json.email }}\\nPhone: {{ $json.phone }}\\nPackage: {{ $json.packageId }}\\nSource: {{ $json.source }}\\nComment: {{ $json.comment }}\"\n  },\n  \"params\": { \"REGISTER_SONET_EVENT\": \"Y\" }\n}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "crm-sync-lead-add-0001",
+                      "name":  "Bitrix - Create CRM Lead",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       280,
+                                       220
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "respondWith":  "json",
+                                         "responseBody":  "={ \"ok\": true, \"action\": \"contact.create\", \"bitrixId\": \"{{ $json.result || \u0027\u0027 }}\" }",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "crm-sync-contact-add-response-0001",
+                      "name":  "Respond Contact Created",
+                      "type":  "n8n-nodes-base.respondToWebhook",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       560,
+                                       -220
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "respondWith":  "json",
+                                         "responseBody":  "={ \"ok\": true, \"action\": \"contact.update\", \"bitrixId\": \"{{ $(\"Normalize CRM Payload\").item.json.bitrixId }}\" }",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "crm-sync-contact-update-response-0001",
+                      "name":  "Respond Contact Updated",
+                      "type":  "n8n-nodes-base.respondToWebhook",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       560,
+                                       0
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "respondWith":  "json",
+                                         "responseBody":  "={ \"ok\": true, \"action\": \"lead.create\", \"bitrixLeadId\": \"{{ $json.result || \u0027\u0027 }}\" }",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "crm-sync-lead-add-response-0001",
+                      "name":  "Respond CRM Lead Created",
+                      "type":  "n8n-nodes-base.respondToWebhook",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       560,
+                                       220
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "respondWith":  "json",
+                                         "responseBody":  "={ \"ok\": false, \"error\": \"Unsupported CRM action. Use contact.create, contact.update or lead.create.\" }",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "crm-sync-unsupported-response-0001",
+                      "name":  "Respond Unsupported Action",
+                      "type":  "n8n-nodes-base.respondToWebhook",
+                      "typeVersion":  1.1,
+                      "position":  [
+                                       280,
+                                       440
+                                   ]
+                  }
+              ],
+    "connections":  {
+                        "Portal Webhook - CRM Sync":  {
+                                                          "main":  [
+                                                                       [
+                                                                           {
+                                                                               "node":  "Normalize CRM Payload",
+                                                                               "type":  "main",
+                                                                               "index":  0
+                                                                           }
+                                                                       ]
+                                                                   ]
+                                                      },
+                        "Normalize CRM Payload":  {
+                                                      "main":  [
+                                                                   [
+                                                                       {
+                                                                           "node":  "Route CRM Action",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ]
+                                                               ]
+                                                  },
+                        "Route CRM Action":  {
+                                                 "main":  [
+                                                              [
+                                                                  {
+                                                                      "node":  "Bitrix - Create Contact",
+                                                                      "type":  "main",
+                                                                      "index":  0
+                                                                  }
+                                                              ],
+                                                              [
+                                                                  {
+                                                                      "node":  "Bitrix - Update Contact",
+                                                                      "type":  "main",
+                                                                      "index":  0
+                                                                  }
+                                                              ],
+                                                              [
+                                                                  {
+                                                                      "node":  "Bitrix - Create CRM Lead",
+                                                                      "type":  "main",
+                                                                      "index":  0
+                                                                  }
+                                                              ],
+                                                              [
+                                                                  {
+                                                                      "node":  "Respond Unsupported Action",
+                                                                      "type":  "main",
+                                                                      "index":  0
+                                                                  }
+                                                              ]
+                                                          ]
+                                             },
+                        "Bitrix - Create Contact":  {
+                                                        "main":  [
+                                                                     [
+                                                                         {
+                                                                             "node":  "Respond Contact Created",
+                                                                             "type":  "main",
+                                                                             "index":  0
+                                                                         }
+                                                                     ]
+                                                                 ]
+                                                    },
+                        "Bitrix - Update Contact":  {
+                                                        "main":  [
+                                                                     [
+                                                                         {
+                                                                             "node":  "Respond Contact Updated",
+                                                                             "type":  "main",
+                                                                             "index":  0
+                                                                         }
+                                                                     ]
+                                                                 ]
+                                                    },
+                        "Bitrix - Create CRM Lead":  {
+                                                         "main":  [
+                                                                      [
+                                                                          {
+                                                                              "node":  "Respond CRM Lead Created",
+                                                                              "type":  "main",
+                                                                              "index":  0
+                                                                          }
+                                                                      ]
+                                                                  ]
+                                                     }
+                    },
+    "pinData":  {
+
+                },
+    "settings":  {
+                     "executionOrder":  "v1",
+                     "binaryMode":  "separate"
+                 },
+    "staticData":  null,
+    "tags":  [
+                 {
+                     "name":  "raid"
+                 },
+                 {
+                     "name":  "crm"
+                 },
+                 {
+                     "name":  "bitrix"
+                 }
+             ],
+    "triggerCount":  1,
+    "updatedAt":  "2026-05-12T00:00:00.000Z",
+    "versionId":  "raid-crm-sync-bitrix-002"
+}
