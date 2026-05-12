@@ -4,6 +4,7 @@ export type UserProfile = {
   uid: string;
   email: string;
   displayName: string;
+  avatarUrl?: string;
   role: UserRole;
   status: "active" | "blocked" | "pending";
   activityStats?: {

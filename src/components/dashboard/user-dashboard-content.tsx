@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { FileText, MessageSquare, ScrollText, Send, Swords } from "lucide-react";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { FileText, ImagePlus, MessageSquare, ScrollText, Send, Swords } from "lucide-react";
+import { collection, doc, onSnapshot, query, updateDoc, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
+import type { CloudinaryAsset } from "@/lib/cloudinary/types";
 
 type TopupLead = {
   id: string;
@@ -49,11 +50,30 @@ function leadTime(lead: TopupLead) {
   }).format(new Date(lead.createdAt.seconds * 1000));
 }
 
+async function uploadAvatar(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("folder", "users");
+  formData.append("publicId", `avatars/${Date.now()}-${file.name.replace(/[^a-z0-9.]+/gi, "-")}`);
+
+  const response = await fetch("/api/cloudinary/upload", {
+    method: "POST",
+    body: formData
+  });
+
+  if (!response.ok) {
+    throw new Error("Could not upload avatar.");
+  }
+
+  return (await response.json()) as CloudinaryAsset;
+}
+
 export function UserDashboardContent() {
-  const { profile, user } = useAuth();
+  const { profile, refreshProfile, user } = useAuth();
   const [topupLeads, setTopupLeads] = useState<TopupLead[]>([]);
   const [forumThreads, setForumThreads] = useState<ForumThread[]>([]);
   const [directThreads, setDirectThreads] = useState<DirectThread[]>([]);
+  const [avatarStatus, setAvatarStatus] = useState("");
 
   useEffect(() => {
     if (!user?.uid) {
@@ -114,6 +134,50 @@ export function UserDashboardContent() {
 
   return (
     <>
+      <GlassPanel className="mb-6 p-5 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <span className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-full border border-relic/35 bg-relic/15 text-xl font-black text-relic">
+              {profile?.avatarUrl ? <img src={profile.avatarUrl} alt={profile.displayName} className="h-full w-full object-cover" /> : (profile?.displayName ?? "U").slice(0, 2).toUpperCase()}
+            </span>
+            <div>
+              <h2 className="text-xl font-bold text-white">{profile?.displayName ?? profile?.email}</h2>
+              <p className="text-sm text-zinc-400">Аватар отображается в личном кабинете и чатах.</p>
+              {avatarStatus ? <p className="mt-1 text-xs text-relic">{avatarStatus}</p> : null}
+            </div>
+          </div>
+          <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border border-relic/30 bg-relic/10 px-4 py-2 text-sm font-semibold text-relic transition hover:bg-relic/15">
+            <ImagePlus size={16} />
+            Сменить аватар
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={async (event) => {
+                const file = event.target.files?.[0];
+
+                if (!file || !user?.uid) {
+                  return;
+                }
+
+                setAvatarStatus("Загрузка...");
+                try {
+                  const asset = await uploadAvatar(file);
+                  await updateDoc(doc(db, collections.users, user.uid), {
+                    avatarUrl: asset.secureUrl ?? asset.url,
+                    updatedAt: new Date()
+                  });
+                  await refreshProfile();
+                  setAvatarStatus("Аватар обновлен.");
+                } catch {
+                  setAvatarStatus("Не удалось загрузить аватар.");
+                }
+              }}
+            />
+          </label>
+        </div>
+      </GlassPanel>
+
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => (
           <StatCard key={stat.label} {...stat} />
@@ -148,7 +212,7 @@ export function UserDashboardContent() {
 
         <GlassPanel className="p-5 sm:p-6">
           <h2 className="text-xl font-bold text-white sm:text-2xl">История заявок</h2>
-          <div className="mt-5 space-y-3">
+          <div className="mt-5 max-h-[420px] space-y-3 overflow-y-auto pr-1">
             {topupLeads.map((lead) => (
               <div key={lead.id} className="grid gap-3 rounded-lg border border-white/10 bg-black/25 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
                 <div className="min-w-0">

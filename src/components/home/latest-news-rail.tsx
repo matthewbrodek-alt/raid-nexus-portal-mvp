@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { GlassPanel } from "@/components/ui/glass-panel";
@@ -11,7 +10,6 @@ type NewsItem = {
   id: string;
   title?: string;
   summary?: string;
-  slug?: string;
   publishedAt?: { seconds?: number };
   createdAt?: { seconds?: number };
   coverImage?: {
@@ -23,18 +21,18 @@ type NewsItem = {
 const fallbackNews: NewsItem[] = [
   {
     id: "fallback-1",
-    title: "Добро пожаловать в Raid Nexus",
-    summary: "Новости из Hero-секции появятся здесь после публикации из админ-панели."
+    title: "Raid Nexus готов к хроникам",
+    summary: "Новости из админ-панели появятся здесь после публикации: события, герои, акции и важные объявления."
   },
   {
     id: "fallback-2",
-    title: "Hero DB готова к пополнению",
-    summary: "Добавляй героев с фото, галереей и описанием через Content Forge."
+    title: "База героев ждет пополнения",
+    summary: "Добавляй героев с портретом, галереей и описанием через Content Forge."
   },
   {
     id: "fallback-3",
-    title: "Чат портала открыт",
-    summary: "Общий чат и личные сообщения доступны участникам после входа."
+    title: "Личный чат открыт",
+    summary: "Участники и админы могут вести диалоги по заявкам прямо на сайте."
   }
 ];
 
@@ -54,38 +52,32 @@ export function LatestNewsRail() {
   }, []);
 
   return (
-    <GlassPanel className="overflow-hidden p-4 sm:p-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[0.22em] text-relic">Latest News</p>
-          <h2 className="text-xl font-bold text-white">Последние новости</h2>
-        </div>
-        <Link href="/useful" className="shrink-0 rounded-md border border-relic/30 px-3 py-2 text-xs font-bold text-relic hover:bg-relic/10">
-          Все
-        </Link>
+    <GlassPanel className="overflow-hidden p-5 sm:p-6">
+      <div className="mb-5">
+        <p className="text-xs uppercase tracking-[0.22em] text-relic">Latest News</p>
+        <h2 className="mt-1 text-2xl font-black text-white">Хроники портала</h2>
       </div>
 
-      <div className="raid-news-marquee max-h-[430px] overflow-hidden">
-        <div className="raid-news-track space-y-3">
+      <div className="raid-news-marquee min-h-[520px] overflow-hidden rounded-lg border border-white/10 bg-black/20">
+        <div className="raid-news-track flex w-max gap-4 p-4">
           {[...news, ...news].slice(0, Math.max(news.length * 2, 6)).map((item, index) => (
-            <Link
+            <article
               key={`${item.id}-${index}`}
-              href={item.slug ? `/useful#${item.slug}` : "/useful"}
-              className="grid grid-cols-[88px_1fr] gap-3 rounded-lg border border-white/10 bg-black/25 p-3 transition hover:border-relic/40 hover:bg-white/[0.05]"
+              className="grid h-[480px] w-[330px] shrink-0 grid-rows-[260px_1fr] overflow-hidden rounded-lg border border-white/10 bg-[#0c111d] shadow-xl transition hover:border-relic/40 hover:bg-white/[0.04] sm:w-[390px]"
             >
               <div
-                className="h-20 rounded-md bg-gradient-to-br from-violet-900 via-slate-900 to-amber-900 bg-cover bg-center"
+                className="bg-gradient-to-br from-violet-900 via-slate-900 to-amber-900 bg-cover bg-center"
                 style={
                   item.coverImage?.secureUrl || item.coverImage?.url
                     ? { backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.45)), url(${item.coverImage.secureUrl ?? item.coverImage.url})` }
                     : undefined
                 }
               />
-              <div className="min-w-0">
-                <h3 className="line-clamp-2 text-sm font-bold text-white">{item.title}</h3>
-                <p className="mt-1 line-clamp-2 text-xs leading-5 text-zinc-400">{item.summary}</p>
+              <div className="min-w-0 p-4">
+                <h3 className="line-clamp-3 text-xl font-black leading-tight text-white">{item.title}</h3>
+                <p className="mt-3 line-clamp-5 text-sm leading-6 text-zinc-400">{item.summary}</p>
               </div>
-            </Link>
+            </article>
           ))}
         </div>
       </div>

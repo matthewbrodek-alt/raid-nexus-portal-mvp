@@ -60,7 +60,7 @@ body {
 }
 
 .raid-news-track {
-  animation: raid-news-scroll 28s linear infinite;
+  animation: raid-news-scroll 34s linear infinite;
 }
 
 .raid-news-marquee:hover .raid-news-track {
@@ -69,10 +69,10 @@ body {
 
 @keyframes raid-news-scroll {
   from {
-    transform: translateY(0);
+    transform: translateX(0);
   }
   to {
-    transform: translateY(-50%);
+    transform: translateX(-50%);
   }
 }
 

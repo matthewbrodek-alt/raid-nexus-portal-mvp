@@ -1,9 +1,10 @@
 "use client";
 
-import Link from "next/link";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { X } from "lucide-react";
+import { collection, deleteDoc, doc, onSnapshot, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { HeroCard } from "@/components/heroes/hero-card";
+import { useAuth } from "@/components/auth/auth-provider";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import { featuredHeroes } from "@/lib/data/mock";
@@ -39,7 +40,12 @@ function normalizeRarity(value?: string): HeroProfile["rarity"] {
 }
 
 export function HeroesCatalog() {
+  const { profile } = useAuth();
   const [firestoreHeroes, setFirestoreHeroes] = useState<HeroProfile[]>([]);
+  const [selectedHero, setSelectedHero] = useState<HeroProfile | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editComment, setEditComment] = useState("");
+  const canManageHeroes = profile?.role === "admin" || profile?.role === "owner";
 
   useEffect(() => {
     const heroesQuery = query(collection(db, collections.heroes), where("isPublished", "==", true));
@@ -67,14 +73,116 @@ export function HeroesCatalog() {
   }, []);
 
   const heroes = useMemo(() => [...firestoreHeroes, ...featuredHeroes], [firestoreHeroes]);
+  const selectedIsFirestoreHero = Boolean(selectedHero && firestoreHeroes.some((hero) => hero.id === selectedHero.id));
+
+  function openHero(hero: HeroProfile) {
+    setSelectedHero(hero);
+    setEditName(hero.name);
+    setEditComment(hero.comment);
+  }
+
+  async function saveSelectedHero() {
+    if (!selectedHero || !selectedIsFirestoreHero) {
+      return;
+    }
+
+    await updateDoc(doc(db, collections.heroes, selectedHero.id), {
+      name: editName.trim(),
+      markdownComment: editComment.trim(),
+      updatedAt: serverTimestamp()
+    });
+  }
+
+  async function deleteSelectedHero() {
+    if (!selectedHero || !selectedIsFirestoreHero || !window.confirm("Удалить героя из базы?")) {
+      return;
+    }
+
+    await deleteDoc(doc(db, collections.heroes, selectedHero.id));
+    setSelectedHero(null);
+  }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {heroes.map((hero) => (
-        <Link key={hero.id} href={`/heroes/${hero.slug ?? hero.id}`} className="block transition hover:-translate-y-1">
-          <HeroCard hero={hero} />
-        </Link>
-      ))}
-    </div>
+    <>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {heroes.map((hero) => (
+          <button key={hero.id} type="button" onClick={() => openHero(hero)} className="block text-left transition hover:-translate-y-1">
+            <HeroCard hero={hero} />
+          </button>
+        ))}
+      </div>
+
+      {selectedHero ? (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/78 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true">
+          <div className="mx-auto grid max-w-6xl gap-6 rounded-lg border border-white/10 bg-[#0d111b] p-4 shadow-2xl lg:grid-cols-[0.95fr_1.05fr]">
+            <div
+              className="min-h-[430px] rounded-lg border border-white/10 bg-gradient-to-br from-black via-[#1b0e18] to-[#391018] bg-cover bg-center p-5"
+              style={
+                selectedHero.avatarUrl
+                  ? { backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.84)), url(${selectedHero.avatarUrl})` }
+                  : undefined
+              }
+            >
+              <div className="flex h-full flex-col justify-end">
+                <p className="text-sm text-relic">{selectedHero.faction}</p>
+                <h2 className="text-4xl font-black text-white">{selectedHero.name}</h2>
+                <span className="mt-4 w-fit rounded-md border border-relic/30 bg-relic/10 px-3 py-2 text-sm font-bold text-relic">
+                  {selectedHero.rarity}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-start justify-between gap-4 rounded-lg border border-white/10 bg-black/20 p-5">
+                <div>
+                  <h3 className="text-2xl font-black text-white">Комментарий</h3>
+                  <p className="mt-3 text-sm leading-7 text-zinc-300">{selectedHero.comment}</p>
+                </div>
+                <button type="button" onClick={() => setSelectedHero(null)} className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-white/10 text-zinc-400 hover:text-white">
+                  <X size={18} />
+                </button>
+              </div>
+
+              {canManageHeroes && selectedIsFirestoreHero ? (
+                <div className="space-y-3 rounded-lg border border-relic/20 bg-relic/[0.06] p-5">
+                  <h3 className="text-xl font-black text-white">Админ-правка</h3>
+                  <input value={editName} onChange={(event) => setEditName(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic" />
+                  <textarea value={editComment} onChange={(event) => setEditComment(event.target.value)} rows={4} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic" />
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <button type="button" onClick={() => void saveSelectedHero()} className="rounded-md bg-relic px-4 py-2 font-bold text-black">
+                      Сохранить
+                    </button>
+                    <button type="button" onClick={() => void deleteSelectedHero()} className="rounded-md border border-blood/30 bg-blood/10 px-4 py-2 font-bold text-ember">
+                      Удалить
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="rounded-lg border border-white/10 bg-black/20 p-5">
+                <h3 className="text-2xl font-black text-white">Галерея</h3>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  {selectedHero.galleryUrls.slice(0, 3).map((url, index) => (
+                    <a key={url} href={url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg border border-white/10 bg-white/[0.04]">
+                      <img src={url} alt={`${selectedHero.name} ${index + 1}`} className="aspect-[4/3] w-full object-cover" />
+                    </a>
+                  ))}
+                  {selectedHero.galleryUrls.length === 0 ? (
+                    <p className="col-span-full rounded-lg border border-white/10 bg-black/20 p-4 text-sm text-zinc-400">Галерея пока не заполнена.</p>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-white/10 bg-black/20 p-5">
+                <h3 className="text-2xl font-black text-white">Использование</h3>
+                <p className="mt-3 text-sm leading-7 text-zinc-400">
+                  Роль: {selectedHero.role}. Рейтинг базы: {selectedHero.rating}/5. Блок готов для билдов, артефактов и заметок администратора.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }

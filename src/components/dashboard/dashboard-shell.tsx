@@ -21,7 +21,13 @@ export function DashboardShell({ title, subtitle, mode, children }: DashboardShe
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
           <div className="flex items-center gap-3">
             <span className="grid h-11 w-11 place-items-center rounded-lg border border-relic/40 bg-relic/15 text-relic shadow-glow">
-              {mode === "admin" ? <Shield /> : <Crown />}
+              {profile?.avatarUrl ? (
+                <img src={profile.avatarUrl} alt={profile.displayName} className="h-full w-full rounded-lg object-cover" />
+              ) : mode === "admin" ? (
+                <Shield />
+              ) : (
+                <Crown />
+              )}
             </span>
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-relic">

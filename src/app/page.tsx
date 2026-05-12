@@ -49,7 +49,19 @@ export default function Home() {
     <main className="min-h-screen bg-raid-radial text-pale">
       <Navigation sections={navSections} />
 
-      <section className="relative mx-auto grid min-h-[calc(100vh-72px)] max-w-7xl grid-cols-1 items-center gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1.02fr_0.98fr] lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
+        <GlassPanel className="p-5 sm:p-7">
+          <p className="text-xs uppercase tracking-[0.28em] text-relic">Raid Shadow Legends</p>
+          <h1 className="mt-3 max-w-5xl text-3xl font-black leading-tight text-white sm:text-5xl">
+            Цитадель Телерии для героев, рейдовых хроник, заявок и боевого чата клана
+          </h1>
+          <p className="mt-4 max-w-4xl text-sm leading-7 text-zinc-300 sm:text-base">
+            Следи за событиями, собирай базу чемпионов, общайся с менеджером по заявкам и держи портал как темный командный зал перед новым походом.
+          </p>
+        </GlassPanel>
+      </section>
+
+      <section className="relative mx-auto grid min-h-[calc(100vh-220px)] max-w-7xl grid-cols-1 items-center gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1.08fr_0.92fr] lg:px-8">
         <div className="absolute inset-x-0 bottom-0 h-px gold-line" />
 
         <div>
@@ -57,14 +69,14 @@ export default function Home() {
         </div>
 
         <div className="grid gap-5">
-          <div className="raid-hero-art min-h-[280px] rounded-lg border border-white/10 bg-[#07101f] p-6 shadow-2xl sm:min-h-[360px]">
-            <div className="flex h-full flex-col justify-end">
-              <p className="text-xs uppercase tracking-[0.26em] text-relic">Raid Shadow Legends</p>
-              <h2 className="mt-2 max-w-xl text-3xl font-black text-white sm:text-5xl">Командный центр портала</h2>
-              <p className="mt-3 max-w-lg text-sm leading-6 text-zinc-300">
-                Новости, герои, чат, заявки и CRM собраны в темной игровой панели.
-              </p>
-            </div>
+          <div className="overflow-hidden rounded-lg border border-white/10 bg-[#07101f] shadow-2xl">
+            <iframe
+              className="aspect-video w-full"
+              src="https://www.youtube.com/embed/MhsY9Uvcx7E"
+              title="Raid Shadow Legends trailer"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
           </div>
           <ActionCalendar events={raidEvents} />
         </div>
@@ -77,7 +89,7 @@ export default function Home() {
             <h2 className="mt-2 text-3xl font-bold text-white">Быстрый переход</h2>
           </div>
           <p className="max-w-xl text-sm leading-6 text-zinc-400">
-            Главная теперь работает как портал-навигатор: каждый крупный блок открыт на своей странице.
+            Каждый раздел открыт как отдельная игровая панель: донат-заявки, герои, чат, маркет и полезные материалы.
           </p>
         </div>
 
