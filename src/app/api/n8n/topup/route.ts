@@ -13,6 +13,10 @@ type TopupLeadPayload = {
   paymentMethod?: string;
   comment?: string;
   leadId?: string;
+  managerUid?: string;
+  threadId?: string;
+  status?: string;
+  source?: string;
 };
 
 async function forwardJson(endpoint: string, payload: unknown) {
@@ -38,13 +42,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Telegram and packageId are required." }, { status: 400 });
   }
 
+  const packageName = body?.packageName?.trim() || packageId;
+  const paymentMethod = body?.paymentMethod?.trim() || "manager";
+  const amountRub = Number(body?.amountRub ?? 0);
+  const leadId = body?.leadId?.trim() || `lead_${Date.now()}`;
+
   const payload = {
     ...body,
     uid: body?.uid || "guest",
+    leadId,
     telegram,
     packageId,
+    packageName,
+    amountRub: Number.isFinite(amountRub) ? amountRub : 0,
+    paymentMethod,
     comment: body?.comment?.slice(0, MAX_COMMENT_LENGTH) ?? "",
-    source: "portal",
+    status: body?.status || "new",
+    source: body?.source || "portal",
     receivedAt: new Date().toISOString()
   };
 
