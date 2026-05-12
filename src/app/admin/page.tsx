@@ -2,6 +2,7 @@ import { AdminCalendarEditor } from "@/components/admin/admin-calendar-editor";
 import { AdminChatModeration } from "@/components/admin/admin-chat-moderation";
 import { AdminContentForge } from "@/components/admin/admin-content-forge";
 import { AdminCrmPanel } from "@/components/admin/admin-crm-panel";
+import { AdminMarketplaceManager } from "@/components/admin/admin-marketplace-manager";
 import { AdminUserManagement } from "@/components/admin/admin-user-management";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
@@ -13,8 +14,11 @@ export default function AdminDashboardPage() {
     <ProtectedRoute allowedRoles={["admin", "owner"]}>
       <DashboardShell
         mode="admin"
-        title="Админ-панель портала"
-        subtitle="Операционный центр для новостей, героев, календаря акций, модерации, CRM и личных диалогов с игроками."
+        title={{ ru: "Админ-панель портала", en: "Portal admin panel" }}
+        subtitle={{
+          ru: "Операционный центр для новостей, героев, календаря акций, маркетплейса, модерации, CRM и личных диалогов с игроками.",
+          en: "Operations center for news, heroes, event calendar, marketplace, moderation, CRM and direct player dialogs."
+        }}
       >
         <div className="grid gap-4 md:grid-cols-4">
           {adminDashboard.pulse.map((item) => (
@@ -32,6 +36,10 @@ export default function AdminDashboardPage() {
 
         <div className="mt-6">
           <AdminContentForge />
+        </div>
+
+        <div className="mt-6">
+          <AdminMarketplaceManager />
         </div>
 
         <div className="mt-6">

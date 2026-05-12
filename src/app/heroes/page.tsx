@@ -7,16 +7,19 @@ import { GlassPanel } from "@/components/ui/glass-panel";
 export default function HeroesPage() {
   return (
     <PageShell
-      eyebrow="Hero DB"
-      title="База героев"
-      description="Каталог героев в формате отдельной базы: фильтры, карточки, подробные страницы, галерея, markdown-комментарии и видео-гайды."
+      eyebrow={{ ru: "Герои", en: "Hero DB" }}
+      title={{ ru: "База героев", en: "Hero database" }}
+      description={{
+        ru: "Каталог героев с карточками, галереями, комментариями админов и поиском множителей навыков.",
+        en: "Champion catalog with cards, galleries, admin notes and skill multiplier search."
+      }}
     >
       <GlassPanel className="mb-6 p-4">
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="flex flex-1 items-center gap-2 rounded-md border border-white/10 bg-black/30 px-3">
             <Search size={18} className="text-zinc-500" />
             <input
-              placeholder="Поиск героя, фракции или роли..."
+              placeholder="Search champion, faction or role..."
               className="min-w-0 flex-1 border-0 bg-transparent text-sm text-white placeholder:text-zinc-500 focus:ring-0"
             />
           </div>
@@ -36,16 +39,15 @@ export default function HeroesPage() {
       </GlassPanel>
 
       <ChampionMultiplierSearch />
-
       <HeroesCatalog />
 
       <GlassPanel className="mt-6 p-6">
         <div className="flex items-center gap-3">
           <Star className="text-relic" />
-          <h2 className="text-2xl font-bold text-white">Админ-добавление героя</h2>
+          <h2 className="text-2xl font-bold text-white">Admin hero publishing</h2>
         </div>
         <p className="mt-3 text-sm leading-7 text-zinc-400">
-          Схема Firestore уже включает avatar, 3+ gallery screenshots, markdownComment и будущий `youtubeVideoId`.
+          Firestore heroes support avatar, gallery screenshots, markdown comments and future video guide fields.
         </p>
       </GlassPanel>
     </PageShell>

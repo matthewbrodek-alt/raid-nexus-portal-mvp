@@ -28,6 +28,13 @@ export type MarketplaceAccount = {
   voidCount: number;
   price: number;
   tags: string[];
+  description?: string;
+  heroes?: string[];
+  status?: "available" | "reserved" | "sold";
+  screenshotUrl?: string;
+  galleryUrls?: string[];
+  power?: number;
+  server?: string;
 };
 
 export type AiNavigationNode = {

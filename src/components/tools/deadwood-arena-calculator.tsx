@@ -48,7 +48,7 @@ function NumberField({ label, max, min = 0, onChange, suffix, value }: NumberFie
           max={max}
           value={value}
           onChange={(event) => onChange(toNumber(event.target.value))}
-          className="min-w-0 flex-1 border-0 bg-transparent text-white focus:ring-0"
+          className="min-w-0 flex-1 border-0 bg-[#050811] text-lg font-black text-relic placeholder:text-zinc-500 focus:ring-0 [color-scheme:dark]"
         />
         {suffix ? <span className="flex items-center border-l border-white/10 px-3 text-sm text-zinc-500">{suffix}</span> : null}
       </div>

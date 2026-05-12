@@ -7,8 +7,11 @@ export default function UserDashboardPage() {
     <ProtectedRoute>
       <DashboardShell
         mode="user"
-        title="Личный кабинет"
-        subtitle="Персональный центр игрока: заявки, активность, форумные треды, чат и быстрый доступ к базе героев."
+        title={{ ru: "Личный кабинет", en: "Dashboard" }}
+        subtitle={{
+          ru: "Персональный центр игрока: заявки, активность, форумные треды, чат и быстрый доступ к базе героев.",
+          en: "Player command center: requests, activity, forum threads, chat and quick access to the hero database."
+        }}
       >
         <UserDashboardContent />
       </DashboardShell>

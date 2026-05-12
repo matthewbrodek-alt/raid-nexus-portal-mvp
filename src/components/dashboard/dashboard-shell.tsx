@@ -3,16 +3,24 @@
 import Link from "next/link";
 import { Crown, Home, LogOut, Shield } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-provider";
+import { useLanguage, type Language } from "@/lib/i18n/use-language";
+
+type LocalizedText = string | Record<Language, string>;
 
 type DashboardShellProps = {
-  title: string;
-  subtitle: string;
+  title: LocalizedText;
+  subtitle: LocalizedText;
   mode: "user" | "admin";
   children: React.ReactNode;
 };
 
+function resolveText(value: LocalizedText, language: Language) {
+  return typeof value === "string" ? value : value[language];
+}
+
 export function DashboardShell({ title, subtitle, mode, children }: DashboardShellProps) {
   const { profile, signOut } = useAuth();
+  const { language, isRu } = useLanguage();
   const hasAdminAccess = profile?.role === "admin" || profile?.role === "owner";
 
   return (
@@ -20,7 +28,7 @@ export function DashboardShell({ title, subtitle, mode, children }: DashboardShe
       <header className="border-b border-white/10 bg-abyss/86 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
           <div className="flex items-center gap-3">
-            <span className="grid h-11 w-11 place-items-center rounded-lg border border-relic/40 bg-relic/15 text-relic shadow-glow">
+            <span className="grid h-11 w-11 place-items-center overflow-hidden rounded-lg border border-relic/40 bg-relic/15 text-relic shadow-glow">
               {profile?.avatarUrl ? (
                 <img src={profile.avatarUrl} alt={profile.displayName} className="h-full w-full rounded-lg object-cover" />
               ) : mode === "admin" ? (
@@ -33,7 +41,7 @@ export function DashboardShell({ title, subtitle, mode, children }: DashboardShe
               <p className="text-xs uppercase tracking-[0.24em] text-relic">
                 {mode === "admin" ? "Admin War Room" : "Player Sanctum"}
               </p>
-              <h1 className="text-lg font-bold text-white sm:text-xl">{title}</h1>
+              <h1 className="text-lg font-bold text-white sm:text-xl">{resolveText(title, language)}</h1>
             </div>
           </div>
 
@@ -43,7 +51,7 @@ export function DashboardShell({ title, subtitle, mode, children }: DashboardShe
                 href={mode === "admin" ? "/dashboard" : "/admin"}
                 className="rounded-md border border-ember/30 bg-ember/10 px-3 py-2 text-sm font-semibold text-ember transition hover:bg-ember/15"
               >
-                {mode === "admin" ? "Кабинет игрока" : "Админ-панель"}
+                {mode === "admin" ? (isRu ? "Кабинет игрока" : "Player cabinet") : isRu ? "Админ-панель" : "Admin panel"}
               </Link>
             ) : null}
             <Link
@@ -51,7 +59,7 @@ export function DashboardShell({ title, subtitle, mode, children }: DashboardShe
               className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-zinc-300 transition hover:text-white"
             >
               <Home size={16} />
-              На главную
+              {isRu ? "На главную" : "Home"}
             </Link>
             <button
               type="button"
@@ -59,7 +67,7 @@ export function DashboardShell({ title, subtitle, mode, children }: DashboardShe
               className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-zinc-300 transition hover:text-white"
             >
               <LogOut size={16} />
-              Выйти
+              {isRu ? "Выйти" : "Sign out"}
             </button>
           </div>
         </div>
@@ -68,10 +76,10 @@ export function DashboardShell({ title, subtitle, mode, children }: DashboardShe
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {profile ? (
           <div className="mb-5 inline-flex rounded-full border border-relic/30 bg-relic/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-relic">
-            {profile.email} · {profile.role}
+            {profile.email} / {profile.role}
           </div>
         ) : null}
-        <p className="max-w-3xl text-sm leading-7 text-zinc-400">{subtitle}</p>
+        <p className="max-w-3xl text-sm leading-7 text-zinc-400">{resolveText(subtitle, language)}</p>
         <div className="mt-8">{children}</div>
       </section>
     </main>
