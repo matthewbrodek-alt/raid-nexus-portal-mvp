@@ -20,6 +20,36 @@ type FirestoreHero = {
   markdownComment?: string;
 };
 
+const raidFactions = [
+  "Banner Lords",
+  "High Elves",
+  "The Sacred Order",
+  "Barbarians",
+  "Ogryn Tribes",
+  "Lizardmen",
+  "Skinwalkers",
+  "Orcs",
+  "Demonspawn",
+  "Undead Hordes",
+  "Dark Elves",
+  "Knight Revenant",
+  "Dwarves",
+  "Shadowkin",
+  "Sylvan Watchers",
+  "The Nyresan Union"
+];
+
+const raidRoles = [
+  { value: "support", label: "Поддержка" },
+  { value: "attack", label: "Атака" },
+  { value: "defense", label: "Защита" },
+  { value: "hp", label: "Здоровье" }
+];
+
+function roleLabel(value: string) {
+  return raidRoles.find((role) => role.value === value)?.label ?? value;
+}
+
 function normalizeRarity(value?: string): HeroProfile["rarity"] {
   const lower = value?.toLowerCase();
 
@@ -43,6 +73,8 @@ export function HeroesCatalog() {
   const [heroes, setHeroes] = useState<HeroProfile[]>([]);
   const [selectedHero, setSelectedHero] = useState<HeroProfile | null>(null);
   const [editName, setEditName] = useState("");
+  const [editFaction, setEditFaction] = useState("");
+  const [editRole, setEditRole] = useState("support");
   const [editComment, setEditComment] = useState("");
   const canManageHeroes = profile?.role === "admin" || profile?.role === "owner";
 
@@ -74,6 +106,8 @@ export function HeroesCatalog() {
   function openHero(hero: HeroProfile) {
     setSelectedHero(hero);
     setEditName(hero.name);
+    setEditFaction(hero.faction);
+    setEditRole(raidRoles.some((role) => role.value === hero.role) ? hero.role : "support");
     setEditComment(hero.comment);
   }
 
@@ -84,6 +118,8 @@ export function HeroesCatalog() {
 
     await updateDoc(doc(db, collections.heroes, selectedHero.id), {
       name: editName.trim(),
+      faction: editFaction || "Unknown",
+      role: editRole,
       markdownComment: editComment.trim(),
       updatedAt: serverTimestamp()
     });
@@ -152,6 +188,21 @@ export function HeroesCatalog() {
                 <div className="space-y-3 rounded-lg border border-relic/20 bg-relic/[0.06] p-5">
                   <h3 className="text-xl font-black text-white">Админ-правка</h3>
                   <input value={editName} onChange={(event) => setEditName(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic" />
+                  <select value={editFaction} onChange={(event) => setEditFaction(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
+                    <option value="">Фракция</option>
+                    {raidFactions.map((faction) => (
+                      <option key={faction} value={faction}>
+                        {faction}
+                      </option>
+                    ))}
+                  </select>
+                  <select value={editRole} onChange={(event) => setEditRole(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
+                    {raidRoles.map((role) => (
+                      <option key={role.value} value={role.value}>
+                        {role.label}
+                      </option>
+                    ))}
+                  </select>
                   <textarea value={editComment} onChange={(event) => setEditComment(event.target.value)} rows={4} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic" />
                   <div className="grid gap-2 sm:grid-cols-2">
                     <button type="button" onClick={() => void saveSelectedHero()} className="rounded-md bg-relic px-4 py-2 font-bold text-black">
@@ -181,7 +232,7 @@ export function HeroesCatalog() {
               <div className="rounded-lg border border-white/10 bg-black/20 p-5">
                 <h3 className="text-2xl font-black text-white">Использование</h3>
                 <p className="mt-3 text-sm leading-7 text-zinc-400">
-                  Роль: {selectedHero.role}. Рейтинг базы: {selectedHero.rating}/5. Блок готов для билдов, артефактов и заметок администратора.
+                  Роль: {roleLabel(selectedHero.role)}. Рейтинг базы: {selectedHero.rating}/5. Блок готов для билдов, артефактов и заметок администратора.
                 </p>
               </div>
             </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, CornerDownRight, ImagePlus, MessageSquare, Search, Send, Users, X } from "lucide-react";
+import { ChevronDown, CornerDownRight, ImagePlus, Menu, MessageSquare, Search, Send, Users, X } from "lucide-react";
 import {
   addDoc,
   collection,
@@ -96,6 +96,7 @@ export function ChatWindow() {
   const [imagePreview, setImagePreview] = useState<ImagePreview | null>(null);
   const [memberMenu, setMemberMenu] = useState<MemberMenu | null>(null);
   const [personalBlockedUids, setPersonalBlockedUids] = useState<string[]>([]);
+  const [chatMenuOpen, setChatMenuOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const canSend = Boolean(message.trim() || attachmentFile) && Boolean(user) && !sending;
@@ -313,8 +314,8 @@ export function ChatWindow() {
 
   return (
     <>
-      <div className="mx-auto grid h-[calc(100dvh-112px)] min-h-[620px] w-full max-w-7xl grid-rows-[auto_1fr] overflow-hidden rounded-lg border border-white/10 bg-[#0b1120] shadow-2xl lg:h-[78vh] lg:grid-cols-[330px_1fr] lg:grid-rows-none">
-        <aside className="min-w-0 border-b border-white/10 bg-[#080e1a] lg:border-b-0 lg:border-r">
+      <div className="mx-auto grid h-[calc(100dvh-112px)] min-h-[620px] w-full max-w-7xl overflow-hidden rounded-lg border border-white/10 bg-[#0b1120] shadow-2xl lg:h-[78vh] lg:grid-cols-[330px_1fr]">
+        <aside className="hidden min-w-0 border-b border-white/10 bg-[#080e1a] lg:block lg:border-b-0 lg:border-r">
           <div className="border-b border-white/10 p-3 sm:p-4">
             <div className="flex items-center gap-3">
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-relic/35 bg-relic/15 text-relic">
@@ -340,7 +341,10 @@ export function ChatWindow() {
           <div className="flex max-h-[150px] gap-2 overflow-x-auto p-3 lg:block lg:max-h-[590px] lg:space-y-2 lg:overflow-y-auto">
             <button
               type="button"
-              onClick={() => setSelectedUser(null)}
+              onClick={() => {
+                setSelectedUser(null);
+                setChatMenuOpen(false);
+              }}
               className={`flex min-w-[220px] items-center gap-3 rounded-lg p-3 text-left transition lg:min-w-0 lg:w-full ${
                 !selectedUser ? "border border-relic/35 bg-relic/15 text-white" : "border border-white/10 bg-white/[0.03] text-zinc-300 hover:bg-white/[0.06]"
               }`}
@@ -358,7 +362,10 @@ export function ChatWindow() {
               <button
                 key={item.uid}
                 type="button"
-                onClick={() => setSelectedUser(item)}
+                onClick={() => {
+                  setSelectedUser(item);
+                  setChatMenuOpen(false);
+                }}
                 className={`flex min-w-[220px] items-center gap-3 rounded-lg p-3 text-left transition lg:min-w-0 lg:w-full ${
                   selectedUser?.uid === item.uid ? "border border-violet-400/45 bg-violet-500/15 text-white" : "border border-white/10 bg-white/[0.03] text-zinc-300 hover:bg-white/[0.06]"
                 }`}
@@ -387,10 +394,18 @@ export function ChatWindow() {
 
         <section className="relative flex min-h-0 min-w-0 flex-col bg-[#101827]">
           <header className="flex items-center gap-3 border-b border-white/10 bg-[#0d1422]/95 p-3 sm:p-4">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-white/10 bg-white/[0.04] text-relic">
+            <button
+              type="button"
+              onClick={() => setChatMenuOpen(true)}
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-relic/30 bg-relic/10 text-relic lg:hidden"
+              aria-label="Открыть меню чатов"
+            >
+              <Menu size={19} />
+            </button>
+            <span className="hidden h-11 w-11 shrink-0 place-items-center rounded-lg border border-white/10 bg-white/[0.04] text-relic lg:grid">
               <MessageSquare size={20} />
             </span>
-            <div className="min-w-0">
+            <div className="hidden min-w-0 lg:block">
               <h2 className="truncate text-lg font-bold text-white">{selectedUser ? selectedUser.displayName || selectedUser.email : "Общий чат"}</h2>
               <p className="truncate text-sm text-zinc-500">{selectedUser ? selectedUser.email : "Открытая комната портала"}</p>
             </div>
@@ -527,6 +542,84 @@ export function ChatWindow() {
           )}
         </section>
       </div>
+
+      {chatMenuOpen ? (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm lg:hidden" role="dialog" aria-modal="true">
+          <div className="h-full w-[86vw] max-w-sm overflow-y-auto border-r border-relic/25 bg-[#080e1a] p-4 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-relic/35 bg-relic/15 text-relic">
+                  <Users size={20} />
+                </span>
+                <div className="min-w-0">
+                  <h2 className="truncate text-lg font-bold text-white">Сообщения</h2>
+                  <p className="truncate text-sm text-zinc-500">Общий чат и личные диалоги</p>
+                </div>
+              </div>
+              <button type="button" onClick={() => setChatMenuOpen(false)} className="grid h-10 w-10 place-items-center rounded-md border border-white/10 text-zinc-400">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="mb-4 flex items-center gap-2 rounded-md border border-white/10 bg-black/30 px-3 py-2">
+              <Search size={16} className="shrink-0 text-zinc-500" />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="min-w-0 flex-1 border-0 bg-transparent text-sm text-white placeholder:text-zinc-500 focus:ring-0"
+                placeholder="Найти пользователя"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedUser(null);
+                  setChatMenuOpen(false);
+                }}
+                className={`flex w-full items-center gap-3 rounded-lg p-3 text-left transition ${
+                  !selectedUser ? "border border-relic/35 bg-relic/15 text-white" : "border border-white/10 bg-white/[0.03] text-zinc-300"
+                }`}
+              >
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-relic to-amber-700 text-sm font-black text-black">
+                  G
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate font-semibold">Общий чат</span>
+                  <span className="block truncate text-xs text-zinc-500">Видят все участники</span>
+                </span>
+              </button>
+
+              {filteredUsers.map((item) => (
+                <button
+                  key={item.uid}
+                  type="button"
+                  onClick={() => {
+                    setSelectedUser(item);
+                    setChatMenuOpen(false);
+                  }}
+                  className={`flex w-full items-center gap-3 rounded-lg p-3 text-left transition ${
+                    selectedUser?.uid === item.uid ? "border border-violet-400/45 bg-violet-500/15 text-white" : "border border-white/10 bg-white/[0.03] text-zinc-300"
+                  }`}
+                >
+                  <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-violet-500 to-cyan-600 text-xs font-black text-white">
+                    {item.avatarUrl ? (
+                      <img src={item.avatarUrl} alt={item.displayName || item.email} className="h-full w-full rounded-full object-cover" />
+                    ) : (
+                      (item.displayName || item.email || "U").slice(0, 2).toUpperCase()
+                    )}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate font-semibold">{item.displayName || item.email}</span>
+                    <span className="block truncate text-xs text-zinc-500">{item.role}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {memberMenu ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">

@@ -118,37 +118,45 @@ export function LatestNewsRail() {
       </div>
 
       {selectedNews ? (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true">
-          <div className="raid-ornate-panel mx-auto max-w-5xl overflow-hidden bg-[#071019]">
-            <div
-              className="min-h-[360px] bg-gradient-to-br from-[#16090c] via-[#111827] to-[#352012] bg-cover bg-center"
-              style={
-                getNewsImage(selectedNews)
-                  ? { backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.86)), url(${getNewsImage(selectedNews)})` }
-                  : undefined
-              }
-            >
-              <div className="flex min-h-[360px] flex-col justify-between p-5 sm:p-8">
-                <button
-                  type="button"
-                  onClick={() => setSelectedNews(null)}
-                  className="ml-auto grid h-10 w-10 place-items-center border border-relic/40 bg-black/45 text-zinc-300 transition hover:text-white"
-                  aria-label="Закрыть новость"
-                >
-                  <X size={18} />
-                </button>
-                <div className="max-w-3xl">
-                  <p className="text-xs font-bold uppercase tracking-[0.34em] text-relic">{formatNewsDate(selectedNews)}</p>
-                  <h2 className="mt-3 font-[var(--font-cinzel)] text-3xl font-black leading-tight text-white sm:text-5xl">{selectedNews.title}</h2>
-                  <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-200">{selectedNews.summary}</p>
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 px-3 py-5 backdrop-blur-sm sm:px-4 sm:py-8" role="dialog" aria-modal="true">
+          <div className="flex min-h-full items-center justify-center">
+            <div className="raid-ornate-panel mx-auto grid max-h-[calc(100dvh-40px)] w-full max-w-5xl overflow-y-auto bg-[#071019]">
+              <div className="bg-gradient-to-br from-[#16090c] via-[#111827] to-[#352012]">
+                <div className="flex items-start justify-between gap-4 p-4 sm:p-6">
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold uppercase tracking-[0.34em] text-relic">{formatNewsDate(selectedNews)}</p>
+                    <h2 className="mt-2 font-[var(--font-cinzel)] text-2xl font-black leading-tight text-white sm:text-4xl">{selectedNews.title}</h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedNews(null)}
+                    className="grid h-10 w-10 shrink-0 place-items-center border border-relic/40 bg-black/45 text-zinc-300 transition hover:text-white"
+                    aria-label="Закрыть новость"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+                <div className="border-y border-relic/20 bg-black/35">
+                  {getNewsImage(selectedNews) ? (
+                    <img
+                      src={getNewsImage(selectedNews)}
+                      alt={selectedNews.title ?? "News image"}
+                      className="mx-auto max-h-[48dvh] w-full object-contain"
+                    />
+                  ) : (
+                    <div className="grid min-h-[220px] place-items-center bg-gradient-to-br from-[#16090c] via-[#111827] to-[#352012] text-relic">
+                      Raid Nexus
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-            <div className="p-5 sm:p-8">
-              <h3 className="font-[var(--font-cinzel)] text-2xl font-black text-white">Подробности</h3>
-              <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-zinc-300">
-                {selectedNews.markdownBody || selectedNews.summary || "Описание новости пока не заполнено."}
-              </p>
+              <div className="p-5 sm:p-8">
+                <p className="max-w-3xl text-base leading-7 text-zinc-200">{selectedNews.summary}</p>
+                <h3 className="mt-6 font-[var(--font-cinzel)] text-2xl font-black text-white">Подробности</h3>
+                <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-zinc-300">
+                  {selectedNews.markdownBody || selectedNews.summary || "Описание новости пока не заполнено."}
+                </p>
+              </div>
             </div>
           </div>
         </div>

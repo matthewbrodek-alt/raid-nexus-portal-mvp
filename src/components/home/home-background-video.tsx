@@ -10,6 +10,8 @@ type BroadcastSettings = {
   videoUrl?: string;
 };
 
+const defaultBackgroundVideoUrl = "/videos/raid-bg.mp4";
+
 function isVideoFile(value?: string) {
   return Boolean(value && /\.(mp4|webm|ogg)(\?.*)?$/i.test(value));
 }
@@ -23,7 +25,7 @@ export function HomeBackgroundVideo() {
     });
   }, []);
 
-  const videoUrl = settings.backgroundVideoUrl || (isVideoFile(settings.videoUrl) ? settings.videoUrl : "");
+  const videoUrl = settings.backgroundVideoUrl || (isVideoFile(settings.videoUrl) ? settings.videoUrl : defaultBackgroundVideoUrl);
 
   if (!videoUrl) {
     return null;

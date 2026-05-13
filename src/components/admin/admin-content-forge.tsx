@@ -18,6 +18,32 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
+const raidFactions = [
+  "Banner Lords",
+  "High Elves",
+  "The Sacred Order",
+  "Barbarians",
+  "Ogryn Tribes",
+  "Lizardmen",
+  "Skinwalkers",
+  "Orcs",
+  "Demonspawn",
+  "Undead Hordes",
+  "Dark Elves",
+  "Knight Revenant",
+  "Dwarves",
+  "Shadowkin",
+  "Sylvan Watchers",
+  "The Nyresan Union"
+];
+
+const raidRoles = [
+  { value: "support", label: "Поддержка" },
+  { value: "attack", label: "Атака" },
+  { value: "defense", label: "Защита" },
+  { value: "hp", label: "Здоровье" }
+];
+
 type ManagedHero = {
   id: string;
   name?: string;
@@ -179,7 +205,7 @@ export function AdminContentForge() {
     setEditingHeroId(hero.id);
     setEditHeroName(hero.name ?? "");
     setEditHeroFaction(hero.faction ?? "");
-    setEditHeroRole(hero.role ?? "support");
+    setEditHeroRole(raidRoles.some((role) => role.value === hero.role) ? hero.role ?? "support" : "support");
     setEditHeroDescription(hero.markdownComment ?? "");
   }
 
@@ -364,14 +390,21 @@ export function AdminContentForge() {
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <input value={heroName} onChange={(event) => setHeroName(event.target.value)} required placeholder="Имя героя" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
-            <input value={heroFaction} onChange={(event) => setHeroFaction(event.target.value)} placeholder="Фракция" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+            <select value={heroFaction} onChange={(event) => setHeroFaction(event.target.value)} required className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
+              <option value="">Фракция</option>
+              {raidFactions.map((faction) => (
+                <option key={faction} value={faction}>
+                  {faction}
+                </option>
+              ))}
+            </select>
           </div>
           <select value={heroRole} onChange={(event) => setHeroRole(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
-            <option value="support">Support</option>
-            <option value="nuker">Nuker</option>
-            <option value="speedLead">Speed Lead</option>
-            <option value="control">Control</option>
-            <option value="tank">Tank</option>
+            {raidRoles.map((role) => (
+              <option key={role.value} value={role.value}>
+                {role.label}
+              </option>
+            ))}
           </select>
           <label className="block text-sm text-zinc-300">
             Главное фото
@@ -411,13 +444,20 @@ export function AdminContentForge() {
 
           <div className="space-y-3 rounded-lg border border-white/10 bg-black/25 p-3">
             <input value={editHeroName} onChange={(event) => setEditHeroName(event.target.value)} placeholder="Имя героя" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
-            <input value={editHeroFaction} onChange={(event) => setEditHeroFaction(event.target.value)} placeholder="Фракция" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+            <select value={editHeroFaction} onChange={(event) => setEditHeroFaction(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
+              <option value="">Фракция</option>
+              {raidFactions.map((faction) => (
+                <option key={faction} value={faction}>
+                  {faction}
+                </option>
+              ))}
+            </select>
             <select value={editHeroRole} onChange={(event) => setEditHeroRole(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
-              <option value="support">Support</option>
-              <option value="nuker">Nuker</option>
-              <option value="speedLead">Speed Lead</option>
-              <option value="control">Control</option>
-              <option value="tank">Tank</option>
+              {raidRoles.map((role) => (
+                <option key={role.value} value={role.value}>
+                  {role.label}
+                </option>
+              ))}
             </select>
             <textarea value={editHeroDescription} onChange={(event) => setEditHeroDescription(event.target.value)} rows={5} placeholder="Описание" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
             <button type="button" disabled={!editingHeroId || saving} onClick={() => void saveHeroEdits()} className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
