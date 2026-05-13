@@ -5,40 +5,23 @@ import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 
-type BroadcastSettings = {
-  backgroundVideoUrl?: string;
-  videoUrl?: string;
+type BackgroundSettings = {
+  backgroundImageUrl?: string;
 };
 
-const defaultBackgroundVideoUrl = "/videos/raid-bg.mp4";
-
-function isVideoFile(value?: string) {
-  return Boolean(value && /\.(mp4|webm|ogg)(\?.*)?$/i.test(value));
-}
-
 export function HomeBackgroundVideo() {
-  const [settings, setSettings] = useState<BroadcastSettings>({});
+  const [settings, setSettings] = useState<BackgroundSettings>({});
 
   useEffect(() => {
     return onSnapshot(doc(db, collections.siteSettings, "homeBroadcast"), (snapshot) => {
-      setSettings((snapshot.data() as BroadcastSettings | undefined) ?? {});
+      setSettings((snapshot.data() as BackgroundSettings | undefined) ?? {});
     });
   }, []);
 
-  const videoUrl = settings.backgroundVideoUrl || (isVideoFile(settings.videoUrl) ? settings.videoUrl : defaultBackgroundVideoUrl);
-
-  if (!videoUrl) {
-    return null;
-  }
-
   return (
-    <video
-      className="pointer-events-none fixed inset-0 z-0 h-full w-full object-cover opacity-30"
-      src={videoUrl}
-      autoPlay
-      muted
-      loop
-      playsInline
+    <div
+      className="raid-static-background pointer-events-none fixed inset-0 z-0"
+      style={settings.backgroundImageUrl ? { backgroundImage: `url(${settings.backgroundImageUrl})` } : undefined}
       aria-hidden="true"
     />
   );

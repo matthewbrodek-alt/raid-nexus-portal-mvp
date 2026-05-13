@@ -91,7 +91,7 @@ export function AdminContentForge() {
   const [editHeroDescription, setEditHeroDescription] = useState("");
   const [broadcastTitle, setBroadcastTitle] = useState("");
   const [broadcastVideoUrl, setBroadcastVideoUrl] = useState("");
-  const [broadcastBackgroundVideoUrl, setBroadcastBackgroundVideoUrl] = useState("");
+  const [broadcastBackgroundImageUrl, setBroadcastBackgroundImageUrl] = useState("");
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
   const crmUrl = process.env.NEXT_PUBLIC_CRM_URL ?? "#";
@@ -106,10 +106,10 @@ export function AdminContentForge() {
 
   useEffect(() => {
     void getDoc(doc(db, collections.siteSettings, "homeBroadcast")).then((snapshot) => {
-      const data = snapshot.data() as { title?: string; videoUrl?: string; backgroundVideoUrl?: string } | undefined;
+      const data = snapshot.data() as { title?: string; videoUrl?: string; backgroundImageUrl?: string } | undefined;
       setBroadcastTitle(data?.title ?? "Боевой эфир");
       setBroadcastVideoUrl(data?.videoUrl ?? "https://www.youtube.com/embed/MhsY9Uvcx7E");
-      setBroadcastBackgroundVideoUrl(data?.backgroundVideoUrl ?? "");
+      setBroadcastBackgroundImageUrl(data?.backgroundImageUrl ?? "");
     });
   }, []);
 
@@ -129,7 +129,7 @@ export function AdminContentForge() {
         {
           title: broadcastTitle.trim() || "Боевой эфир",
           videoUrl: broadcastVideoUrl.trim(),
-          backgroundVideoUrl: broadcastBackgroundVideoUrl.trim(),
+          backgroundImageUrl: broadcastBackgroundImageUrl.trim(),
           updatedBy: profile.uid,
           updatedAt: serverTimestamp()
         },
@@ -349,14 +349,14 @@ export function AdminContentForge() {
             className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
           />
           <input
-            value={broadcastBackgroundVideoUrl}
-            onChange={(event) => setBroadcastBackgroundVideoUrl(event.target.value)}
-            placeholder="Фоновое локальное видео: /videos/bg.mp4"
+            value={broadcastBackgroundImageUrl}
+            onChange={(event) => setBroadcastBackgroundImageUrl(event.target.value)}
+            placeholder="Фоновая картинка: /images/raid-bg.jpg"
             className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
           />
         </div>
         <p className="text-xs leading-5 text-zinc-500">
-          Локальный файл положи в папку public/videos и укажи путь вида /videos/raid-bg.mp4. Ссылка проигрывателя может быть YouTube или прямой mp4/webm.
+          Фон теперь статичный. Если нужна своя картинка, положи файл в public/images и укажи путь вида /images/raid-bg.jpg. Ссылка проигрывателя может быть YouTube или прямой mp4/webm.
         </p>
         <button disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
           <Save size={16} />

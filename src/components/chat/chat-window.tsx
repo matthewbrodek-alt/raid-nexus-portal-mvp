@@ -411,7 +411,7 @@ export function ChatWindow() {
             </div>
           </header>
 
-          <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-6">
+          <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-3 py-3 sm:px-5">
             {visibleMessages.map((item) => {
               const own = item.uid === user?.uid;
               const attachmentUrl = item.attachment?.secureUrl ?? item.attachment?.url;
@@ -419,31 +419,31 @@ export function ChatWindow() {
               const initials = (item.displayName || "U").slice(0, 2).toUpperCase();
 
               return (
-                <div key={item.id} className={`mb-3 flex items-end gap-2 ${own ? "justify-end" : "justify-start"}`}>
+                <div key={item.id} className={`mb-2 flex items-end gap-2 ${own ? "justify-end" : "justify-start"}`}>
                   {!own ? (
                     <button
                       type="button"
                       onClick={() => openMemberMenu(item)}
-                      className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-relic/25 bg-gradient-to-br from-violet-500 to-cyan-600 text-xs font-black text-white"
+                      className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full border border-relic/25 bg-gradient-to-br from-violet-500 to-cyan-600 text-[11px] font-black text-white"
                       title={item.displayName}
                     >
                       {item.avatarUrl ? <img src={item.avatarUrl} alt={item.displayName} className="h-full w-full object-cover" /> : initials}
                     </button>
                   ) : null}
                   <article
-                    className={`max-w-[88%] rounded-2xl px-4 py-3 shadow-lg sm:max-w-[70%] ${
+                    className={`max-w-[82%] rounded-xl px-3 py-2 shadow-lg sm:max-w-[62%] ${
                       own
-                        ? "rounded-br-md bg-gradient-to-br from-violet-700 to-relic text-white"
-                        : "rounded-bl-md border border-white/10 bg-black/30 text-white"
+                        ? "rounded-br-sm bg-gradient-to-br from-violet-700 to-relic text-white"
+                        : "rounded-bl-sm border border-white/10 bg-black/30 text-white"
                     }`}
                   >
                     {!own ? (
-                      <button type="button" onClick={() => openMemberMenu(item)} className="mb-1 text-xs font-bold text-relic hover:text-white">
+                      <button type="button" onClick={() => openMemberMenu(item)} className="mb-0.5 text-[11px] font-bold text-relic hover:text-white">
                         {item.displayName}
                       </button>
                     ) : null}
                     {item.replyTo ? (
-                      <div className="mb-2 rounded-md border border-white/10 bg-black/20 p-2 text-xs text-zinc-300">
+                      <div className="mb-1.5 rounded-md border border-white/10 bg-black/20 p-1.5 text-[11px] leading-4 text-zinc-300">
                         <p className="font-bold text-relic">{item.replyTo.displayName}</p>
                         <p className="line-clamp-2">{item.replyTo.text}</p>
                       </div>
@@ -452,19 +452,19 @@ export function ChatWindow() {
                       <button
                         type="button"
                         onClick={() => setImagePreview({ url: attachmentUrl, alt: attachmentAlt })}
-                        className="mb-2 block overflow-hidden rounded-lg border border-white/10"
+                        className="mb-1.5 block overflow-hidden rounded-md border border-white/10"
                       >
-                        <img src={attachmentUrl} alt={attachmentAlt} className="max-h-64 object-cover" />
+                        <img src={attachmentUrl} alt={attachmentAlt} className="max-h-44 object-cover" />
                       </button>
                     ) : null}
-                    {item.text ? <p className="break-words text-sm leading-6">{item.text}</p> : null}
+                    {item.text ? <p className="break-words text-[13px] leading-5">{item.text}</p> : null}
                     {!selectedUser ? (
-                      <button type="button" onClick={() => setReplyTo(item)} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-relic hover:text-white">
+                      <button type="button" onClick={() => setReplyTo(item)} className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-relic hover:text-white">
                         <CornerDownRight size={13} />
                         Ответить
                       </button>
                     ) : null}
-                    <p className={`mt-1 text-right text-[11px] ${own ? "text-white/65" : "text-zinc-500"}`}>{formatTime(item)}</p>
+                    <p className={`mt-0.5 text-right text-[10px] ${own ? "text-white/65" : "text-zinc-500"}`}>{formatTime(item)}</p>
                   </article>
                 </div>
               );
