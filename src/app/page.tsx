@@ -42,7 +42,7 @@ export default function Home() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#030609] text-pale">
       <HomeBackgroundVideo />
-      <div className="pointer-events-none fixed inset-0 z-0 bg-[#030609]/70" />
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[#030609]/38" />
       <Navigation sections={navSections} />
 
       <div className="raid-mobile-shell relative z-10 mx-auto w-full max-w-7xl px-3 pb-10 pt-4 sm:px-6 lg:px-8">

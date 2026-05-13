@@ -314,7 +314,7 @@ export function ChatWindow() {
 
   return (
     <>
-      <div className="mx-auto grid h-[calc(100dvh-112px)] min-h-[620px] w-full max-w-7xl overflow-hidden rounded-lg border border-white/10 bg-[#0b1120] shadow-2xl lg:h-[78vh] lg:grid-cols-[330px_1fr]">
+      <div className="mx-auto grid h-[calc(100dvh-112px)] min-h-[620px] w-full max-w-7xl overflow-hidden rounded-[18px] border border-relic/20 bg-[#05070b]/95 shadow-[0_0_44px_rgba(0,0,0,0.55)] lg:h-[78vh] lg:grid-cols-[330px_1fr]">
         <aside className="hidden min-w-0 border-b border-white/10 bg-[#080e1a] lg:block lg:border-b-0 lg:border-r">
           <div className="border-b border-white/10 p-3 sm:p-4">
             <div className="flex items-center gap-3">
@@ -392,8 +392,8 @@ export function ChatWindow() {
           </div>
         </aside>
 
-        <section className="relative flex min-h-0 min-w-0 flex-col bg-[#101827]">
-          <header className="flex items-center gap-3 border-b border-white/10 bg-[#0d1422]/95 p-3 sm:p-4">
+        <section className="relative flex min-h-0 min-w-0 flex-col bg-[#0b1220]/96">
+          <header className="flex items-center gap-3 border-b border-relic/15 bg-[#08101c]/96 p-3 sm:p-4">
             <button
               type="button"
               onClick={() => setChatMenuOpen(true)}
@@ -433,8 +433,8 @@ export function ChatWindow() {
                   <article
                     className={`max-w-[82%] rounded-xl px-3 py-2 shadow-lg sm:max-w-[62%] ${
                       own
-                        ? "rounded-br-sm bg-gradient-to-br from-violet-700 to-relic text-white"
-                        : "rounded-bl-sm border border-white/10 bg-black/30 text-white"
+                        ? "rounded-br-sm border border-relic/35 bg-[linear-gradient(135deg,rgba(35,21,49,0.96),rgba(200,154,61,0.72))] text-white shadow-[0_0_22px_rgba(200,154,61,0.18)]"
+                        : "rounded-bl-sm border border-relic/15 bg-[#050a12]/92 text-white shadow-[0_0_20px_rgba(0,0,0,0.32)]"
                     }`}
                   >
                     {!own ? (

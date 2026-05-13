@@ -57,14 +57,15 @@ body {
 
 .raid-static-background {
   background:
-    linear-gradient(135deg, rgba(5, 7, 11, 0.88) 0%, rgba(9, 17, 30, 0.55) 50%, rgba(200, 154, 61, 0.08) 100%),
-    radial-gradient(circle at 72% 18%, rgba(231, 193, 106, 0.22), transparent 12%),
-    radial-gradient(circle at 82% 48%, rgba(103, 85, 178, 0.26), transparent 23%),
-    radial-gradient(circle at 20% 78%, rgba(216, 75, 53, 0.16), transparent 20%),
-    linear-gradient(115deg, transparent 0 34%, rgba(245, 245, 245, 0.08) 35% 36%, transparent 37%),
-    linear-gradient(245deg, transparent 0 38%, rgba(200, 154, 61, 0.12) 39% 40%, transparent 41%),
+    linear-gradient(135deg, rgba(5, 7, 11, 0.72) 0%, rgba(9, 17, 30, 0.38) 50%, rgba(200, 154, 61, 0.12) 100%),
+    var(--raid-bg-image, none),
+    radial-gradient(circle at 72% 18%, rgba(231, 193, 106, 0.34), transparent 14%),
+    radial-gradient(circle at 82% 48%, rgba(103, 85, 178, 0.36), transparent 25%),
+    radial-gradient(circle at 20% 78%, rgba(216, 75, 53, 0.22), transparent 22%),
+    linear-gradient(115deg, transparent 0 34%, rgba(245, 245, 245, 0.14) 35% 36%, transparent 37%),
+    linear-gradient(245deg, transparent 0 38%, rgba(200, 154, 61, 0.18) 39% 40%, transparent 41%),
     linear-gradient(180deg, #05070b 0%, #09111e 100%);
-  background-size: cover;
+  background-size: cover, cover, cover, cover, cover, cover, cover, cover;
   background-position: center;
 }
 
@@ -73,11 +74,11 @@ body {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse at 54% 22%, rgba(238, 236, 225, 0.42) 0 4%, transparent 4.5%),
-    radial-gradient(ellipse at 52% 35%, rgba(72, 76, 91, 0.7) 0 10%, transparent 10.5%),
-    radial-gradient(ellipse at 49% 56%, rgba(15, 18, 27, 0.88) 0 20%, transparent 21%),
-    linear-gradient(90deg, transparent 0 14%, rgba(119, 101, 178, 0.28) 18% 24%, transparent 28% 72%, rgba(190, 55, 92, 0.25) 76% 82%, transparent 86%);
-  opacity: 0.55;
+    radial-gradient(ellipse at 54% 20%, rgba(238, 236, 225, 0.58) 0 4.5%, transparent 5%),
+    radial-gradient(ellipse at 52% 34%, rgba(72, 76, 91, 0.86) 0 11%, transparent 11.5%),
+    radial-gradient(ellipse at 49% 56%, rgba(15, 18, 27, 0.92) 0 22%, transparent 23%),
+    linear-gradient(90deg, transparent 0 12%, rgba(119, 101, 178, 0.36) 18% 25%, transparent 30% 70%, rgba(190, 55, 92, 0.34) 76% 84%, transparent 88%);
+  opacity: 0.7;
   filter: blur(0.4px);
 }
 
@@ -89,7 +90,7 @@ body {
     radial-gradient(circle at 18% 28%, rgba(200, 154, 61, 0.18) 0 1px, transparent 2px),
     radial-gradient(circle at 72% 62%, rgba(231, 193, 106, 0.16) 0 1px, transparent 2px),
     radial-gradient(circle at 42% 86%, rgba(216, 75, 53, 0.16) 0 1px, transparent 2px),
-    linear-gradient(180deg, rgba(5, 7, 11, 0.28), rgba(5, 7, 11, 0.82));
+    linear-gradient(180deg, rgba(5, 7, 11, 0.16), rgba(5, 7, 11, 0.66));
   background-size: 180px 180px, 220px 220px, 260px 260px, cover;
 }
 
@@ -99,7 +100,7 @@ body {
 
 .raid-mobile-shell {
   background:
-    linear-gradient(180deg, rgba(5, 7, 11, 0.78), rgba(3, 7, 10, 0.86)),
+    linear-gradient(180deg, rgba(5, 7, 11, 0.42), rgba(3, 7, 10, 0.58)),
     radial-gradient(circle at 50% 0%, rgba(200, 154, 61, 0.12), transparent 34%);
 }
 

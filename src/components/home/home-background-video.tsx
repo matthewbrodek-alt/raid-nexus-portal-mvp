@@ -1,6 +1,7 @@
 "use client";
 
 import { doc, onSnapshot } from "firebase/firestore";
+import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
@@ -21,7 +22,11 @@ export function HomeBackgroundVideo() {
   return (
     <div
       className="raid-static-background pointer-events-none fixed inset-0 z-0"
-      style={settings.backgroundImageUrl ? { backgroundImage: `url(${settings.backgroundImageUrl})` } : undefined}
+      style={
+        {
+          "--raid-bg-image": settings.backgroundImageUrl ? `url(${settings.backgroundImageUrl})` : "none"
+        } as CSSProperties
+      }
       aria-hidden="true"
     />
   );
