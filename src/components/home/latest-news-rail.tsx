@@ -86,16 +86,16 @@ export function LatestNewsRail() {
           </button>
         </div>
 
-        <div className="grid max-h-[520px] gap-3 overflow-y-auto pr-1">
+        <div className="grid max-h-[700px] gap-3 overflow-y-auto pr-1">
           {news.slice(0, 5).map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={() => setSelectedNews(item)}
-              className="group grid min-h-[132px] grid-cols-[112px_1fr] overflow-hidden border border-relic/25 bg-black/35 text-left transition hover:border-relic hover:bg-relic/[0.06] sm:grid-cols-[180px_1fr]"
+              className="group grid min-h-[150px] grid-cols-[118px_1fr] overflow-hidden border border-relic/25 bg-black/35 text-left transition hover:border-relic hover:bg-relic/[0.06] sm:grid-cols-[200px_1fr]"
             >
               <div
-                className="h-full min-h-[132px] bg-gradient-to-br from-[#12070a] via-[#111827] to-[#51301a] bg-cover bg-center"
+                className="h-full min-h-[150px] bg-gradient-to-br from-[#12070a] via-[#111827] to-[#51301a] bg-cover bg-center"
                 style={
                   getNewsImage(item)
                     ? { backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.52)), url(${getNewsImage(item)})` }

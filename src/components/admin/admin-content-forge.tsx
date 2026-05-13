@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ExternalLink, ImagePlus, Newspaper, Plus, Save, Trash2 } from "lucide-react";
-import { addDoc, collection, deleteDoc, doc, limit, onSnapshot, orderBy, query, serverTimestamp, updateDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, getDoc, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { GlassPanel } from "@/components/ui/glass-panel";
@@ -63,6 +63,9 @@ export function AdminContentForge() {
   const [editHeroFaction, setEditHeroFaction] = useState("");
   const [editHeroRole, setEditHeroRole] = useState("");
   const [editHeroDescription, setEditHeroDescription] = useState("");
+  const [broadcastTitle, setBroadcastTitle] = useState("");
+  const [broadcastVideoUrl, setBroadcastVideoUrl] = useState("");
+  const [broadcastBackgroundVideoUrl, setBroadcastBackgroundVideoUrl] = useState("");
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
   const crmUrl = process.env.NEXT_PUBLIC_CRM_URL ?? "#";
@@ -74,6 +77,45 @@ export function AdminContentForge() {
       setManagedHeroes(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<ManagedHero, "id">) })));
     });
   }, []);
+
+  useEffect(() => {
+    void getDoc(doc(db, collections.siteSettings, "homeBroadcast")).then((snapshot) => {
+      const data = snapshot.data() as { title?: string; videoUrl?: string; backgroundVideoUrl?: string } | undefined;
+      setBroadcastTitle(data?.title ?? "Боевой эфир");
+      setBroadcastVideoUrl(data?.videoUrl ?? "https://www.youtube.com/embed/MhsY9Uvcx7E");
+      setBroadcastBackgroundVideoUrl(data?.backgroundVideoUrl ?? "");
+    });
+  }, []);
+
+  async function saveBroadcast(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!profile) {
+      return;
+    }
+
+    setSaving(true);
+    setStatus("");
+
+    try {
+      await setDoc(
+        doc(db, collections.siteSettings, "homeBroadcast"),
+        {
+          title: broadcastTitle.trim() || "Боевой эфир",
+          videoUrl: broadcastVideoUrl.trim(),
+          backgroundVideoUrl: broadcastBackgroundVideoUrl.trim(),
+          updatedBy: profile.uid,
+          updatedAt: serverTimestamp()
+        },
+        { merge: true }
+      );
+      setStatus("Настройки Raid Broadcast сохранены.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Не удалось сохранить Raid Broadcast.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function createNews(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -261,6 +303,40 @@ export function AdminContentForge() {
           Открыть CRM
         </Link>
       </div>
+
+      <form onSubmit={saveBroadcast} className="mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
+        <div className="flex items-center gap-2 text-white">
+          <Save size={18} className="text-relic" />
+          <h3 className="font-semibold">Raid Broadcast</h3>
+        </div>
+        <div className="grid gap-3 lg:grid-cols-3">
+          <input
+            value={broadcastTitle}
+            onChange={(event) => setBroadcastTitle(event.target.value)}
+            placeholder="Название видео-блока"
+            className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+          />
+          <input
+            value={broadcastVideoUrl}
+            onChange={(event) => setBroadcastVideoUrl(event.target.value)}
+            placeholder="YouTube embed/link или /videos/broadcast.mp4"
+            className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+          />
+          <input
+            value={broadcastBackgroundVideoUrl}
+            onChange={(event) => setBroadcastBackgroundVideoUrl(event.target.value)}
+            placeholder="Фоновое локальное видео: /videos/bg.mp4"
+            className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+          />
+        </div>
+        <p className="text-xs leading-5 text-zinc-500">
+          Локальный файл положи в папку public/videos и укажи путь вида /videos/raid-bg.mp4. Ссылка проигрывателя может быть YouTube или прямой mp4/webm.
+        </p>
+        <button disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
+          <Save size={16} />
+          Сохранить Broadcast
+        </button>
+      </form>
 
       <div className="grid gap-5 xl:grid-cols-2">
         <form onSubmit={createNews} className="space-y-3 rounded-lg border border-white/10 bg-black/20 p-4">

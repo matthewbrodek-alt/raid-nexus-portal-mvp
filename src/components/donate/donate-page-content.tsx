@@ -62,8 +62,8 @@ export function DonatePageContent() {
   const integrationCards = [
     {
       Icon: Bot,
-      title: "n8n + Bitrix CRM",
-      text: isRu ? "Заявка уходит в твой уже подключенный workflow и CRM." : "Request goes into your connected workflow and CRM."
+      title: "n8n workflow",
+      text: isRu ? "Заявка уходит менеджеру через уже подключенный workflow." : "Request goes to the manager through your connected workflow."
     },
     {
       Icon: MessageSquareText,

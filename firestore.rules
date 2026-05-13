@@ -15,7 +15,12 @@ service cloud.firestore {
     }
 
     function activeUser() {
-      return signedIn() && profile().status == "active";
+      return signedIn()
+        && profile().status == "active"
+        && (
+          !exists(/databases/$(database)/documents/globalUserBlocks/$(request.auth.uid))
+          || get(/databases/$(database)/documents/globalUserBlocks/$(request.auth.uid)).data.blockedUntil <= request.time
+        );
     }
 
     function isAdmin() {
@@ -156,6 +161,16 @@ service cloud.firestore {
 
     match /moderationQueue/{itemId} {
       allow read, write: if isAdmin();
+    }
+
+    match /siteSettings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /globalUserBlocks/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow write, delete: if isAdmin();
     }
   }
 }

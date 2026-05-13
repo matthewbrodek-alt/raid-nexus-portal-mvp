@@ -24,7 +24,7 @@ const donationPackages = [
 const copy = {
   ru: {
     title: "Заявка на донат",
-    subtitle: "Форма отправляет заявку в уже подключенный n8n webhook и Bitrix CRM.",
+    subtitle: "Форма отправляет заявку менеджеру через подключенный n8n webhook.",
     telegram: "Telegram",
     package: "Набор",
     payment: "Оплата",
@@ -33,14 +33,14 @@ const copy = {
     placeholder: "Прикреплю скриншот магазина, нужен этот набор сегодня...",
     sending: "Отправка...",
     submit: "Отправить заявку",
-    sent: "Заявка отправлена. Менеджер получит уведомление через n8n/Bitrix CRM.",
+    sent: "Заявка отправлена. Менеджер получит уведомление через n8n.",
     error: "Не удалось отправить заявку. Проверь webhook URL и активность workflow в n8n.",
     from: "от",
     rub: "₽"
   },
   en: {
     title: "Donation request",
-    subtitle: "The form sends a lead to your connected n8n webhook and Bitrix CRM.",
+    subtitle: "The form sends a request to the manager through your connected n8n webhook.",
     telegram: "Telegram",
     package: "Pack",
     payment: "Payment",
@@ -49,7 +49,7 @@ const copy = {
     placeholder: "I will attach a shop screenshot, need this pack today...",
     sending: "Sending...",
     submit: "Send request",
-    sent: "Request sent. Manager will receive it through n8n/Bitrix CRM.",
+    sent: "Request sent. Manager will receive it through n8n.",
     error: "Could not send request. Check webhook URL and n8n workflow status.",
     from: "from",
     rub: "RUB"

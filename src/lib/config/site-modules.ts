@@ -27,7 +27,7 @@ export const siteModules: SiteModule[] = [
     enabled: true,
     featureFlags: ["n8nWebhook", "managerRouting", "directChat"],
     aiCapabilities: ["createTopupLead", "sendManagerWebhook", "openDirectChat"],
-    description: "Dark fantasy donation flow with manager contact, n8n and Bitrix CRM."
+    description: "Dark fantasy donation flow with manager contact and n8n routing."
   },
   {
     id: "useful",

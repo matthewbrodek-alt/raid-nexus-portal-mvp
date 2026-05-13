@@ -11,5 +11,7 @@ export const collections = {
   chatMessages: "chatMessages",
   forumThreads: "forumThreads",
   crmTables: "crmTables",
-  moderationQueue: "moderationQueue"
+  moderationQueue: "moderationQueue",
+  siteSettings: "siteSettings",
+  globalUserBlocks: "globalUserBlocks"
 } as const;

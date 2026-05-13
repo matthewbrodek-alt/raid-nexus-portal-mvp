@@ -11,7 +11,8 @@ import {
   orderBy,
   query,
   serverTimestamp,
-  setDoc
+  setDoc,
+  Timestamp
 } from "firebase/firestore";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -42,6 +43,12 @@ type ChatMessage = {
 type ImagePreview = {
   url: string;
   alt: string;
+};
+
+type MemberMenu = {
+  uid: string;
+  displayName: string;
+  avatarUrl?: string;
 };
 
 async function uploadChatImage(file: File) {
@@ -87,9 +94,12 @@ export function ChatWindow() {
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<ImagePreview | null>(null);
+  const [memberMenu, setMemberMenu] = useState<MemberMenu | null>(null);
+  const [personalBlockedUids, setPersonalBlockedUids] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const canSend = Boolean(message.trim() || attachmentFile) && Boolean(user) && !sending;
+  const canModerate = profile?.role === "admin" || profile?.role === "owner";
 
   const activeThread = selectedUser && user ? directThreadId(user.uid, selectedUser.uid) : "global";
   const filteredUsers = useMemo(
@@ -100,6 +110,28 @@ export function ChatWindow() {
       }),
     [search, user?.uid, users]
   );
+  const visibleMessages = useMemo(
+    () => messages.filter((item) => item.uid === user?.uid || !personalBlockedUids.includes(item.uid)),
+    [messages, personalBlockedUids, user?.uid]
+  );
+
+  useEffect(() => {
+    if (!user) {
+      setPersonalBlockedUids([]);
+      return;
+    }
+
+    const stored = window.localStorage.getItem(`raid-personal-blocks-${user.uid}`);
+    setPersonalBlockedUids(stored ? JSON.parse(stored) as string[] : []);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    window.localStorage.setItem(`raid-personal-blocks-${user.uid}`, JSON.stringify(personalBlockedUids));
+  }, [personalBlockedUids, user]);
 
   useEffect(() => {
     if (!user) {
@@ -144,6 +176,59 @@ export function ChatWindow() {
 
   function scrollToBottom() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }
+
+  function openMemberMenu(messageItem: ChatMessage) {
+    if (messageItem.uid === user?.uid) {
+      return;
+    }
+
+    setMemberMenu({
+      uid: messageItem.uid,
+      displayName: messageItem.displayName,
+      avatarUrl: messageItem.avatarUrl
+    });
+  }
+
+  function startDirectMessage(member: MemberMenu) {
+    const targetUser = users.find((item) => item.uid === member.uid);
+
+    if (targetUser) {
+      setSelectedUser(targetUser);
+    }
+
+    setMemberMenu(null);
+  }
+
+  function blockForMe(member: MemberMenu) {
+    setPersonalBlockedUids((current) => (current.includes(member.uid) ? current : [...current, member.uid]));
+    setMemberMenu(null);
+  }
+
+  async function blockGlobally(member: MemberMenu, minutes: number | "forever") {
+    if (!user || !canModerate) {
+      return;
+    }
+
+    const blockedUntil =
+      minutes === "forever"
+        ? Timestamp.fromDate(new Date("2099-12-31T23:59:59.000Z"))
+        : Timestamp.fromMillis(Date.now() + minutes * 60 * 1000);
+
+    await setDoc(
+      doc(db, collections.globalUserBlocks, member.uid),
+      {
+        uid: member.uid,
+        displayName: member.displayName,
+        blockedBy: user.uid,
+        blockedUntil,
+        scope: "global",
+        updatedAt: serverTimestamp()
+      },
+      { merge: true }
+    );
+
+    setMemberMenu(null);
   }
 
   async function sendMessage() {
@@ -312,13 +397,24 @@ export function ChatWindow() {
           </header>
 
           <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-6">
-            {messages.map((item) => {
+            {visibleMessages.map((item) => {
               const own = item.uid === user?.uid;
               const attachmentUrl = item.attachment?.secureUrl ?? item.attachment?.url;
               const attachmentAlt = item.attachment?.alt ?? "Screenshot";
+              const initials = (item.displayName || "U").slice(0, 2).toUpperCase();
 
               return (
-                <div key={item.id} className={`mb-3 flex ${own ? "justify-end" : "justify-start"}`}>
+                <div key={item.id} className={`mb-3 flex items-end gap-2 ${own ? "justify-end" : "justify-start"}`}>
+                  {!own ? (
+                    <button
+                      type="button"
+                      onClick={() => openMemberMenu(item)}
+                      className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border border-relic/25 bg-gradient-to-br from-violet-500 to-cyan-600 text-xs font-black text-white"
+                      title={item.displayName}
+                    >
+                      {item.avatarUrl ? <img src={item.avatarUrl} alt={item.displayName} className="h-full w-full object-cover" /> : initials}
+                    </button>
+                  ) : null}
                   <article
                     className={`max-w-[88%] rounded-2xl px-4 py-3 shadow-lg sm:max-w-[70%] ${
                       own
@@ -326,9 +422,10 @@ export function ChatWindow() {
                         : "rounded-bl-md border border-white/10 bg-black/30 text-white"
                     }`}
                   >
-                    {!own ? <p className="mb-1 text-xs font-bold text-relic">{item.displayName}</p> : null}
-                    {!own && item.avatarUrl ? (
-                      <img src={item.avatarUrl} alt={item.displayName} className="mb-2 h-8 w-8 rounded-full object-cover" />
+                    {!own ? (
+                      <button type="button" onClick={() => openMemberMenu(item)} className="mb-1 text-xs font-bold text-relic hover:text-white">
+                        {item.displayName}
+                      </button>
                     ) : null}
                     {item.replyTo ? (
                       <div className="mb-2 rounded-md border border-white/10 bg-black/20 p-2 text-xs text-zinc-300">
@@ -358,7 +455,7 @@ export function ChatWindow() {
               );
             })}
 
-            {messages.length === 0 ? (
+            {visibleMessages.length === 0 ? (
               <div className="grid min-h-[260px] place-items-center text-center sm:min-h-[360px]">
                 <div>
                   <p className="text-xl font-bold text-white">Начни диалог</p>
@@ -430,6 +527,51 @@ export function ChatWindow() {
           )}
         </section>
       </div>
+
+      {memberMenu ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+          <div className="w-full max-w-sm rounded-lg border border-relic/25 bg-[#0b101b] p-4 shadow-2xl">
+            <div className="flex items-center gap-3">
+              <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full border border-relic/30 bg-gradient-to-br from-violet-500 to-cyan-600 text-sm font-black text-white">
+                {memberMenu.avatarUrl ? <img src={memberMenu.avatarUrl} alt={memberMenu.displayName} className="h-full w-full object-cover" /> : memberMenu.displayName.slice(0, 2).toUpperCase()}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate font-bold text-white">{memberMenu.displayName}</p>
+                <p className="text-xs text-zinc-500">Действия с участником</p>
+              </div>
+              <button type="button" onClick={() => setMemberMenu(null)} className="ml-auto grid h-9 w-9 place-items-center rounded-md border border-white/10 text-zinc-400 hover:text-white">
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="mt-4 grid gap-2">
+              <button type="button" onClick={() => startDirectMessage(memberMenu)} className="rounded-md border border-relic/30 bg-relic/10 px-4 py-3 text-left font-semibold text-relic hover:bg-relic hover:text-black">
+                Перейти в личные сообщения
+              </button>
+              <button type="button" onClick={() => blockForMe(memberMenu)} className="rounded-md border border-white/10 bg-white/[0.04] px-4 py-3 text-left font-semibold text-zinc-200 hover:bg-white/[0.08]">
+                Не показывать мне сообщения участника
+              </button>
+
+              {canModerate ? (
+                <div className="mt-2 rounded-md border border-blood/30 bg-blood/10 p-3">
+                  <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-ember">Глобальная блокировка</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button type="button" onClick={() => void blockGlobally(memberMenu, 5)} className="rounded-md border border-blood/30 px-2 py-2 text-xs font-bold text-ember hover:bg-blood/20">
+                      5 мин
+                    </button>
+                    <button type="button" onClick={() => void blockGlobally(memberMenu, 30)} className="rounded-md border border-blood/30 px-2 py-2 text-xs font-bold text-ember hover:bg-blood/20">
+                      30 мин
+                    </button>
+                    <button type="button" onClick={() => void blockGlobally(memberMenu, "forever")} className="rounded-md border border-blood/30 px-2 py-2 text-xs font-bold text-ember hover:bg-blood/20">
+                      Навсегда
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {imagePreview ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/85 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
