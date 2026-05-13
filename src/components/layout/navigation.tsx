@@ -55,13 +55,13 @@ export function Navigation({ sections }: NavigationProps) {
   const labels = navLabels[language];
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-abyss/82 backdrop-blur-xl">
-      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 border-b border-relic/20 bg-[#030609]/92 backdrop-blur-xl">
+      <div className="mx-auto flex h-[82px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-3">
-          <span className="grid h-10 w-10 place-items-center rounded-lg border border-relic/40 bg-relic/15 font-[var(--font-cinzel)] text-xl font-black text-relic shadow-glow">
+          <span className="grid h-14 w-14 place-items-center border border-relic/70 bg-black/50 font-[var(--font-cinzel)] text-3xl font-black text-relic shadow-glow">
             R
           </span>
-          <span className="font-[var(--font-cinzel)] text-lg font-black text-white">Raid Portal</span>
+          <span className="font-[var(--font-cinzel)] text-2xl font-black uppercase tracking-[0.06em] text-relic sm:text-3xl">Raid Portal</span>
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex">
@@ -71,7 +71,7 @@ export function Navigation({ sections }: NavigationProps) {
               <Link
                 key={section.href}
                 href={section.href}
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-zinc-300 transition hover:bg-white/[0.06] hover:text-white"
+                className="flex items-center gap-2 border border-transparent px-3 py-2 text-sm uppercase tracking-[0.08em] text-zinc-300 transition hover:border-relic/40 hover:bg-relic/10 hover:text-relic"
               >
                 <Icon size={16} />
                 {labels[section.href as keyof typeof labels] ?? section.label}
@@ -82,26 +82,26 @@ export function Navigation({ sections }: NavigationProps) {
 
         <div className="hidden items-center gap-2 sm:flex">
           <LanguageSwitcher />
-          <button className="grid h-10 w-10 place-items-center rounded-md border border-white/10 bg-white/[0.04] text-zinc-300 transition hover:text-white" aria-label={labels.search}>
+          <button className="grid h-10 w-10 place-items-center border border-relic/25 bg-black/35 text-zinc-300 transition hover:text-relic" aria-label={labels.search}>
             <Search size={18} />
           </button>
-          <Link href="/dashboard" className="flex h-10 items-center gap-2 rounded-md border border-relic/30 bg-relic/10 px-3 text-sm font-semibold text-relic transition hover:bg-relic/15">
+          <Link href="/dashboard" className="flex h-10 items-center gap-2 border border-relic/45 bg-black/35 px-3 text-sm font-semibold text-relic transition hover:bg-relic hover:text-black">
             <UserRound size={18} />
             {labels.dashboard}
           </Link>
         </div>
 
         <button
-          className="grid h-10 w-10 place-items-center rounded-md border border-white/10 bg-white/[0.04] text-white lg:hidden"
+          className="grid h-14 w-14 place-items-center border border-relic/45 bg-black/35 text-relic shadow-glow lg:hidden"
           aria-label={labels.menu}
           onClick={() => setOpen((value) => !value)}
         >
-          <Menu size={20} />
+          <Menu size={26} />
         </button>
       </div>
 
       {open ? (
-        <div className="border-t border-white/10 bg-abyss px-4 py-3 lg:hidden">
+        <div className="border-t border-relic/20 bg-[#030609] px-4 py-3 lg:hidden">
           <div className="mb-3">
             <LanguageSwitcher />
           </div>
@@ -111,7 +111,7 @@ export function Navigation({ sections }: NavigationProps) {
               <Link
                 key={section.href}
                 href={section.href}
-                className="flex items-center gap-2 rounded-md px-3 py-3 text-sm text-zinc-300"
+                className="flex items-center gap-2 border-b border-white/5 px-3 py-3 text-sm uppercase tracking-[0.08em] text-zinc-300"
                 onClick={() => setOpen(false)}
               >
                 <Icon size={16} />
@@ -121,7 +121,7 @@ export function Navigation({ sections }: NavigationProps) {
           })}
           <Link
             href="/dashboard"
-            className="mt-2 flex items-center gap-2 rounded-md border border-relic/30 bg-relic/10 px-3 py-3 text-sm font-semibold text-relic"
+            className="mt-2 flex items-center gap-2 border border-relic/40 bg-relic/10 px-3 py-3 text-sm font-semibold text-relic"
             onClick={() => setOpen(false)}
           >
             <UserRound size={16} />
