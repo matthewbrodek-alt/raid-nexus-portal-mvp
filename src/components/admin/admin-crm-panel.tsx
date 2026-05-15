@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { BellRing, ExternalLink, MessageSquare, Send, Table2 } from "lucide-react";
-import { addDoc, collection, limit, onSnapshot, orderBy, query, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, doc, limit, onSnapshot, orderBy, query, serverTimestamp, updateDoc } from "firebase/firestore";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { GlassPanel } from "@/components/ui/glass-panel";
@@ -92,6 +93,7 @@ function formatDate(lead: TopupLead) {
 export function AdminCrmPanel() {
   const { profile } = useAuth();
   const { language } = useLanguage();
+  const router = useRouter();
   const t = copy[language];
   const [telegram, setTelegram] = useState("");
   const [clientName, setClientName] = useState("");
@@ -112,6 +114,21 @@ export function AdminCrmPanel() {
   }, []);
 
   const unprocessedCount = useMemo(() => recentLeads.filter(isUnprocessedLead).length, [recentLeads]);
+
+  async function replyOnSite(lead: TopupLead) {
+    if (!lead.uid || !profile) {
+      return;
+    }
+
+    await updateDoc(doc(db, collections.topupLeads, lead.id), {
+      status: "processed",
+      respondedAt: serverTimestamp(),
+      respondedBy: profile.uid,
+      updatedAt: serverTimestamp()
+    });
+
+    router.push(`/chat?user=${lead.uid}`);
+  }
 
   async function submitCrmLead(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -253,13 +270,14 @@ export function AdminCrmPanel() {
                   </p>
                 </div>
                 {lead.uid ? (
-                  <Link
-                    href={`/chat?user=${lead.uid}`}
+                  <button
+                    type="button"
+                    onClick={() => void replyOnSite(lead)}
                     className="inline-flex items-center justify-center gap-2 rounded-md border border-relic/30 bg-relic/10 px-3 py-2 text-sm font-semibold text-relic transition hover:bg-relic/15"
                   >
                     <MessageSquare size={16} />
                     {t.reply}
-                  </Link>
+                  </button>
                 ) : (
                   <span className="text-sm text-zinc-500">{t.noChatUser}</span>
                 )}

@@ -1,8 +1,9 @@
 "use client";
 
-import { Coins, Database, Menu, MessageSquare, Search, ShoppingBag, UserRound, Zap } from "lucide-react";
+import { Coins, Database, Menu, MessageSquare, Search, ShoppingBag, UserRound, X, Zap } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { RaidLogo } from "@/components/brand/raid-logo";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { useLanguage } from "@/lib/i18n/use-language";
 
@@ -58,10 +59,7 @@ export function Navigation({ sections }: NavigationProps) {
     <header className="sticky top-0 z-50 border-b border-relic/20 bg-[#030609]/92 backdrop-blur-xl">
       <div className="mx-auto flex h-[82px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-3">
-          <span className="grid h-14 w-14 place-items-center border border-relic/70 bg-black/50 font-[var(--font-cinzel)] text-3xl font-black text-relic shadow-glow">
-            R
-          </span>
-          <span className="font-[var(--font-cinzel)] text-2xl font-black uppercase tracking-[0.06em] text-relic sm:text-3xl">Raid Portal</span>
+          <RaidLogo className="scale-[0.78] origin-left sm:scale-90" />
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex">
@@ -94,39 +92,56 @@ export function Navigation({ sections }: NavigationProps) {
         <button
           className="grid h-14 w-14 place-items-center border border-relic/45 bg-black/35 text-relic shadow-glow lg:hidden"
           aria-label={labels.menu}
-          onClick={() => setOpen((value) => !value)}
+          onClick={() => setOpen(true)}
         >
           <Menu size={26} />
         </button>
       </div>
 
       {open ? (
-        <div className="border-t border-relic/20 bg-[#030609] px-4 py-3 lg:hidden">
-          <div className="mb-3">
-            <LanguageSwitcher />
-          </div>
-          {sections.map((section) => {
-            const Icon = iconMap[section.icon];
-            return (
+        <div className="fixed inset-0 z-[80] bg-black/78 backdrop-blur-sm lg:hidden" role="dialog" aria-modal="true">
+          <div className="h-full w-[84vw] max-w-sm overflow-y-auto border-r border-relic/25 bg-[#04090f]/98 p-4 shadow-2xl">
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <RaidLogo className="scale-[0.78] origin-left" />
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="grid h-10 w-10 shrink-0 place-items-center border border-white/10 text-zinc-300 transition hover:border-relic/50 hover:text-relic"
+                aria-label="Close menu"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <LanguageSwitcher />
+            </div>
+
+            <nav className="space-y-2">
+              {sections.map((section) => {
+                const Icon = iconMap[section.icon];
+                return (
+                  <Link
+                    key={section.href}
+                    href={section.href}
+                    className="raid-side-link flex h-14 items-center gap-4 border border-white/5 bg-black/20 px-4 text-sm font-semibold uppercase tracking-[0.1em] text-zinc-300 transition hover:border-relic/35 hover:text-relic"
+                    onClick={() => setOpen(false)}
+                  >
+                    <Icon className="relative z-10 h-5 w-5 shrink-0" />
+                    <span className="relative z-10">{labels[section.href as keyof typeof labels] ?? section.label}</span>
+                  </Link>
+                );
+              })}
               <Link
-                key={section.href}
-                href={section.href}
-                className="flex items-center gap-2 border-b border-white/5 px-3 py-3 text-sm uppercase tracking-[0.08em] text-zinc-300"
+                href="/dashboard"
+                className="raid-side-link flex h-14 items-center gap-4 border border-relic/30 bg-relic/10 px-4 text-sm font-semibold uppercase tracking-[0.1em] text-relic"
                 onClick={() => setOpen(false)}
               >
-                <Icon size={16} />
-                {labels[section.href as keyof typeof labels] ?? section.label}
+                <UserRound className="relative z-10 h-5 w-5 shrink-0" />
+                <span className="relative z-10">{labels.dashboard}</span>
               </Link>
-            );
-          })}
-          <Link
-            href="/dashboard"
-            className="mt-2 flex items-center gap-2 border border-relic/40 bg-relic/10 px-3 py-3 text-sm font-semibold text-relic"
-            onClick={() => setOpen(false)}
-          >
-            <UserRound size={16} />
-            {labels.dashboard}
-          </Link>
+            </nav>
+          </div>
         </div>
       ) : null}
     </header>

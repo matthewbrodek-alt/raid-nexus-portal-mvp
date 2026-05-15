@@ -10,7 +10,6 @@ import {
   MessageCircle,
   Newspaper,
   Search,
-  Settings,
   Shield,
   ShoppingBag,
   Swords,
@@ -19,8 +18,10 @@ import {
   Users
 } from "lucide-react";
 import { ActionCalendar } from "@/components/calendar/action-calendar";
+import { RaidLogo } from "@/components/brand/raid-logo";
 import { HomeBackgroundVideo } from "@/components/home/home-background-video";
 import { HomeBroadcast } from "@/components/home/home-broadcast";
+import { HomeMobileHeader } from "@/components/home/home-mobile-header";
 import { LatestNewsRail } from "@/components/home/latest-news-rail";
 import { raidEvents } from "@/lib/data/mock";
 
@@ -33,7 +34,7 @@ const sidebarLinks = [
   { label: "Гильдии", href: "/chat", icon: Shield },
   { label: "Чат", href: "/chat", icon: MessageCircle },
   { label: "Донат", href: "/topup", icon: Crown },
-  { label: "Настройки", href: "/dashboard", icon: Settings }
+  { label: "Настройки", href: "/dashboard", icon: Shield }
 ];
 
 const activityCards = [
@@ -71,14 +72,8 @@ export default function Home() {
 
       <div className="raid-dashboard-shell relative z-10 min-h-screen lg:grid lg:grid-cols-[300px_1fr]">
         <aside className="hidden min-h-screen flex-col border-r border-relic/18 bg-[#02070c]/72 backdrop-blur-md lg:flex">
-          <div className="flex h-28 items-center gap-4 border-b border-relic/12 px-6">
-            <span className="grid h-16 w-16 place-items-center border border-relic/55 bg-black/45 font-[var(--font-cinzel)] text-4xl font-black text-relic shadow-[0_0_32px_rgba(216,168,71,0.24)]">
-              R
-            </span>
-            <div>
-              <p className="font-[var(--font-cinzel)] text-3xl font-black uppercase tracking-[0.08em] text-relic">Raid Portal</p>
-              <p className="mt-1 text-sm text-zinc-400">Gaming Hub</p>
-            </div>
+          <div className="flex h-28 items-center border-b border-relic/12 px-6">
+            <RaidLogo />
           </div>
 
           <nav className="px-5 py-7">
@@ -138,26 +133,7 @@ export default function Home() {
         </aside>
 
         <section className="min-w-0 px-4 py-4 sm:px-6 lg:px-8">
-          <header className="flex items-center gap-3 lg:hidden">
-            <Link href="/" className="flex min-w-0 flex-1 items-center gap-3">
-              <span className="grid h-12 w-12 place-items-center border border-relic/55 bg-black/45 font-[var(--font-cinzel)] text-2xl font-black text-relic">
-                R
-              </span>
-              <span className="truncate font-[var(--font-cinzel)] text-2xl font-black uppercase tracking-[0.08em] text-relic">Raid Portal</span>
-            </Link>
-            <details className="relative">
-              <summary className="grid h-12 w-12 cursor-pointer list-none place-items-center border border-relic/40 bg-black/45 text-relic">
-                <Settings size={22} />
-              </summary>
-              <div className="absolute right-0 top-14 z-30 w-64 border border-relic/25 bg-[#03080e]/98 p-2 shadow-2xl">
-                {sidebarLinks.map((item) => (
-                  <Link key={item.label} href={item.href} className="block border-b border-white/5 px-3 py-3 text-sm uppercase tracking-[0.08em] text-zinc-300">
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </details>
-          </header>
+          <HomeMobileHeader />
 
           <header className="hidden h-24 items-center gap-5 lg:flex">
             <label className="flex h-14 w-full max-w-[540px] items-center gap-3 border border-relic/24 bg-black/34 px-5 text-zinc-500 shadow-[inset_0_0_20px_rgba(216,168,71,0.03)]">
@@ -238,7 +214,7 @@ export default function Home() {
           </div>
 
           <footer className="mt-8 flex items-center justify-between border-t border-relic/12 py-5 text-xs uppercase tracking-[0.18em] text-zinc-500">
-            <span>Raid Portal</span>
+            <span>RAID Shadow Legends</span>
             <Link href="/dashboard" className="inline-flex items-center gap-2 text-relic transition hover:text-[#ffe1a0]">
               Личный кабинет
               <ChevronRight size={16} />
