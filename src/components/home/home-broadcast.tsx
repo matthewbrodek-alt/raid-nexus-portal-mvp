@@ -12,7 +12,7 @@ type BroadcastSettings = {
 };
 
 const defaultSettings: BroadcastSettings = {
-  title: "Боевой эфир",
+  title: "Эмбрис в 9 леса, что он может!?",
   videoUrl: "https://www.youtube.com/embed/MhsY9Uvcx7E"
 };
 
@@ -45,13 +45,15 @@ export function HomeBroadcast() {
   const playbackUrl = useMemo(() => normalizeYoutubeUrl(settings.videoUrl || defaultSettings.videoUrl), [settings.videoUrl]);
 
   return (
-    <div className="raid-ornate-panel overflow-hidden p-4 sm:p-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div>
+    <div className="raid-ornate-panel overflow-hidden p-5">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <p className="text-xs font-bold uppercase tracking-[0.36em] text-relic">Raid Broadcast</p>
-          <h2 className="mt-2 font-[var(--font-cinzel)] text-2xl font-black text-white">{settings.title || "Боевой эфир"}</h2>
+          <h2 className="raid-title-metal mt-3 text-xl font-black uppercase leading-tight">{settings.title || defaultSettings.title}</h2>
         </div>
-        <PlayCircle className="shrink-0 text-relic" />
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-relic/55 text-relic shadow-[0_0_22px_rgba(216,168,71,0.16)]">
+          <PlayCircle size={20} />
+        </span>
       </div>
 
       {isVideoFile(playbackUrl) ? (
