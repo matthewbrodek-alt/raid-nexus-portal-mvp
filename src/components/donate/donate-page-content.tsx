@@ -1,8 +1,11 @@
 "use client";
 
 import { Bot, Clock, Gem, MessageSquareText, ScrollText, ShieldCheck, Sparkles } from "lucide-react";
-import { TopupLeadForm, donationPackages } from "@/components/topup/topup-lead-form";
+import { useState } from "react";
+import { useDonationOffers } from "@/components/donate/use-donation-offers";
+import { TopupLeadForm } from "@/components/topup/topup-lead-form";
 import { GlassPanel } from "@/components/ui/glass-panel";
+import { getDonationOfferImageUrl, getDonationOfferTitle } from "@/lib/donation/offers";
 import { useLanguage } from "@/lib/i18n/use-language";
 
 const content = {
@@ -58,6 +61,8 @@ const content = {
 
 export function DonatePageContent() {
   const { language, isRu } = useLanguage();
+  const donationOffers = useDonationOffers();
+  const [selectedPackageId, setSelectedPackageId] = useState("");
   const t = content[language];
   const integrationCards = [
     {
@@ -101,27 +106,56 @@ export function DonatePageContent() {
             </div>
           </GlassPanel>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            {donationPackages.map((pack) => (
-              <GlassPanel key={pack.id} className="group p-4 transition hover:-translate-y-1 hover:shadow-glow">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.18em] text-relic">{pack.tag}</p>
-                    <h2 className="mt-2 font-semibold text-white">{isRu ? pack.ru : pack.en}</h2>
-                  </div>
-                  <Sparkles className="shrink-0 text-relic opacity-70" size={18} />
-                </div>
-                <p className="mt-4 text-3xl font-black text-relic">
-                  {t.from} {pack.priceRub.toLocaleString("ru-RU")} {t.rub}
-                </p>
-              </GlassPanel>
-            ))}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {donationOffers.map((pack) => {
+              const imageUrl = getDonationOfferImageUrl(pack);
+              const selected = selectedPackageId === pack.id;
+
+              return (
+                <button
+                  key={pack.id}
+                  type="button"
+                  onClick={() => setSelectedPackageId(pack.id)}
+                  className={`group relative min-h-[218px] overflow-hidden rounded-[18px] border p-5 text-left shadow-[inset_0_0_24px_rgba(36,89,145,0.14),0_18px_40px_rgba(0,0,0,0.34)] transition hover:-translate-y-0.5 hover:border-relic/70 ${
+                    selected ? "border-relic/80 ring-1 ring-relic/45" : "border-[#223348]"
+                  }`}
+                >
+                  <span className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_78%_56%,rgba(200,154,61,0.24),transparent_34%),linear-gradient(135deg,rgba(7,14,24,0.96),rgba(7,18,33,0.9))]" />
+                  {imageUrl ? (
+                    <img
+                      src={imageUrl}
+                      alt=""
+                      className="pointer-events-none absolute inset-0 z-[1] h-full w-full object-cover opacity-80 transition duration-300 group-hover:scale-[1.04] group-hover:opacity-95"
+                    />
+                  ) : (
+                    <span className="pointer-events-none absolute bottom-5 right-5 z-[1] text-relic/20">
+                      <Sparkles size={92} />
+                    </span>
+                  )}
+                  <span className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(90deg,rgba(5,10,17,0.9),rgba(5,10,17,0.62)_48%,rgba(5,10,17,0.18)_100%),linear-gradient(180deg,rgba(5,10,17,0.08),rgba(5,10,17,0.62))]" />
+                  <span className="relative z-10 flex min-h-[178px] flex-col justify-between">
+                    <span>
+                      <span className="text-xs font-bold uppercase tracking-[0.24em] text-relic">{pack.tag}</span>
+                      <span className="mt-3 block max-w-[76%] text-2xl font-black leading-tight text-white">
+                        {getDonationOfferTitle(pack, isRu)}
+                      </span>
+                      {pack.comment ? (
+                        <span className="mt-2 block max-w-[74%] text-sm leading-6 text-zinc-200">{pack.comment}</span>
+                      ) : null}
+                    </span>
+                    <span className="inline-flex w-fit rounded-md border border-relic/25 bg-black/45 px-3 py-2 text-xl font-black text-relic">
+                      {t.from} {pack.priceRub.toLocaleString("ru-RU")} {t.rub}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
           <p className="text-xs leading-6 text-zinc-500">{t.priceNote}</p>
         </div>
 
-        <TopupLeadForm />
+        <TopupLeadForm selectedPackageId={selectedPackageId} />
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">

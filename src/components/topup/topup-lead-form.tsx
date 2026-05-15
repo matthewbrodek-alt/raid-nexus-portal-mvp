@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { Camera, CreditCard, MessageCircle, Paperclip, Send, ShieldCheck, Timer, WalletCards, X } from "lucide-react";
 import { addDoc, collection, doc, getDocs, query, serverTimestamp, setDoc, where } from "firebase/firestore";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
+import { useDonationOffers } from "@/components/donate/use-donation-offers";
 import { GlassPanel } from "@/components/ui/glass-panel";
+import { fallbackDonationOffers, getDonationOfferTitle } from "@/lib/donation/offers";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import { useLanguage } from "@/lib/i18n/use-language";
@@ -99,12 +101,17 @@ async function findManager() {
   return managers[0] ?? null;
 }
 
-export function TopupLeadForm() {
+type TopupLeadFormProps = {
+  selectedPackageId?: string;
+};
+
+export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
   const { language, isRu } = useLanguage();
   const { user } = useAuth();
+  const donationOffers = useDonationOffers();
   const t = copy[language];
   const [telegram, setTelegram] = useState("");
-  const [packageId, setPackageId] = useState(donationPackages[0].id);
+  const [packageId, setPackageId] = useState(selectedPackageId ?? fallbackDonationOffers[0].id);
   const [paymentMethod, setPaymentMethod] = useState("manager");
   const [comment, setComment] = useState("");
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
@@ -113,9 +120,25 @@ export function TopupLeadForm() {
   const [activeManagerUid, setActiveManagerUid] = useState("");
   const managerTelegramUrl = process.env.NEXT_PUBLIC_MANAGER_TELEGRAM_URL ?? "";
 
+  useEffect(() => {
+    if (selectedPackageId) {
+      setPackageId(selectedPackageId);
+    }
+  }, [selectedPackageId]);
+
+  useEffect(() => {
+    if (selectedPackageId) {
+      return;
+    }
+
+    if (donationOffers.length > 0 && !donationOffers.some((item) => item.id === packageId)) {
+      setPackageId(donationOffers[0].id);
+    }
+  }, [donationOffers, packageId, selectedPackageId]);
+
   const selectedPackage = useMemo(
-    () => donationPackages.find((item) => item.id === packageId) ?? donationPackages[0],
-    [packageId]
+    () => donationOffers.find((item) => item.id === packageId) ?? donationOffers[0] ?? fallbackDonationOffers[0],
+    [donationOffers, packageId]
   );
 
   const serviceSteps = [
@@ -181,7 +204,7 @@ export function TopupLeadForm() {
         threadId,
         telegram,
         packageId,
-        packageName: isRu ? selectedPackage.ru : selectedPackage.en,
+        packageName: getDonationOfferTitle(selectedPackage, isRu),
         amountRub: selectedPackage.priceRub,
         paymentMethod,
         comment,
@@ -302,9 +325,9 @@ export function TopupLeadForm() {
               onChange={(event) => setPackageId(event.target.value)}
               className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic"
             >
-              {donationPackages.map((pack) => (
+              {donationOffers.map((pack) => (
                 <option key={pack.id} value={pack.id}>
-                  {isRu ? pack.ru : pack.en} - {t.from} {pack.priceRub.toLocaleString("ru-RU")} {t.rub}
+                  {getDonationOfferTitle(pack, isRu)} - {t.from} {pack.priceRub.toLocaleString("ru-RU")} {t.rub}
                 </option>
               ))}
             </select>

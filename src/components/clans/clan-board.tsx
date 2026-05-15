@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { addDoc, collection, deleteDoc, doc, limit, onSnapshot, orderBy, query, serverTimestamp } from "firebase/firestore";
-import { Megaphone, Send, Trash2, Users } from "lucide-react";
+import { MessageCircle, Megaphone, Send, Trash2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { GlassPanel } from "@/components/ui/glass-panel";
@@ -157,6 +157,15 @@ export function ClanBoard() {
                 ) : null}
               </div>
               <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7 text-zinc-300">{item.text}</p>
+              {item.uid && item.uid !== user?.uid ? (
+                <Link
+                  href={user ? `/chat?user=${item.uid}` : "/login"}
+                  className="mt-4 inline-flex items-center gap-2 rounded-md border border-relic/30 bg-relic/10 px-3 py-2 text-sm font-semibold text-relic transition hover:bg-relic hover:text-black"
+                >
+                  <MessageCircle size={16} />
+                  Написать автору
+                </Link>
+              ) : null}
             </article>
           ))}
 
