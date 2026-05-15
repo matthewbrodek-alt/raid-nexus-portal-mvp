@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDays, Crown, Home, MessageCircle, Newspaper, Settings, Shield, ShoppingBag, Swords, X } from "lucide-react";
+import { CalendarDays, Crown, Home, Menu, MessageCircle, Newspaper, Shield, ShoppingBag, Swords, UserRound, X } from "lucide-react";
 import { useState } from "react";
 import { RaidLogo } from "@/components/brand/raid-logo";
 
@@ -14,7 +14,7 @@ const mobileLinks = [
   { label: "Гильдии", href: "/chat", icon: Shield },
   { label: "Чат", href: "/chat", icon: MessageCircle },
   { label: "Донат", href: "/topup", icon: Crown },
-  { label: "Настройки", href: "/dashboard", icon: Settings }
+  { label: "Личный кабинет", href: "/dashboard", icon: UserRound }
 ];
 
 export function HomeMobileHeader() {
@@ -32,7 +32,7 @@ export function HomeMobileHeader() {
           className="grid h-12 w-12 shrink-0 place-items-center border border-relic/40 bg-black/45 text-relic shadow-[0_0_24px_rgba(216,168,71,0.16)]"
           aria-label="Открыть меню"
         >
-          <Settings size={22} />
+          <Menu size={24} />
         </button>
       </header>
 

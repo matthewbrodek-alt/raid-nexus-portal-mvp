@@ -145,12 +145,13 @@ export function LatestNewsRail() {
                     <X size={18} />
                   </button>
                 </div>
-                <div
-                  className="min-h-[280px] border-y border-relic/20 bg-cover bg-center"
-                  style={{
-                    backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.62)), url(${getNewsImage(selectedNews) || "/images/raid-castle-bg.png"})`
-                  }}
-                />
+                <div className="border-y border-relic/20 bg-black/35">
+                  <img
+                    src={getNewsImage(selectedNews) || "/images/raid-castle-bg.png"}
+                    alt={selectedNews.title ?? "News image"}
+                    className="mx-auto max-h-[56dvh] w-full object-contain"
+                  />
+                </div>
               </div>
               <div className="p-5 sm:p-8">
                 <p className="max-w-3xl text-base leading-7 text-zinc-200">{selectedNews.summary}</p>

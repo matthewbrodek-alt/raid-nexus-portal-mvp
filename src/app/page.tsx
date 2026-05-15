@@ -14,7 +14,6 @@ import {
   ShoppingBag,
   Swords,
   Trophy,
-  UserRound,
   Users
 } from "lucide-react";
 import { ActionCalendar } from "@/components/calendar/action-calendar";
@@ -22,6 +21,7 @@ import { RaidLogo } from "@/components/brand/raid-logo";
 import { HomeBackgroundVideo } from "@/components/home/home-background-video";
 import { HomeBroadcast } from "@/components/home/home-broadcast";
 import { HomeMobileHeader } from "@/components/home/home-mobile-header";
+import { HomeUserCard } from "@/components/home/home-user-card";
 import { LatestNewsRail } from "@/components/home/latest-news-rail";
 import { raidEvents } from "@/lib/data/mock";
 
@@ -34,7 +34,7 @@ const sidebarLinks = [
   { label: "Гильдии", href: "/chat", icon: Shield },
   { label: "Чат", href: "/chat", icon: MessageCircle },
   { label: "Донат", href: "/topup", icon: Crown },
-  { label: "Настройки", href: "/dashboard", icon: Shield }
+  { label: "Личный кабинет", href: "/dashboard", icon: Users }
 ];
 
 const activityCards = [
@@ -97,10 +97,7 @@ export default function Home() {
           </nav>
 
           <div className="mt-auto space-y-4 px-5 pb-6">
-            <Link
-              href="/topup"
-              className="raid-glow-button flex items-center justify-between border border-relic/24 bg-black/32 px-5 py-4 text-left"
-            >
+            <Link href="/topup" className="raid-glow-button flex items-center justify-between border border-relic/24 bg-black/32 px-5 py-4 text-left">
               <span>
                 <span className="block text-xs font-bold uppercase tracking-[0.28em] text-relic">Скачать RAID</span>
                 <span className="mt-1 block text-sm text-zinc-400">Начни своё приключение</span>
@@ -108,7 +105,7 @@ export default function Home() {
               <Download className="text-relic" size={22} />
             </Link>
 
-            <div className="border border-relic/18 bg-black/28 p-5">
+            <div className="rounded-[18px] border border-relic/18 bg-black/28 p-5">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">Присоединяйся к сообществу</p>
               <div className="mt-4 flex gap-3">
                 {["D", "F", "X", "Y"].map((item) => (
@@ -118,17 +115,6 @@ export default function Home() {
                 ))}
               </div>
             </div>
-
-            <div className="border border-relic/18 bg-black/28 p-5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs uppercase tracking-[0.18em] text-zinc-400">Уровень</span>
-                <span className="text-2xl font-black text-relic">42</span>
-              </div>
-              <div className="mt-4 h-2 overflow-hidden bg-black/45">
-                <div className="h-full w-[64%] bg-gradient-to-r from-relic to-[#ffe1a0]" />
-              </div>
-              <p className="mt-2 text-xs text-zinc-500">6,500 / 10,000 XP</p>
-            </div>
           </div>
         </aside>
 
@@ -136,7 +122,7 @@ export default function Home() {
           <HomeMobileHeader />
 
           <header className="hidden h-24 items-center gap-5 lg:flex">
-            <label className="flex h-14 w-full max-w-[540px] items-center gap-3 border border-relic/24 bg-black/34 px-5 text-zinc-500 shadow-[inset_0_0_20px_rgba(216,168,71,0.03)]">
+            <label className="flex h-14 w-full max-w-[540px] items-center gap-3 rounded-[16px] border border-relic/24 bg-black/34 px-5 text-zinc-500 shadow-[inset_0_0_20px_rgba(216,168,71,0.03)]">
               <input
                 className="min-w-0 flex-1 border-0 bg-transparent text-sm text-zinc-200 placeholder:text-zinc-500 focus:ring-0"
                 placeholder="Поиск по порталу..."
@@ -154,18 +140,7 @@ export default function Home() {
                 <Bell size={20} />
               </button>
               <span className="h-8 w-px bg-relic/18" />
-              <Link
-                href="/dashboard"
-                className="raid-glow-button flex h-16 items-center gap-3 border border-relic/22 bg-black/32 px-4"
-              >
-                <span className="grid h-12 w-12 place-items-center overflow-hidden rounded-full border border-relic/45 bg-gradient-to-br from-[#362414] to-[#111827] text-relic">
-                  <UserRound size={24} />
-                </span>
-                <span>
-                  <span className="block text-base font-semibold text-white">PlayerOne</span>
-                  <span className="block text-sm text-zinc-500">Уровень 42</span>
-                </span>
-              </Link>
+              <HomeUserCard />
             </div>
           </header>
 

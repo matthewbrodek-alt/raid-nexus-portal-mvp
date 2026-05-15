@@ -100,7 +100,7 @@ export function AdminCalendarEditor() {
 
       <form onSubmit={saveEvent} className="space-y-3">
         <input value={title} onChange={(event) => setTitle(event.target.value)} required placeholder="Название акции" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
-        <input value={date} onChange={(event) => setDate(event.target.value)} placeholder="Дата / период" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+        <input type="date" value={date} onChange={(event) => setDate(event.target.value)} placeholder="Дата" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
         <select value={type} onChange={(event) => setType(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
           <option value="summon">Summon</option>
           <option value="tournament">Tournament</option>

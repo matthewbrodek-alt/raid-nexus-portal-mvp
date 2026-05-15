@@ -116,6 +116,7 @@ body::before {
 
 .raid-ornate-panel {
   position: relative;
+  border-radius: 22px;
   border: 1px solid rgba(216, 168, 71, 0.28);
   background:
     linear-gradient(135deg, rgba(6, 14, 22, 0.84), rgba(3, 7, 12, 0.92)),
@@ -129,26 +130,7 @@ body::before {
 
 .raid-ornate-panel::before,
 .raid-ornate-panel::after {
-  content: "";
-  position: absolute;
-  pointer-events: none;
-  width: 38px;
-  height: 38px;
-  border-color: rgba(216, 168, 71, 0.78);
-}
-
-.raid-ornate-panel::before {
-  left: 8px;
-  top: 8px;
-  border-left: 1px solid;
-  border-top: 1px solid;
-}
-
-.raid-ornate-panel::after {
-  right: 8px;
-  bottom: 8px;
-  border-right: 1px solid;
-  border-bottom: 1px solid;
+  display: none;
 }
 
 .raid-hero-art {
@@ -239,6 +221,7 @@ body::before {
 .raid-side-link {
   position: relative;
   overflow: hidden;
+  border-radius: 16px;
 }
 
 .raid-side-link::after,
@@ -282,6 +265,7 @@ body::before {
 .raid-glow-button {
   position: relative;
   overflow: hidden;
+  border-radius: 16px;
   box-shadow:
     inset 0 0 18px rgba(216, 168, 71, 0.06),
     0 0 0 rgba(216, 168, 71, 0);
