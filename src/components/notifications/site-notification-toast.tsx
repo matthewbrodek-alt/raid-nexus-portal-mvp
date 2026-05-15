@@ -225,21 +225,22 @@ export function SiteNotificationToast() {
     return null;
   }
 
-  const Icon = toast.icon === "message" ? MessageCircle : ShoppingBag;
+  const activeToast = toast;
+  const Icon = activeToast.icon === "message" ? MessageCircle : ShoppingBag;
 
   function closeToast() {
-    if (!user?.uid || !toast) {
+    if (!user?.uid) {
       return;
     }
 
-    markSeen(user.uid, toast.seenKey, toast.id, toast.seenValue);
+    markSeen(user.uid, activeToast.seenKey, activeToast.id, activeToast.seenValue);
     setSeenState(readSeenState(user.uid));
-    setDismissedIds((current) => [...current, `${toast.seenKey === "threadById" ? "thread" : "topup"}:${toast.id}`]);
+    setDismissedIds((current) => [...current, `${activeToast.seenKey === "threadById" ? "thread" : "topup"}:${activeToast.id}`]);
   }
 
   function openToast() {
     closeToast();
-    router.push(toast.href);
+    router.push(activeToast.href);
   }
 
   return (
@@ -258,9 +259,9 @@ export function SiteNotificationToast() {
           <button type="button" onClick={openToast} className="min-w-0 flex-1 text-left">
             <p className="flex items-center gap-2 text-sm font-bold text-white">
               <Bell size={14} className="text-relic" />
-              {toast.title}
+              {activeToast.title}
             </p>
-            <p className="mt-1 line-clamp-2 text-sm leading-5 text-zinc-300">{toast.body}</p>
+            <p className="mt-1 line-clamp-2 text-sm leading-5 text-zinc-300">{activeToast.body}</p>
           </button>
           <button
             type="button"
