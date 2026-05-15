@@ -67,32 +67,41 @@ export function PortalOffers() {
             const imageUrl = getOfferImageUrl(offer);
 
             return (
-            <Link
-              key={offer.id}
-              href="/topup"
-              className="raid-glow-button group relative min-h-[218px] overflow-hidden border border-[#223348] bg-[#07101a] p-5 transition hover:-translate-y-0.5"
-            >
-              <span className="absolute inset-0 bg-[radial-gradient(circle_at_82%_68%,rgba(36,89,145,0.34),transparent_34%),linear-gradient(135deg,rgba(7,14,24,0.96),rgba(7,18,33,0.9))]" aria-hidden="true" />
-              {imageUrl ? (
+              <Link
+                key={offer.id}
+                href="/topup"
+                className="group relative block min-h-[218px] overflow-hidden rounded-[18px] border border-[#223348] bg-[#07101a] p-5 shadow-[inset_0_0_24px_rgba(36,89,145,0.14),0_18px_40px_rgba(0,0,0,0.34)] transition hover:-translate-y-0.5 hover:border-relic/70"
+              >
+                <span className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_82%_68%,rgba(36,89,145,0.36),transparent_36%),linear-gradient(135deg,rgba(7,14,24,0.98),rgba(7,18,33,0.92))]" aria-hidden="true" />
+                {imageUrl ? (
+                  <>
+                    <img
+                      src={imageUrl}
+                      alt=""
+                      className="pointer-events-none absolute bottom-0 right-0 z-[4] h-[86%] w-[78%] max-w-none object-contain object-right-bottom opacity-100 drop-shadow-[0_12px_24px_rgba(0,0,0,0.65)] transition duration-300 group-hover:scale-[1.04]"
+                      aria-hidden="true"
+                    />
+                    <span className="pointer-events-none absolute inset-y-0 right-0 z-[5] w-[22%] bg-gradient-to-r from-transparent to-black/16" aria-hidden="true" />
+                  </>
+                ) : (
+                  <span className="pointer-events-none absolute bottom-4 right-4 z-[1] h-24 w-28 rounded-full bg-relic/10 blur-2xl" aria-hidden="true" />
+                )}
                 <span
-                  className="absolute inset-y-2 right-0 w-[66%] bg-contain bg-right-bottom bg-no-repeat opacity-95 transition duration-300 group-hover:scale-[1.04]"
-                  style={{ backgroundImage: `url("${imageUrl}")` }}
+                  className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(90deg,rgba(5,10,17,0.98),rgba(5,10,17,0.7)_38%,rgba(5,10,17,0)_72%)]"
                   aria-hidden="true"
                 />
-              ) : null}
-              <span className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,10,17,0.98),rgba(5,10,17,0.78)_42%,rgba(5,10,17,0.12)_100%)]" aria-hidden="true" />
-              <span className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/70 to-transparent" aria-hidden="true" />
-              <span className="relative z-10 flex h-full min-h-[150px] flex-col justify-between">
-                <span>
-                  <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-relic">
-                    <ShoppingBag size={15} />
-                    Оффер
+                <span className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] h-14 bg-gradient-to-t from-black/70 to-transparent" aria-hidden="true" />
+                <span className="relative z-10 flex h-full min-h-[150px] flex-col justify-between">
+                  <span>
+                    <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-relic">
+                      <ShoppingBag size={15} />
+                      Оффер
+                    </span>
+                    <span className="mt-4 block max-w-[62%] text-2xl font-black leading-tight text-white">{offer.title || "Новый оффер"}</span>
+                    <span className="mt-2 block max-w-[58%] text-sm leading-6 text-zinc-300">{offer.comment || "Подробности у менеджера."}</span>
                   </span>
-                  <span className="mt-4 block max-w-[62%] text-2xl font-black leading-tight text-white">{offer.title || "Новый оффер"}</span>
-                  <span className="mt-2 block max-w-[58%] text-sm leading-6 text-zinc-300">{offer.comment || "Подробности у менеджера."}</span>
                 </span>
-              </span>
-            </Link>
+              </Link>
             );
           })}
         </div>
