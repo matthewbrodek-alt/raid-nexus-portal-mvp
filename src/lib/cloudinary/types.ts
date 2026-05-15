@@ -1,4 +1,4 @@
-export type CloudinaryFolder = "heroes" | "news" | "marketplace" | "chat" | "forum" | "users";
+export type CloudinaryFolder = "heroes" | "news" | "marketplace" | "chat" | "forum" | "users" | "topup";
 
 export type CloudinaryAsset = {
   publicId: string;

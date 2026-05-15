@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Camera, CreditCard, Send, ShieldCheck, Timer, WalletCards } from "lucide-react";
+import { Camera, CreditCard, MessageCircle, Paperclip, Send, ShieldCheck, Timer, WalletCards, X } from "lucide-react";
 import { addDoc, collection, doc, getDocs, query, serverTimestamp, setDoc, where } from "firebase/firestore";
 import { useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -21,36 +21,46 @@ const donationPackages = [
   { id: "hero-pass-predator", ru: "Пропуск героя: Хищник", en: "Hero Pass: Predator", priceRub: 3600, tag: "hero pass" }
 ];
 
+const MAX_SCREENSHOT_SIZE = 6 * 1024 * 1024;
+
 const copy = {
   ru: {
     title: "Заявка на донат",
-    subtitle: "Форма отправляет заявку менеджеру через подключенный n8n webhook.",
+    subtitle: "Форма отправляет заявку менеджеру через подключенный webhook.",
     telegram: "Telegram",
     package: "Набор",
     payment: "Оплата",
     manager: "Через менеджера",
     comment: "Комментарий",
+    screenshot: "Скриншот",
+    screenshotHint: "PNG, JPG или WEBP до 6 МБ",
+    screenshotTooLarge: "Скриншот должен быть до 6 МБ.",
+    directTelegram: "Написать менеджеру в Telegram",
     placeholder: "Прикреплю скриншот магазина, нужен этот набор сегодня...",
     sending: "Отправка...",
     submit: "Отправить заявку",
-    sent: "Заявка отправлена. Менеджер получит уведомление через n8n.",
-    error: "Не удалось отправить заявку. Проверь webhook URL и активность workflow в n8n.",
+    sent: "Заявка отправлена. Менеджер получит уведомление.",
+    error: "Не удалось отправить заявку. Проверь webhook URL и активность workflow.",
     from: "от",
     rub: "₽"
   },
   en: {
     title: "Donation request",
-    subtitle: "The form sends a request to the manager through your connected n8n webhook.",
+    subtitle: "The form sends a request to the manager through your connected webhook.",
     telegram: "Telegram",
     package: "Pack",
     payment: "Payment",
     manager: "Manager assisted",
     comment: "Comment",
+    screenshot: "Screenshot",
+    screenshotHint: "PNG, JPG or WEBP up to 6 MB",
+    screenshotTooLarge: "Screenshot must be 6 MB or smaller.",
+    directTelegram: "Message manager in Telegram",
     placeholder: "I will attach a shop screenshot, need this pack today...",
     sending: "Sending...",
     submit: "Send request",
-    sent: "Request sent. Manager will receive it through n8n.",
-    error: "Could not send request. Check webhook URL and n8n workflow status.",
+    sent: "Request sent. Manager will receive it.",
+    error: "Could not send request. Check webhook URL and workflow status.",
     from: "from",
     rub: "RUB"
   }
@@ -61,6 +71,12 @@ type ManagerProfile = {
   email: string;
   displayName?: string;
   role?: string;
+};
+
+type UploadedScreenshot = {
+  publicId: string;
+  secureUrl: string;
+  url?: string;
 };
 
 function directThreadId(firstUid: string, secondUid: string) {
@@ -91,18 +107,56 @@ export function TopupLeadForm() {
   const [packageId, setPackageId] = useState(donationPackages[0].id);
   const [paymentMethod, setPaymentMethod] = useState("manager");
   const [comment, setComment] = useState("");
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [activeManagerUid, setActiveManagerUid] = useState("");
+  const managerTelegramUrl = process.env.NEXT_PUBLIC_MANAGER_TELEGRAM_URL ?? "";
 
   const selectedPackage = useMemo(
     () => donationPackages.find((item) => item.id === packageId) ?? donationPackages[0],
     [packageId]
   );
+
   const serviceSteps = [
     { Icon: Camera, label: isRu ? "Скриншот набора" : "Pack screenshot" },
     { Icon: CreditCard, label: isRu ? "Счёт менеджера" : "Manager invoice" },
     { Icon: Timer, label: isRu ? "5-10 минут без очереди" : "5-10 min if no queue" }
   ];
+
+  function updateScreenshot(file: File | null) {
+    setFileError("");
+
+    if (!file) {
+      setScreenshotFile(null);
+      return;
+    }
+
+    if (file.size > MAX_SCREENSHOT_SIZE) {
+      setScreenshotFile(null);
+      setFileError(t.screenshotTooLarge);
+      return;
+    }
+
+    setScreenshotFile(file);
+  }
+
+  async function uploadScreenshot(file: File): Promise<UploadedScreenshot> {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "topup");
+
+    const response = await fetch("/api/cloudinary/upload", {
+      method: "POST",
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error("Screenshot upload failed");
+    }
+
+    return (await response.json()) as UploadedScreenshot;
+  }
 
   async function submitLead(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -119,6 +173,7 @@ export function TopupLeadForm() {
       setActiveManagerUid(manager?.uid ?? "");
       const topupRef = doc(collection(db, collections.topupLeads));
       const threadId = manager ? directThreadId(user.uid, manager.uid) : "";
+      const screenshot = screenshotFile ? await uploadScreenshot(screenshotFile) : null;
       const payload = {
         uid: user.uid,
         leadId: topupRef.id,
@@ -130,6 +185,9 @@ export function TopupLeadForm() {
         amountRub: selectedPackage.priceRub,
         paymentMethod,
         comment,
+        screenshotUrl: screenshot?.secureUrl ?? "",
+        screenshotPublicId: screenshot?.publicId ?? "",
+        screenshotName: screenshotFile?.name ?? "",
         status: "new",
         source: "portal"
       };
@@ -157,8 +215,16 @@ export function TopupLeadForm() {
         await addDoc(collection(db, "directThreads", threadId, "messages"), {
           uid: user.uid,
           displayName: user.email ?? telegram,
-          text: `Donation request sent.\nPack: ${payload.packageName}\nPayment: ${paymentMethod}\nComment: ${comment || "-"}`,
+          text: `Donation request sent.\nPack: ${payload.packageName}\nPayment: ${paymentMethod}\nComment: ${comment || "-"}\nScreenshot: ${payload.screenshotUrl || "-"}`,
           topupLeadId: topupRef.id,
+          attachment: screenshot
+            ? {
+                publicId: screenshot.publicId,
+                secureUrl: screenshot.secureUrl,
+                url: screenshot.url ?? screenshot.secureUrl,
+                alt: screenshotFile?.name ?? "Donation screenshot"
+              }
+            : null,
           createdAt: serverTimestamp()
         });
       }
@@ -170,10 +236,12 @@ export function TopupLeadForm() {
       });
 
       if (!response.ok) {
-        throw new Error("n8n webhook rejected request");
+        throw new Error("webhook rejected request");
       }
 
       setStatus("sent");
+      setScreenshotFile(null);
+      setFileError("");
     } catch {
       setStatus("error");
     }
@@ -264,6 +332,42 @@ export function TopupLeadForm() {
           />
         </label>
 
+        <div className="rounded-lg border border-relic/20 bg-black/20 p-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-white">{t.screenshot}</p>
+              <p className="text-xs text-zinc-500">{t.screenshotHint}</p>
+            </div>
+            <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border border-relic/30 px-4 py-2 text-sm font-semibold text-relic transition hover:border-relic hover:bg-relic/10">
+              <Paperclip size={16} />
+              {screenshotFile ? screenshotFile.name : t.screenshot}
+              <input
+                key={screenshotFile?.name ?? "empty"}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="sr-only"
+                onChange={(event) => updateScreenshot(event.target.files?.[0] ?? null)}
+              />
+            </label>
+          </div>
+
+          {screenshotFile ? (
+            <div className="mt-3 flex items-center justify-between rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-zinc-300">
+              <span className="min-w-0 truncate">{screenshotFile.name}</span>
+              <button
+                type="button"
+                className="ml-3 rounded-full p-1 text-zinc-400 transition hover:bg-white/10 hover:text-white"
+                onClick={() => updateScreenshot(null)}
+                aria-label="Remove screenshot"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ) : null}
+
+          {fileError ? <p className="mt-2 text-xs text-ember">{fileError}</p> : null}
+        </div>
+
         <button
           disabled={status === "sending" || !user}
           className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-semibold text-black transition hover:bg-[#f0c766] disabled:cursor-not-allowed disabled:opacity-60"
@@ -271,6 +375,18 @@ export function TopupLeadForm() {
           <Send size={18} />
           {status === "sending" ? t.sending : t.submit}
         </button>
+
+        {managerTelegramUrl ? (
+          <a
+            href={managerTelegramUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-relic/35 px-4 py-3 font-semibold text-relic transition hover:border-relic hover:bg-relic/10"
+          >
+            <MessageCircle size={18} />
+            {t.directTelegram}
+          </a>
+        ) : null}
 
         {status === "sent" ? (
           <p className="rounded-md border border-relic/20 bg-relic/[0.08] px-3 py-2 text-sm text-relic">
@@ -292,8 +408,8 @@ export function TopupLeadForm() {
       <div className="mt-5 flex items-start gap-2 rounded-lg border border-white/10 bg-white/[0.035] p-3 text-sm leading-6 text-zinc-400">
         <ShieldCheck className="mt-0.5 shrink-0 text-relic" size={18} />
         {isRu
-          ? "Данные аккаунта передаются только менеджеру для покупки доступных в игровом магазине наборов. В продакшене поле игровых данных должно храниться зашифрованным."
-          : "Account data is shared only with the manager to buy packs available in the in-game shop. In production, game account fields must be encrypted."}
+          ? "Данные заявки передаются только менеджеру для покупки доступных в игровом магазине наборов."
+          : "Request data is shared only with the manager to buy packs available in the in-game shop."}
       </div>
     </GlassPanel>
   );

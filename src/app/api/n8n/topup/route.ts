@@ -12,6 +12,9 @@ type TopupLeadPayload = {
   amountRub?: number;
   paymentMethod?: string;
   comment?: string;
+  screenshotUrl?: string;
+  screenshotPublicId?: string;
+  screenshotName?: string;
   leadId?: string;
   managerUid?: string;
   threadId?: string;
@@ -57,6 +60,9 @@ export async function POST(request: Request) {
     amountRub: Number.isFinite(amountRub) ? amountRub : 0,
     paymentMethod,
     comment: body?.comment?.slice(0, MAX_COMMENT_LENGTH) ?? "",
+    screenshotUrl: body?.screenshotUrl?.trim() || "",
+    screenshotPublicId: body?.screenshotPublicId?.trim() || "",
+    screenshotName: body?.screenshotName?.trim() || "",
     status: body?.status || "new",
     source: body?.source || "portal",
     receivedAt: new Date().toISOString()
