@@ -6,7 +6,7 @@ import {
   Crown,
   Download,
   Gem,
-  Home,
+  Home as HomeIcon,
   MessageCircle,
   Newspaper,
   Search,
@@ -25,7 +25,7 @@ import { LatestNewsRail } from "@/components/home/latest-news-rail";
 import { raidEvents } from "@/lib/data/mock";
 
 const sidebarLinks = [
-  { label: "Главная", href: "/", icon: Home, active: true },
+  { label: "Главная", href: "/", icon: HomeIcon, active: true },
   { label: "Новости", href: "#news", icon: Newspaper },
   { label: "Герои", href: "/heroes", icon: Swords },
   { label: "Маркет", href: "/marketplace", icon: ShoppingBag },
