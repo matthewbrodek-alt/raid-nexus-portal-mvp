@@ -10,6 +10,7 @@ export const collections = {
   topupLeads: "topupLeads",
   chatRooms: "chatRooms",
   chatMessages: "chatMessages",
+  clanAnnouncements: "clanAnnouncements",
   forumThreads: "forumThreads",
   crmTables: "crmTables",
   moderationQueue: "moderationQueue",

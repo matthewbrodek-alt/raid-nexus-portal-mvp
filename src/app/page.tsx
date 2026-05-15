@@ -31,7 +31,7 @@ const sidebarLinks = [
   { label: "Герои", href: "/heroes", icon: Swords },
   { label: "Маркет", href: "/marketplace", icon: ShoppingBag },
   { label: "Календарь", href: "#calendar", icon: CalendarDays },
-  { label: "Гильдии", href: "/chat", icon: Shield },
+  { label: "Кланы", href: "/clans", icon: Shield },
   { label: "Чат", href: "/chat", icon: MessageCircle },
   { label: "Донат", href: "/topup", icon: Crown },
   { label: "Личный кабинет", href: "/dashboard", icon: Users }

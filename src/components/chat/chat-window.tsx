@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, CornerDownRight, ImagePlus, Menu, MessageSquare, Search, Send, Users, X } from "lucide-react";
+import { ChevronDown, CornerDownRight, ImagePlus, Menu, MessageSquare, Search, Send, Smile, Users, X } from "lucide-react";
 import {
   addDoc,
   collection,
@@ -51,6 +51,8 @@ type MemberMenu = {
   avatarUrl?: string;
 };
 
+const basicEmojis = ["😀", "😂", "😍", "👍", "🔥", "❤️", "🙏", "🎉", "😎", "🤔"];
+
 async function uploadChatImage(file: File) {
   const formData = new FormData();
   formData.append("file", file);
@@ -97,6 +99,7 @@ export function ChatWindow() {
   const [memberMenu, setMemberMenu] = useState<MemberMenu | null>(null);
   const [personalBlockedUids, setPersonalBlockedUids] = useState<string[]>([]);
   const [chatMenuOpen, setChatMenuOpen] = useState(false);
+  const [emojiOpen, setEmojiOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const canSend = Boolean(message.trim() || attachmentFile) && Boolean(user) && !sending;
@@ -519,6 +522,33 @@ export function ChatWindow() {
                   <ImagePlus size={18} />
                   <input type="file" accept="image/*" className="hidden" onChange={(event) => setAttachmentFile(event.target.files?.[0] ?? null)} />
                 </label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setEmojiOpen((current) => !current)}
+                    className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-white/10 bg-black/30 text-relic transition hover:bg-white/[0.06]"
+                    aria-label="Открыть смайлики"
+                  >
+                    <Smile size={18} />
+                  </button>
+                  {emojiOpen ? (
+                    <div className="absolute bottom-[calc(100%+8px)] left-0 z-20 grid w-[214px] grid-cols-5 gap-1 rounded-[16px] border border-relic/20 bg-[#060b13]/98 p-2 shadow-[0_18px_44px_rgba(0,0,0,0.48)] backdrop-blur-xl">
+                      {basicEmojis.map((emoji) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => {
+                            setMessage((current) => `${current}${emoji}`);
+                            setEmojiOpen(false);
+                          }}
+                          className="grid h-9 w-9 place-items-center rounded-lg text-xl transition hover:bg-relic/15"
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
                 <textarea
                   value={message}
                   onChange={(event) => setMessage(event.target.value)}

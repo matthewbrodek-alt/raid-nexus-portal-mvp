@@ -39,6 +39,7 @@ const staticItems: SearchItem[] = [
   { id: "page-news", type: "Раздел", title: "Новости", description: "Последние новости портала", href: "/#news" },
   { id: "page-heroes", type: "Раздел", title: "Герои", description: "База героев, фракции, роли и галерея", href: "/heroes" },
   { id: "page-market", type: "Раздел", title: "Маркет", description: "Лоты, аккаунты и предложения", href: "/marketplace" },
+  { id: "page-clans", type: "Раздел", title: "Кланы", description: "Объявления участников и набор в кланы", href: "/clans" },
   { id: "page-topup", type: "Раздел", title: "Донат", description: "Заявка на покупку набора через менеджера", href: "/topup" },
   { id: "page-useful", type: "Раздел", title: "Полезное", description: "Гайды и калькуляторы", href: "/useful" },
   { id: "page-chat", type: "Раздел", title: "Чат", description: "Общий чат и личные сообщения", href: "/chat" }

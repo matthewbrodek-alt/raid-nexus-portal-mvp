@@ -148,6 +148,13 @@ service cloud.firestore {
       }
     }
 
+    match /clanAnnouncements/{announcementId} {
+      allow read: if true;
+      allow create: if activeUser()
+        && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAdmin() || resource.data.uid == request.auth.uid;
+    }
+
     match /forumThreads/{threadId} {
       allow read: if true;
       allow create: if signedIn();

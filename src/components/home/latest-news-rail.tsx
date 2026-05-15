@@ -53,8 +53,11 @@ function formatNewsDate(item: NewsItem) {
 
 export function LatestNewsRail() {
   const [news, setNews] = useState<NewsItem[]>(fallbackNews);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [allNewsOpen, setAllNewsOpen] = useState(false);
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
-  const featured = news[0] ?? fallbackNews[0];
+  const cycleNews = news.slice(0, 5);
+  const featured = cycleNews[activeIndex % Math.max(cycleNews.length, 1)] ?? fallbackNews[0];
   const featuredImage = getNewsImage(featured);
 
   useEffect(() => {
@@ -69,6 +72,22 @@ export function LatestNewsRail() {
     });
   }, []);
 
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [news.length]);
+
+  useEffect(() => {
+    if (cycleNews.length <= 1) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setActiveIndex((current) => (current + 1) % cycleNews.length);
+    }, 5200);
+
+    return () => window.clearInterval(timer);
+  }, [cycleNews.length]);
+
   return (
     <>
       <div className="raid-ornate-panel raid-news-hero min-h-[430px] overflow-hidden p-5 sm:p-7">
@@ -81,7 +100,7 @@ export function LatestNewsRail() {
           </div>
           <button
             type="button"
-            onClick={() => setSelectedNews(featured)}
+            onClick={() => setAllNewsOpen(true)}
             className="raid-glow-button hidden shrink-0 border border-relic/35 bg-black/28 px-5 py-3 text-xs font-black uppercase tracking-[0.16em] text-relic sm:block"
           >
             <span>Все новости</span>
@@ -89,9 +108,10 @@ export function LatestNewsRail() {
         </div>
 
         <button
+          key={featured.id}
           type="button"
           onClick={() => setSelectedNews(featured)}
-          className="raid-glow-button mt-7 grid min-h-[170px] w-full overflow-hidden border border-relic/35 bg-black/42 text-left sm:grid-cols-[250px_1fr]"
+          className="raid-glow-button raid-news-cycle mt-7 grid min-h-[170px] w-full overflow-hidden border border-relic/35 bg-black/42 text-left sm:grid-cols-[250px_1fr]"
         >
           <span
             className="min-h-[170px] bg-gradient-to-br from-[#16090c] via-[#111827] to-[#51301a] bg-cover bg-center"
@@ -114,17 +134,66 @@ export function LatestNewsRail() {
         </button>
 
         <div className="mt-7 flex justify-center gap-3">
-          {news.slice(0, 5).map((item, index) => (
+          {cycleNews.map((item, index) => (
             <button
               key={item.id}
               type="button"
-              onClick={() => setSelectedNews(item)}
-              className={`h-2.5 w-2.5 rounded-full transition ${index === 0 ? "bg-[#ffe1a0]" : "bg-zinc-500/45 hover:bg-relic"}`}
+              onClick={() => setActiveIndex(index)}
+              className={`h-2.5 w-2.5 rounded-full transition ${index === activeIndex ? "bg-[#ffe1a0]" : "bg-zinc-500/45 hover:bg-relic"}`}
               aria-label={`Открыть новость ${index + 1}`}
             />
           ))}
         </div>
       </div>
+
+      {allNewsOpen ? (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 px-3 py-5 backdrop-blur-sm sm:px-4 sm:py-8" role="dialog" aria-modal="true">
+          <div className="flex min-h-full items-center justify-center">
+            <div className="raid-ornate-panel mx-auto w-full max-w-4xl overflow-hidden bg-[#071019]">
+              <div className="flex items-start justify-between gap-4 border-b border-relic/20 p-4 sm:p-6">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.34em] text-relic">Latest News</p>
+                  <h2 className="raid-title-metal mt-2 text-3xl font-black">Все новости</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAllNewsOpen(false)}
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] border border-relic/40 bg-black/45 text-zinc-300 transition hover:text-white"
+                  aria-label="Закрыть список новостей"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="max-h-[72dvh] overflow-y-auto p-3 sm:p-5">
+                <div className="space-y-3">
+                  {news.map((item) => {
+                    const image = getNewsImage(item) || "/images/raid-castle-bg.png";
+
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedNews(item);
+                          setAllNewsOpen(false);
+                        }}
+                        className="grid w-full gap-3 rounded-[18px] border border-relic/18 bg-black/28 p-3 text-left transition hover:border-relic/50 hover:bg-relic/[0.08] sm:grid-cols-[150px_1fr]"
+                      >
+                        <span className="min-h-[96px] rounded-[14px] bg-cover bg-center" style={{ backgroundImage: `url("${image}")` }} />
+                        <span className="min-w-0 py-1">
+                          <span className="block text-xs font-bold uppercase tracking-[0.2em] text-relic">{formatNewsDate(item)}</span>
+                          <span className="mt-2 block text-xl font-black text-white">{item.title}</span>
+                          <span className="mt-1 block max-h-12 overflow-hidden text-sm leading-6 text-zinc-400">{item.summary}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {selectedNews ? (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 px-3 py-5 backdrop-blur-sm sm:px-4 sm:py-8" role="dialog" aria-modal="true">

@@ -85,10 +85,10 @@ export function PortalOffers() {
                   <span className="pointer-events-none absolute bottom-4 right-4 z-[1] h-24 w-28 rounded-full bg-relic/10 blur-2xl" aria-hidden="true" />
                 )}
                 <span
-                  className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(90deg,rgba(5,10,17,0.96),rgba(5,10,17,0.72)_48%,rgba(5,10,17,0.2)_100%),linear-gradient(180deg,rgba(5,10,17,0.25),rgba(5,10,17,0.82))]"
+                  className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(90deg,rgba(5,10,17,0.88),rgba(5,10,17,0.52)_48%,rgba(5,10,17,0.04)_100%),linear-gradient(180deg,rgba(5,10,17,0.08),rgba(5,10,17,0.54))]"
                   aria-hidden="true"
                 />
-                <span className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] h-14 bg-gradient-to-t from-black/70 to-transparent" aria-hidden="true" />
+                <span className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] h-14 bg-gradient-to-t from-black/45 to-transparent" aria-hidden="true" />
                 <span className="relative z-10 flex h-full min-h-[150px] flex-col justify-between">
                   <span>
                     <span className="block max-w-[72%] text-2xl font-black leading-tight text-white">{offer.title || "Новый оффер"}</span>
