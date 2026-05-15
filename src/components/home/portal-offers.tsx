@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { collection, limit, onSnapshot, query, where } from "firebase/firestore";
-import { ShoppingBag } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { CloudinaryAsset } from "@/lib/cloudinary/types";
 import { db } from "@/lib/firebase/client";
@@ -78,27 +77,22 @@ export function PortalOffers() {
                     <img
                       src={imageUrl}
                       alt=""
-                      className="pointer-events-none absolute bottom-0 right-0 z-[4] h-[86%] w-[78%] max-w-none object-contain object-right-bottom opacity-100 drop-shadow-[0_12px_24px_rgba(0,0,0,0.65)] transition duration-300 group-hover:scale-[1.04]"
+                      className="pointer-events-none absolute inset-0 z-[1] h-full w-full max-w-none object-cover object-center opacity-100 transition duration-300 group-hover:scale-[1.04]"
                       aria-hidden="true"
                     />
-                    <span className="pointer-events-none absolute inset-y-0 right-0 z-[5] w-[22%] bg-gradient-to-r from-transparent to-black/16" aria-hidden="true" />
                   </>
                 ) : (
                   <span className="pointer-events-none absolute bottom-4 right-4 z-[1] h-24 w-28 rounded-full bg-relic/10 blur-2xl" aria-hidden="true" />
                 )}
                 <span
-                  className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(90deg,rgba(5,10,17,0.98),rgba(5,10,17,0.7)_38%,rgba(5,10,17,0)_72%)]"
+                  className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(90deg,rgba(5,10,17,0.96),rgba(5,10,17,0.72)_48%,rgba(5,10,17,0.2)_100%),linear-gradient(180deg,rgba(5,10,17,0.25),rgba(5,10,17,0.82))]"
                   aria-hidden="true"
                 />
                 <span className="pointer-events-none absolute inset-x-0 bottom-0 z-[6] h-14 bg-gradient-to-t from-black/70 to-transparent" aria-hidden="true" />
                 <span className="relative z-10 flex h-full min-h-[150px] flex-col justify-between">
                   <span>
-                    <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-relic">
-                      <ShoppingBag size={15} />
-                      Оффер
-                    </span>
-                    <span className="mt-4 block max-w-[62%] text-2xl font-black leading-tight text-white">{offer.title || "Новый оффер"}</span>
-                    <span className="mt-2 block max-w-[58%] text-sm leading-6 text-zinc-300">{offer.comment || "Подробности у менеджера."}</span>
+                    <span className="block max-w-[72%] text-2xl font-black leading-tight text-white">{offer.title || "Новый оффер"}</span>
+                    {offer.comment ? <span className="mt-2 block max-w-[68%] text-sm leading-6 text-zinc-200">{offer.comment}</span> : null}
                   </span>
                 </span>
               </Link>

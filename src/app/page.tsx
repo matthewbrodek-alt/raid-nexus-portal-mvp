@@ -8,7 +8,6 @@ import {
   Home as HomeIcon,
   MessageCircle,
   Newspaper,
-  Search,
   Shield,
   ShoppingBag,
   Swords,
@@ -19,6 +18,7 @@ import { RaidLogo } from "@/components/brand/raid-logo";
 import { HomeBackgroundVideo } from "@/components/home/home-background-video";
 import { HomeBroadcast } from "@/components/home/home-broadcast";
 import { HomeMobileHeader } from "@/components/home/home-mobile-header";
+import { HomeSearch } from "@/components/home/home-search";
 import { HomeUserCard } from "@/components/home/home-user-card";
 import { LatestNewsRail } from "@/components/home/latest-news-rail";
 import { PortalOffers } from "@/components/home/portal-offers";
@@ -100,13 +100,7 @@ export default function Home() {
           <HomeMobileHeader />
 
           <header className="hidden h-24 items-center gap-5 lg:flex">
-            <label className="flex h-14 w-full max-w-[540px] items-center gap-3 rounded-[16px] border border-relic/24 bg-black/34 px-5 text-zinc-500 shadow-[inset_0_0_20px_rgba(216,168,71,0.03)]">
-              <input
-                className="min-w-0 flex-1 border-0 bg-transparent text-sm text-zinc-200 placeholder:text-zinc-500 focus:ring-0"
-                placeholder="Поиск по порталу..."
-              />
-              <Search size={20} />
-            </label>
+            <HomeSearch />
 
             <div className="ml-auto flex items-center gap-5">
               <LanguageSwitcher />
