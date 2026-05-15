@@ -58,6 +58,8 @@ type PortalOffer = {
   title?: string;
   comment?: string;
   status?: string;
+  image?: CloudinaryAsset | null;
+  createdAt?: { seconds?: number };
 };
 
 async function uploadImage(file: File, publicId: string, folder = "heroes") {
@@ -102,6 +104,7 @@ export function AdminContentForge() {
   const [offerTitle, setOfferTitle] = useState("");
   const [offerComment, setOfferComment] = useState("");
   const [offerImage, setOfferImage] = useState<File | null>(null);
+  const [replacingOfferId, setReplacingOfferId] = useState("");
   const [managedOffers, setManagedOffers] = useState<PortalOffer[]>([]);
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
@@ -231,11 +234,17 @@ export function AdminContentForge() {
     setStatus("");
 
     try {
+      const activeOffers = managedOffers.filter((offer) => offer.status !== "archived");
+
+      if (!replacingOfferId && activeOffers.length >= 3) {
+        setStatus("Максимум 3 карточки активности. Удали карточку или выбери слот для замены.");
+        return;
+      }
+
       const title = offerTitle.trim();
       const slug = slugify(title);
       const image = offerImage ? await uploadImage(offerImage, `${slug}/cover`, "offers") : null;
-
-      await addDoc(collection(db, collections.portalOffers), {
+      const payload = {
         title,
         comment: offerComment.trim(),
         image: image
@@ -246,14 +255,26 @@ export function AdminContentForge() {
           : null,
         status: "published",
         createdBy: profile.uid,
-        createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
-      });
+      };
+
+      if (replacingOfferId) {
+        await updateDoc(doc(db, collections.portalOffers, replacingOfferId), {
+          ...payload,
+          replacedAt: serverTimestamp()
+        });
+      } else {
+        await addDoc(collection(db, collections.portalOffers), {
+          ...payload,
+          createdAt: serverTimestamp()
+        });
+      }
 
       setOfferTitle("");
       setOfferComment("");
       setOfferImage(null);
-      setStatus("Карточка активности опубликована.");
+      setReplacingOfferId("");
+      setStatus(replacingOfferId ? "Карточка активности заменена." : "Карточка активности опубликована.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Не удалось добавить карточку активности.");
     } finally {
@@ -380,6 +401,8 @@ export function AdminContentForge() {
     }
   }
 
+  const activeOfferCount = managedOffers.filter((offer) => offer.status !== "archived").length;
+
   return (
     <GlassPanel className="p-5 sm:p-6">
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -440,6 +463,21 @@ export function AdminContentForge() {
           <ShoppingBag size={18} className="text-relic" />
           <h3 className="font-semibold">Активность портала / Special Offers</h3>
         </div>
+        <p className="text-xs leading-5 text-zinc-500">
+          На главной отображаются максимум 3 карточки. Если слоты заняты, выбери карточку для замены или удали лишнюю ниже.
+        </p>
+        <select
+          value={replacingOfferId}
+          onChange={(event) => setReplacingOfferId(event.target.value)}
+          className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic"
+        >
+          <option value="">{activeOfferCount >= 3 ? "Выбери слот для замены" : "Добавить новую карточку"}</option>
+          {managedOffers.map((offer, index) => (
+            <option key={offer.id} value={offer.id}>
+              Заменить слот {index + 1}: {offer.title ?? "Без названия"}
+            </option>
+          ))}
+        </select>
         <div className="grid gap-3 lg:grid-cols-2">
           <input
             value={offerTitle}
@@ -462,12 +500,17 @@ export function AdminContentForge() {
         </label>
         <button disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
           <Save size={16} />
-          Опубликовать карточку активности
+          {replacingOfferId ? "Заменить карточку активности" : "Опубликовать карточку активности"}
         </button>
 
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {managedOffers.map((offer) => (
             <div key={offer.id} className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/25 p-3">
+              <div
+                className="h-12 w-16 shrink-0 rounded-md border border-relic/15 bg-cover bg-center bg-no-repeat"
+                style={{ backgroundImage: offer.image?.secureUrl ? `url("${offer.image.secureUrl}")` : undefined }}
+                aria-hidden="true"
+              />
               <div className="min-w-0">
                 <p className="truncate font-semibold text-white">{offer.title ?? "Без названия"}</p>
                 <p className="truncate text-xs text-zinc-500">{offer.comment ?? "Без комментария"}</p>
