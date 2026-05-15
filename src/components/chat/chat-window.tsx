@@ -274,6 +274,7 @@ export function ChatWindow() {
             participants: [user.uid, selectedUser.uid],
             participantEmails: [profile.email, selectedUser.email],
             lastMessageText,
+            lastMessageUid: user.uid,
             lastMessageAt: serverTimestamp(),
             updatedAt: serverTimestamp()
           },
@@ -288,6 +289,7 @@ export function ChatWindow() {
             type: "global",
             isPublic: true,
             lastMessageText,
+            lastMessageUid: user.uid,
             lastMessageAt: serverTimestamp(),
             updatedAt: serverTimestamp()
           },

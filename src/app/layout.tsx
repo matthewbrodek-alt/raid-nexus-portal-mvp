@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cinzel, Inter } from "next/font/google";
 import { AuthProvider } from "@/components/auth/auth-provider";
+import { SiteNotificationToast } from "@/components/notifications/site-notification-toast";
 import "./globals.css";
 
 const inter = Inter({
@@ -26,7 +27,10 @@ export default function RootLayout({
   return (
     <html lang="ru" data-scroll-behavior="smooth" className={`${inter.variable} ${cinzel.variable}`}>
       <body className="font-sans antialiased">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {children}
+          <SiteNotificationToast />
+        </AuthProvider>
       </body>
     </html>
   );

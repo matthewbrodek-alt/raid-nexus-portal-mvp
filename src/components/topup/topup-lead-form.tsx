@@ -206,6 +206,7 @@ export function TopupLeadForm() {
             participantEmails: [user.email ?? "", manager.email],
             topupLeadIds: [topupRef.id],
             lastMessageText: `Donation request: ${payload.packageName}`,
+            lastMessageUid: user.uid,
             lastMessageAt: serverTimestamp(),
             updatedAt: serverTimestamp()
           },
