@@ -5,7 +5,7 @@ import type { CloudinaryFolder } from "@/lib/cloudinary/types";
 export const runtime = "nodejs";
 
 const MAX_FILE_SIZE = 6 * 1024 * 1024;
-const allowedFolders = new Set<CloudinaryFolder>(["heroes", "news", "marketplace", "chat", "forum", "users", "topup"]);
+const allowedFolders = new Set<CloudinaryFolder>(["heroes", "news", "offers", "marketplace", "chat", "forum", "users", "topup"]);
 
 function fileToDataUrl(file: File, buffer: ArrayBuffer) {
   const base64 = Buffer.from(buffer).toString("base64");

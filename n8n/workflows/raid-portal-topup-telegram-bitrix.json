@@ -28,61 +28,61 @@
                                                                                      "id":  "telegram",
                                                                                      "name":  "telegram",
                                                                                      "type":  "string",
-                                                                                     "value":  "={{ $json.body.telegram }}"
+                                                                                     "value":  "={{ $json.body?.telegram || $json.telegram || \"\" }}"
                                                                                  },
                                                                                  {
                                                                                      "id":  "packageId",
                                                                                      "name":  "packageId",
                                                                                      "type":  "string",
-                                                                                     "value":  "={{ $json.body.packageId }}"
+                                                                                     "value":  "={{ $json.body?.packageId || $json.packageId || \"\" }}"
                                                                                  },
                                                                                  {
                                                                                      "id":  "packageName",
                                                                                      "name":  "packageName",
                                                                                      "type":  "string",
-                                                                                     "value":  "={{ $json.body.packageName || $json.body.packageId }}"
+                                                                                     "value":  "={{ $json.body?.packageName || $json.packageName || $json.body?.packageId || $json.packageId || \"\" }}"
                                                                                  },
                                                                                  {
                                                                                      "id":  "amountRub",
                                                                                      "name":  "amountRub",
                                                                                      "type":  "number",
-                                                                                     "value":  "={{ $json.body.amountRub || 0 }}"
+                                                                                     "value":  "={{ Number($json.body?.amountRub ?? $json.amountRub ?? 0) }}"
                                                                                  },
                                                                                  {
                                                                                      "id":  "paymentMethod",
                                                                                      "name":  "paymentMethod",
                                                                                      "type":  "string",
-                                                                                     "value":  "={{ $json.body.paymentMethod || \u0027manager\u0027 }}"
+                                                                                     "value":  "={{ $json.body?.paymentMethod || $json.paymentMethod || \"manager\" }}"
                                                                                  },
                                                                                  {
                                                                                      "id":  "comment",
                                                                                      "name":  "comment",
                                                                                      "type":  "string",
-                                                                                     "value":  "={{ $json.body.comment || \u0027\u0027 }}"
+                                                                                     "value":  "={{ $json.body?.comment || $json.comment || \"\" }}"
                                                                                  },
                                                                                  {
                                                                                      "id":  "uid",
                                                                                      "name":  "uid",
                                                                                      "type":  "string",
-                                                                                     "value":  "={{ $json.body.uid || \u0027guest\u0027 }}"
+                                                                                     "value":  "={{ $json.body?.uid || $json.uid || \"guest\" }}"
                                                                                  },
                                                                                  {
                                                                                      "id":  "source",
                                                                                      "name":  "source",
                                                                                      "type":  "string",
-                                                                                     "value":  "={{ $json.body.source || \u0027portal\u0027 }}"
+                                                                                     "value":  "={{ $json.body?.source || $json.source || \"portal\" }}"
                                                                                  },
                                                                                  {
                                                                                      "id":  "leadId",
                                                                                      "name":  "leadId",
                                                                                      "type":  "string",
-                                                                                     "value":  "={{ $json.body.leadId || \u0027lead_\u0027 + Date.now() }}"
+                                                                                     "value":  "={{ $json.body?.leadId || $json.leadId || \"lead_\" + Date.now() }}"
                                                                                  },
                                                                                  {
                                                                                      "id":  "createdAt",
                                                                                      "name":  "createdAt",
                                                                                      "type":  "string",
-                                                                                     "value":  "={{ new Date().toISOString() }}"
+                                                                                     "value":  "={{ $json.body?.receivedAt || $json.receivedAt || new Date().toISOString() }}"
                                                                                  }
                                                                              ]
                                                          },
@@ -162,7 +162,8 @@
                                                          },
                                          "options":  {
 
-                                                     }
+                                                     },
+                                         "includeOtherFields":  true
                                      },
                       "id":  "1d1c0b47-3061-4934-9071-2a22c9fc0004",
                       "name":  "Attach Crypto Invoice",
@@ -193,7 +194,8 @@
                                                          },
                                          "options":  {
 
-                                                     }
+                                                     },
+                                         "includeOtherFields":  true
                                      },
                       "id":  "1d1c0b47-3061-4934-9071-2a22c9fc0005",
                       "name":  "Manager Invoice",
@@ -267,7 +269,7 @@
                   {
                       "parameters":  {
                                          "chatId":  "={{ $env.RAID_MANAGER_TELEGRAM_CHAT_ID }}",
-                                         "text":  "=New Raid top-up lead\\nLead: {{ $(\"Attach Crypto Invoice\").item.json.leadId }}\\nTelegram: {{ $(\"Attach Crypto Invoice\").item.json.telegram }}\\nPackage: {{ $(\"Attach Crypto Invoice\").item.json.packageName || $(\"Attach Crypto Invoice\").item.json.packageId }}\\nAmount RUB: {{ $(\"Attach Crypto Invoice\").item.json.amountRub || 0 }}\\nPayment: {{ $(\"Attach Crypto Invoice\").item.json.paymentMethod }}\\nInvoice: {{ $(\"Attach Crypto Invoice\").item.json.invoiceStatus }}\\nWallet: {{ $(\"Attach Crypto Invoice\").item.json.wallet }}\\nBitrix lead: {{ $(\"Bitrix - Create Crypto Lead\").item.json.result || \"created\" }}\\nComment: {{ $(\"Attach Crypto Invoice\").item.json.comment }}",
+                                         "text":  "=New Raid top-up lead\\nLead: {{ $(\"Normalize Lead Payload\").first().json.leadId || \"no-lead-id\" }}\\nTelegram: {{ $(\"Normalize Lead Payload\").first().json.telegram || \"not provided\" }}\\nPackage: {{ $(\"Normalize Lead Payload\").first().json.packageName || $(\"Normalize Lead Payload\").first().json.packageId || \"not provided\" }}\\nAmount RUB: {{ $(\"Normalize Lead Payload\").first().json.amountRub || 0 }}\\nPayment: {{ $(\"Normalize Lead Payload\").first().json.paymentMethod || \"crypto\" }}\\nInvoice: {{ $(\"Attach Crypto Invoice\").first().json.invoiceStatus || \"waiting_crypto_payment\" }}\\nWallet: {{ $(\"Attach Crypto Invoice\").first().json.wallet || \"manager will provide\" }}\\nBitrix lead: {{ $(\"Bitrix - Create Crypto Lead\").first().json.result || \"created\" }}\\nComment: {{ $(\"Normalize Lead Payload\").first().json.comment || \"\" }}",
                                          "additionalFields":  {
                                                                   "parse_mode":  "Markdown"
                                                               }
@@ -290,7 +292,7 @@
                   {
                       "parameters":  {
                                          "chatId":  "={{ $env.RAID_MANAGER_TELEGRAM_CHAT_ID }}",
-                                         "text":  "=New Raid manager lead\\nLead: {{ $(\"Manager Invoice\").item.json.leadId }}\\nTelegram: {{ $(\"Manager Invoice\").item.json.telegram }}\\nPackage: {{ $(\"Manager Invoice\").item.json.packageName || $(\"Manager Invoice\").item.json.packageId }}\\nAmount RUB: {{ $(\"Manager Invoice\").item.json.amountRub || 0 }}\\nPayment: {{ $(\"Manager Invoice\").item.json.paymentMethod }}\\nInvoice: {{ $(\"Manager Invoice\").item.json.invoiceStatus }}\\nBitrix lead: {{ $(\"Bitrix - Create Manager Lead\").item.json.result || \"created\" }}\\nComment: {{ $(\"Manager Invoice\").item.json.comment }}",
+                                         "text":  "=New Raid manager lead\\nLead: {{ $(\"Normalize Lead Payload\").first().json.leadId || \"no-lead-id\" }}\\nTelegram: {{ $(\"Normalize Lead Payload\").first().json.telegram || \"not provided\" }}\\nPackage: {{ $(\"Normalize Lead Payload\").first().json.packageName || $(\"Normalize Lead Payload\").first().json.packageId || \"not provided\" }}\\nAmount RUB: {{ $(\"Normalize Lead Payload\").first().json.amountRub || 0 }}\\nPayment: {{ $(\"Normalize Lead Payload\").first().json.paymentMethod || \"manager\" }}\\nInvoice: {{ $(\"Manager Invoice\").first().json.invoiceStatus || \"manager_contact_required\" }}\\nBitrix lead: {{ $(\"Bitrix - Create Manager Lead\").first().json.result || \"created\" }}\\nComment: {{ $(\"Normalize Lead Payload\").first().json.comment || \"\" }}",
                                          "additionalFields":  {
                                                                   "parse_mode":  "Markdown"
                                                               }
@@ -313,7 +315,7 @@
                   {
                       "parameters":  {
                                          "respondWith":  "json",
-                                         "responseBody":  "={\n  \"ok\": true,\n  \"leadId\": \"{{ $(\"Attach Crypto Invoice\").item.json.leadId }}\",\n  \"status\": \"{{ $(\"Attach Crypto Invoice\").item.json.invoiceStatus }}\",\n  \"wallet\": \"{{ $(\"Attach Crypto Invoice\").item.json.wallet }}\",\n  \"bitrixLeadId\": \"{{ $(\"Bitrix - Create Crypto Lead\").item.json.result || \u0027\u0027 }}\"\n}",
+                                         "responseBody":  "={\\n  \"ok\": true,\\n  \"leadId\": \"{{ $(\"Normalize Lead Payload\").first().json.leadId }}\",\\n  \"status\": \"{{ $(\"Attach Crypto Invoice\").first().json.invoiceStatus }}\",\\n  \"wallet\": \"{{ $(\"Attach Crypto Invoice\").first().json.wallet }}\",\\n  \"bitrixLeadId\": \"{{ $(\"Bitrix - Create Crypto Lead\").first().json.result || \"\" }}\"\\n}",
                                          "options":  {
 
                                                      }
@@ -330,7 +332,7 @@
                   {
                       "parameters":  {
                                          "respondWith":  "json",
-                                         "responseBody":  "={\n  \"ok\": true,\n  \"leadId\": \"{{ $(\"Manager Invoice\").item.json.leadId }}\",\n  \"status\": \"{{ $(\"Manager Invoice\").item.json.invoiceStatus }}\",\n  \"wallet\": \"\",\n  \"bitrixLeadId\": \"{{ $(\"Bitrix - Create Manager Lead\").item.json.result || \u0027\u0027 }}\"\n}",
+                                         "responseBody":  "={\\n  \"ok\": true,\\n  \"leadId\": \"{{ $(\"Normalize Lead Payload\").first().json.leadId }}\",\\n  \"status\": \"{{ $(\"Manager Invoice\").first().json.invoiceStatus }}\",\\n  \"wallet\": \"\",\\n  \"bitrixLeadId\": \"{{ $(\"Bitrix - Create Manager Lead\").first().json.result || \"\" }}\"\\n}",
                                          "options":  {
 
                                                      }

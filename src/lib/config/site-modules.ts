@@ -25,9 +25,9 @@ export const siteModules: SiteModule[] = [
     route: "/donate",
     navGroup: "public",
     enabled: true,
-    featureFlags: ["n8nWebhook", "managerRouting", "directChat"],
+    featureFlags: ["crmWebhook", "managerRouting", "directChat"],
     aiCapabilities: ["createTopupLead", "sendManagerWebhook", "openDirectChat"],
-    description: "Dark fantasy donation flow with manager contact and n8n routing."
+    description: "Dark fantasy donation flow with manager contact and CRM routing."
   },
   {
     id: "useful",

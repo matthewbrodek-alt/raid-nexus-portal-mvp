@@ -69,7 +69,7 @@ export function Navigation({ sections }: NavigationProps) {
               <Link
                 key={section.href}
                 href={section.href}
-                className="flex items-center gap-2 border border-transparent px-3 py-2 text-sm uppercase tracking-[0.08em] text-zinc-300 transition hover:border-relic/40 hover:bg-relic/10 hover:text-relic"
+                className="flex items-center gap-2 rounded-[14px] border border-transparent px-3 py-2 text-sm uppercase tracking-[0.08em] text-zinc-300 transition hover:border-relic/40 hover:bg-relic/10 hover:text-relic"
               >
                 <Icon size={16} />
                 {labels[section.href as keyof typeof labels] ?? section.label}
@@ -80,17 +80,17 @@ export function Navigation({ sections }: NavigationProps) {
 
         <div className="hidden items-center gap-2 sm:flex">
           <LanguageSwitcher />
-          <button className="grid h-10 w-10 place-items-center border border-relic/25 bg-black/35 text-zinc-300 transition hover:text-relic" aria-label={labels.search}>
+          <button className="grid h-10 w-10 place-items-center rounded-[14px] border border-relic/25 bg-black/35 text-zinc-300 transition hover:text-relic" aria-label={labels.search}>
             <Search size={18} />
           </button>
-          <Link href="/dashboard" className="flex h-10 items-center gap-2 border border-relic/45 bg-black/35 px-3 text-sm font-semibold text-relic transition hover:bg-relic hover:text-black">
+          <Link href="/dashboard" className="flex h-10 items-center gap-2 rounded-[14px] border border-relic/45 bg-black/35 px-3 text-sm font-semibold text-relic transition hover:bg-relic hover:text-black">
             <UserRound size={18} />
             {labels.dashboard}
           </Link>
         </div>
 
         <button
-          className="grid h-14 w-14 place-items-center border border-relic/45 bg-black/35 text-relic shadow-glow lg:hidden"
+          className="grid h-14 w-14 place-items-center rounded-[16px] border border-relic/45 bg-black/45 text-relic shadow-glow lg:hidden"
           aria-label={labels.menu}
           onClick={() => setOpen(true)}
         >
@@ -99,14 +99,14 @@ export function Navigation({ sections }: NavigationProps) {
       </div>
 
       {open ? (
-        <div className="fixed inset-0 z-[80] bg-black/78 backdrop-blur-sm lg:hidden" role="dialog" aria-modal="true">
-          <div className="h-full w-[84vw] max-w-sm overflow-y-auto border-r border-relic/25 bg-[#04090f]/98 p-4 shadow-2xl">
+        <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-xl lg:hidden" role="dialog" aria-modal="true">
+          <div className="h-full w-[84vw] max-w-sm overflow-y-auto border-r border-relic/30 bg-[#02060b]/95 p-4 shadow-2xl backdrop-blur-2xl">
             <div className="mb-5 flex items-center justify-between gap-3">
               <RaidLogo className="scale-[0.78] origin-left" />
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="grid h-10 w-10 shrink-0 place-items-center border border-white/10 text-zinc-300 transition hover:border-relic/50 hover:text-relic"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] border border-white/10 bg-black/40 text-zinc-300 transition hover:border-relic/50 hover:text-relic"
                 aria-label="Close menu"
               >
                 <X size={18} />
@@ -124,7 +124,7 @@ export function Navigation({ sections }: NavigationProps) {
                   <Link
                     key={section.href}
                     href={section.href}
-                    className="raid-side-link flex h-14 items-center gap-4 border border-white/5 bg-black/20 px-4 text-sm font-semibold uppercase tracking-[0.1em] text-zinc-300 transition hover:border-relic/35 hover:text-relic"
+                    className="raid-side-link flex h-14 items-center gap-4 border border-white/5 bg-black/45 px-4 text-sm font-semibold uppercase tracking-[0.1em] text-zinc-300 transition hover:border-relic/35 hover:text-relic"
                     onClick={() => setOpen(false)}
                   >
                     <Icon className="relative z-10 h-5 w-5 shrink-0" />

@@ -48,7 +48,7 @@ export const siteContext = {
       }
     },
     createTopupLead: {
-      route: "/api/n8n/topup",
+      route: "/api/webhook/topup",
       input: {
         telegram: "string",
         packageId: "string",

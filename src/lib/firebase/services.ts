@@ -18,7 +18,7 @@ export async function createTopupLead(input: TopupLeadInput) {
     updatedAt: serverTimestamp()
   });
 
-  await fetch("/api/n8n/topup", {
+  await fetch("/api/webhook/topup", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ leadId: docRef.id, ...input })

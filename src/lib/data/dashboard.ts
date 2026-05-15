@@ -47,7 +47,7 @@ export const adminDashboard = {
     { target: "Marketplace comment", reason: "payment claim", priority: "high" }
   ],
   crmTables: [
-    { name: "Donate Leads", source: "n8n -> CRM", freshness: "2 min" },
+    { name: "Donate Leads", source: "Portal -> CRM", freshness: "2 min" },
     { name: "Marketplace Reservations", source: "Firestore -> Sheets", freshness: "8 min" },
     { name: "Manager SLA", source: "CRM API", freshness: "live" }
   ]

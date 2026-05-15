@@ -5,7 +5,6 @@ import {
   ChevronRight,
   Crown,
   Download,
-  Gem,
   Home as HomeIcon,
   MessageCircle,
   Newspaper,
@@ -13,7 +12,6 @@ import {
   Shield,
   ShoppingBag,
   Swords,
-  Trophy,
   Users
 } from "lucide-react";
 import { ActionCalendar } from "@/components/calendar/action-calendar";
@@ -23,6 +21,8 @@ import { HomeBroadcast } from "@/components/home/home-broadcast";
 import { HomeMobileHeader } from "@/components/home/home-mobile-header";
 import { HomeUserCard } from "@/components/home/home-user-card";
 import { LatestNewsRail } from "@/components/home/latest-news-rail";
+import { PortalOffers } from "@/components/home/portal-offers";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { raidEvents } from "@/lib/data/mock";
 
 const sidebarLinks = [
@@ -35,33 +35,6 @@ const sidebarLinks = [
   { label: "Чат", href: "/chat", icon: MessageCircle },
   { label: "Донат", href: "/topup", icon: Crown },
   { label: "Личный кабинет", href: "/dashboard", icon: Users }
-];
-
-const activityCards = [
-  {
-    label: "Событие",
-    title: "Турнир драконов",
-    text: "Участвуй и получай ценные награды.",
-    meta: "Осталось: 2д 14ч",
-    icon: Trophy,
-    background: "linear-gradient(135deg, rgba(71,17,17,0.9), rgba(21,8,10,0.9))"
-  },
-  {
-    label: "Оффер",
-    title: "Особый набор",
-    text: "Лимитированный набор доступен только сегодня.",
-    meta: "-50%",
-    icon: Gem,
-    background: "linear-gradient(135deg, rgba(59,30,7,0.9), rgba(11,16,24,0.9))"
-  },
-  {
-    label: "Ежедневно",
-    title: "Ежедневные задания",
-    text: "Выполняй задания и получай ценные награды.",
-    meta: "2/5",
-    icon: Shield,
-    background: "linear-gradient(135deg, rgba(7,52,71,0.9), rgba(8,17,28,0.9))"
-  }
 ];
 
 export default function Home() {
@@ -97,7 +70,12 @@ export default function Home() {
           </nav>
 
           <div className="mt-auto space-y-4 px-5 pb-6">
-            <Link href="/topup" className="raid-glow-button flex items-center justify-between border border-relic/24 bg-black/32 px-5 py-4 text-left">
+            <Link
+              href="https://lps.plarium.com/ru/desktop/raid/dragon_fire_f038_fdb_droapp?plid="
+              target="_blank"
+              rel="noreferrer"
+              className="raid-glow-button flex items-center justify-between border border-relic/24 bg-black/32 px-5 py-4 text-left"
+            >
               <span>
                 <span className="block text-xs font-bold uppercase tracking-[0.28em] text-relic">Скачать RAID</span>
                 <span className="mt-1 block text-sm text-zinc-400">Начни своё приключение</span>
@@ -131,10 +109,7 @@ export default function Home() {
             </label>
 
             <div className="ml-auto flex items-center gap-5">
-              <button className="raid-glow-button grid h-11 w-11 place-items-center border border-transparent text-zinc-300" aria-label="Language">
-                <Users size={20} />
-              </button>
-              <span className="text-sm uppercase tracking-[0.08em] text-zinc-300">RU</span>
+              <LanguageSwitcher />
               <span className="h-8 w-px bg-relic/18" />
               <button className="raid-glow-button grid h-11 w-11 place-items-center border border-transparent text-zinc-300" aria-label="Notifications">
                 <Bell size={20} />
@@ -150,34 +125,7 @@ export default function Home() {
                 <LatestNewsRail />
               </section>
 
-              <section className="raid-ornate-panel p-5">
-                <div className="mb-4">
-                  <p className="text-xs font-bold uppercase tracking-[0.38em] text-relic">Активность портала</p>
-                  <p className="mt-2 text-sm text-zinc-400">Присоединяйся к событиям и получай награды</p>
-                </div>
-                <div className="grid gap-4 md:grid-cols-3">
-                  {activityCards.map((card) => {
-                    const Icon = card.icon;
-
-                    return (
-                      <Link
-                        key={card.title}
-                        href={card.label === "Оффер" ? "/topup" : "#calendar"}
-                        className="raid-glow-button min-h-[214px] border border-relic/20 p-5"
-                        style={{ background: card.background }}
-                      >
-                        <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-relic">
-                          <Icon size={15} />
-                          {card.label}
-                        </span>
-                        <span className="raid-title-metal mt-7 block text-2xl leading-tight">{card.title}</span>
-                        <span className="mt-4 block text-sm leading-6 text-zinc-300">{card.text}</span>
-                        <span className="mt-5 block text-sm font-semibold text-relic">{card.meta}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </section>
+              <PortalOffers />
             </div>
 
             <aside className="space-y-5">

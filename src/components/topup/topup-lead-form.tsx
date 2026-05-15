@@ -230,7 +230,7 @@ export function TopupLeadForm() {
         });
       }
 
-      const response = await fetch("/api/n8n/topup", {
+      const response = await fetch("/api/webhook/topup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

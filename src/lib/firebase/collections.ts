@@ -4,6 +4,7 @@ export const collections = {
   encryptedGameAccounts: "encryptedGameAccounts",
   heroes: "heroes",
   heroCalendar: "heroCalendar",
+  portalOffers: "portalOffers",
   news: "news",
   marketplaceAccounts: "marketplaceAccounts",
   topupLeads: "topupLeads",

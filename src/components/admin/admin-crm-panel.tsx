@@ -32,11 +32,11 @@ const copy = {
     manager: "Через менеджера",
     card: "Карта",
     comment: "Комментарий для CRM / Bitrix",
-    send: "Отправить в n8n / Bitrix",
+    send: "Отправить в Bitrix",
     createdBy: "Создано из админ-панели",
-    sent: "Заявка отправлена в n8n и дальше в Bitrix CRM.",
+    sent: "Заявка отправлена в Bitrix CRM.",
     failed: "Не удалось отправить CRM-заявку.",
-    n8nRejected: "n8n отклонил CRM-заявку.",
+    webhookRejected: "CRM webhook отклонил заявку.",
     latest: "Последние заявки с сайта",
     unprocessed: "Необработанные",
     newBadge: "Новая",
@@ -55,11 +55,11 @@ const copy = {
     manager: "Via manager",
     card: "Card",
     comment: "Comment for CRM / Bitrix",
-    send: "Send to n8n / Bitrix",
+    send: "Send to Bitrix",
     createdBy: "Created from admin panel",
-    sent: "Lead was sent to n8n and then to Bitrix CRM.",
+    sent: "Lead was sent to Bitrix CRM.",
     failed: "Could not send CRM lead.",
-    n8nRejected: "n8n rejected CRM lead.",
+    webhookRejected: "CRM webhook rejected the lead.",
     latest: "Latest website requests",
     unprocessed: "Unprocessed",
     newBadge: "New",
@@ -167,14 +167,14 @@ export function AdminCrmPanel() {
         updatedAt: serverTimestamp()
       });
 
-      const response = await fetch("/api/n8n/topup", {
+      const response = await fetch("/api/webhook/topup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
-        throw new Error(t.n8nRejected);
+        throw new Error(t.webhookRejected);
       }
 
       setTelegram("");

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, ImagePlus, Newspaper, Plus, Save, Trash2 } from "lucide-react";
+import { ExternalLink, ImagePlus, Newspaper, Plus, Save, ShoppingBag, Trash2 } from "lucide-react";
 import { addDoc, collection, deleteDoc, doc, getDoc, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -53,6 +53,13 @@ type ManagedHero = {
   isPublished?: boolean;
 };
 
+type PortalOffer = {
+  id: string;
+  title?: string;
+  comment?: string;
+  status?: string;
+};
+
 async function uploadImage(file: File, publicId: string, folder = "heroes") {
   const formData = new FormData();
   formData.append("file", file);
@@ -92,6 +99,10 @@ export function AdminContentForge() {
   const [broadcastTitle, setBroadcastTitle] = useState("");
   const [broadcastVideoUrl, setBroadcastVideoUrl] = useState("");
   const [broadcastBackgroundImageUrl, setBroadcastBackgroundImageUrl] = useState("");
+  const [offerTitle, setOfferTitle] = useState("");
+  const [offerComment, setOfferComment] = useState("");
+  const [offerImage, setOfferImage] = useState<File | null>(null);
+  const [managedOffers, setManagedOffers] = useState<PortalOffer[]>([]);
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
   const crmUrl = process.env.NEXT_PUBLIC_CRM_URL ?? "#";
@@ -101,6 +112,14 @@ export function AdminContentForge() {
 
     return onSnapshot(heroesQuery, (snapshot) => {
       setManagedHeroes(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<ManagedHero, "id">) })));
+    });
+  }, []);
+
+  useEffect(() => {
+    const offersQuery = query(collection(db, collections.portalOffers), orderBy("createdAt", "desc"), limit(12));
+
+    return onSnapshot(offersQuery, (snapshot) => {
+      setManagedOffers(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<PortalOffer, "id">) })));
     });
   }, []);
 
@@ -199,6 +218,58 @@ export function AdminContentForge() {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function createOffer(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!profile) {
+      return;
+    }
+
+    setSaving(true);
+    setStatus("");
+
+    try {
+      const title = offerTitle.trim();
+      const slug = slugify(title);
+      const image = offerImage ? await uploadImage(offerImage, `${slug}/cover`, "offers") : null;
+
+      await addDoc(collection(db, collections.portalOffers), {
+        title,
+        comment: offerComment.trim(),
+        image: image
+          ? {
+              ...image,
+              alt: title
+            }
+          : null,
+        status: "published",
+        createdBy: profile.uid,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
+      setOfferTitle("");
+      setOfferComment("");
+      setOfferImage(null);
+      setStatus("Карточка активности опубликована.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Не удалось добавить карточку активности.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeOffer(offerId: string) {
+    const confirmed = window.confirm("Удалить карточку активности?");
+
+    if (!confirmed) {
+      return;
+    }
+
+    await deleteDoc(doc(db, collections.portalOffers, offerId));
+    setStatus("Карточка активности удалена.");
   }
 
   function startEditHero(hero: ManagedHero) {
@@ -362,6 +433,51 @@ export function AdminContentForge() {
           <Save size={16} />
           Сохранить Broadcast
         </button>
+      </form>
+
+      <form onSubmit={createOffer} className="mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
+        <div className="flex items-center gap-2 text-white">
+          <ShoppingBag size={18} className="text-relic" />
+          <h3 className="font-semibold">Активность портала / Special Offers</h3>
+        </div>
+        <div className="grid gap-3 lg:grid-cols-2">
+          <input
+            value={offerTitle}
+            onChange={(event) => setOfferTitle(event.target.value)}
+            required
+            placeholder="Название карточки"
+            className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+          />
+          <input
+            value={offerComment}
+            onChange={(event) => setOfferComment(event.target.value)}
+            required
+            placeholder="Комментарий / короткое описание"
+            className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+          />
+        </div>
+        <label className="block text-sm text-zinc-300">
+          Картинка карточки
+          <input type="file" accept="image/*" required onChange={(event) => setOfferImage(event.target.files?.[0] ?? null)} className="mt-2 block w-full text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-white/10 file:px-3 file:py-2 file:font-bold file:text-white" />
+        </label>
+        <button disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
+          <Save size={16} />
+          Опубликовать карточку активности
+        </button>
+
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {managedOffers.map((offer) => (
+            <div key={offer.id} className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/25 p-3">
+              <div className="min-w-0">
+                <p className="truncate font-semibold text-white">{offer.title ?? "Без названия"}</p>
+                <p className="truncate text-xs text-zinc-500">{offer.comment ?? "Без комментария"}</p>
+              </div>
+              <button type="button" onClick={() => void removeOffer(offer.id)} className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-blood/30 text-ember hover:bg-blood/15">
+                <Trash2 size={16} />
+              </button>
+            </div>
+          ))}
+        </div>
       </form>
 
       <div className="grid gap-5 xl:grid-cols-2">

@@ -62,7 +62,7 @@ export function DonatePageContent() {
   const integrationCards = [
     {
       Icon: Bot,
-      title: "n8n workflow",
+      title: "CRM workflow",
       text: isRu ? "Заявка уходит менеджеру через уже подключенный workflow." : "Request goes to the manager through your connected workflow."
     },
     {
