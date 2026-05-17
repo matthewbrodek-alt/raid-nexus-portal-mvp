@@ -161,7 +161,7 @@ export function LatestNewsRail() {
             <p className="text-xs font-bold uppercase tracking-[0.28em] text-relic">{labels.eyebrow}</p>
             <h2
               className={`raid-title-metal mt-4 max-w-lg text-4xl uppercase max-sm:[word-spacing:0.18em] sm:text-5xl ${
-                language === "ru" ? "leading-[1.16]" : "leading-none"
+                language === "ru" ? "!leading-[1.32] sm:!leading-[1.26]" : "leading-none"
               }`}
             >
               {labels.title}
