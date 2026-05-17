@@ -3,8 +3,8 @@
 import { X } from "lucide-react";
 import { collection, deleteDoc, doc, onSnapshot, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { HeroCard } from "@/components/heroes/hero-card";
 import { useAuth } from "@/components/auth/auth-provider";
+import { HeroCard } from "@/components/heroes/hero-card";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import type { HeroProfile } from "@/lib/types";
@@ -46,9 +46,12 @@ const raidRoles = [
   { value: "hp", label: "Здоровье" }
 ];
 
-function roleLabel(value: string) {
-  return raidRoles.find((role) => role.value === value)?.label ?? value;
-}
+const heroRarities: Array<{ value: HeroProfile["rarity"]; label: string }> = [
+  { value: "Mythical", label: "Мифический" },
+  { value: "Legendary", label: "Легендарный" },
+  { value: "Epic", label: "Эпический" },
+  { value: "Rare", label: "Редкий" }
+];
 
 function normalizeRarity(value?: string): HeroProfile["rarity"] {
   const lower = value?.toLowerCase();
@@ -72,8 +75,10 @@ export function HeroesCatalog() {
   const { profile } = useAuth();
   const [heroes, setHeroes] = useState<HeroProfile[]>([]);
   const [selectedHero, setSelectedHero] = useState<HeroProfile | null>(null);
+  const [selectedScreenshot, setSelectedScreenshot] = useState("");
   const [editName, setEditName] = useState("");
   const [editFaction, setEditFaction] = useState("");
+  const [editRarity, setEditRarity] = useState<HeroProfile["rarity"]>("Legendary");
   const [editRole, setEditRole] = useState("support");
   const [editComment, setEditComment] = useState("");
   const canManageHeroes = profile?.role === "admin" || profile?.role === "owner";
@@ -107,6 +112,7 @@ export function HeroesCatalog() {
     setSelectedHero(hero);
     setEditName(hero.name);
     setEditFaction(hero.faction);
+    setEditRarity(hero.rarity);
     setEditRole(raidRoles.some((role) => role.value === hero.role) ? hero.role : "support");
     setEditComment(hero.comment);
   }
@@ -119,6 +125,7 @@ export function HeroesCatalog() {
     await updateDoc(doc(db, collections.heroes, selectedHero.id), {
       name: editName.trim(),
       faction: editFaction || "Unknown",
+      rarity: editRarity.toLowerCase(),
       role: editRole,
       markdownComment: editComment.trim(),
       updatedAt: serverTimestamp()
@@ -155,9 +162,9 @@ export function HeroesCatalog() {
 
       {selectedHero ? (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/78 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true">
-          <div className="mx-auto grid max-w-6xl gap-6 rounded-lg border border-white/10 bg-[#0d111b] p-4 shadow-2xl lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="mx-auto grid max-w-6xl gap-6 rounded-[20px] border border-white/10 bg-[#0d111b] p-4 shadow-2xl lg:grid-cols-[0.95fr_1.05fr]">
             <div
-              className="min-h-[430px] rounded-lg border border-white/10 bg-gradient-to-br from-black via-[#1b0e18] to-[#391018] bg-cover bg-center p-5"
+              className="min-h-[430px] rounded-[18px] border border-white/10 bg-gradient-to-br from-black via-[#1b0e18] to-[#391018] bg-cover bg-center p-5"
               style={
                 selectedHero.avatarUrl
                   ? { backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.84)), url(${selectedHero.avatarUrl})` }
@@ -174,9 +181,9 @@ export function HeroesCatalog() {
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-start justify-between gap-4 rounded-lg border border-white/10 bg-black/20 p-5">
+              <div className="flex items-start justify-between gap-4 rounded-[18px] border border-white/10 bg-black/20 p-5">
                 <div>
-                  <h3 className="text-2xl font-black text-white">Комментарий</h3>
+                  <h3 className="text-2xl font-black text-white">Описание</h3>
                   <p className="mt-3 text-sm leading-7 text-zinc-300">{selectedHero.comment}</p>
                 </div>
                 <button type="button" onClick={() => setSelectedHero(null)} className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-white/10 text-zinc-400 hover:text-white">
@@ -185,7 +192,7 @@ export function HeroesCatalog() {
               </div>
 
               {canManageHeroes ? (
-                <div className="space-y-3 rounded-lg border border-relic/20 bg-relic/[0.06] p-5">
+                <div className="space-y-3 rounded-[18px] border border-relic/20 bg-relic/[0.06] p-5">
                   <h3 className="text-xl font-black text-white">Админ-правка</h3>
                   <input value={editName} onChange={(event) => setEditName(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic" />
                   <select value={editFaction} onChange={(event) => setEditFaction(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
@@ -193,6 +200,13 @@ export function HeroesCatalog() {
                     {raidFactions.map((faction) => (
                       <option key={faction} value={faction}>
                         {faction}
+                      </option>
+                    ))}
+                  </select>
+                  <select value={editRarity} onChange={(event) => setEditRarity(event.target.value as HeroProfile["rarity"])} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
+                    {heroRarities.map((rarity) => (
+                      <option key={rarity.value} value={rarity.value}>
+                        {rarity.label}
                       </option>
                     ))}
                   </select>
@@ -215,27 +229,36 @@ export function HeroesCatalog() {
                 </div>
               ) : null}
 
-              <div className="rounded-lg border border-white/10 bg-black/20 p-5">
-                <h3 className="text-2xl font-black text-white">Галерея</h3>
+              <div className="rounded-[18px] border border-white/10 bg-black/20 p-5">
+                <h3 className="text-2xl font-black text-white">Сборка героя</h3>
                 <div className="mt-4 grid gap-3 sm:grid-cols-3">
                   {selectedHero.galleryUrls.slice(0, 3).map((url, index) => (
-                    <div key={url} className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.04]">
+                    <button key={url} type="button" onClick={() => setSelectedScreenshot(url)} className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.04] transition hover:border-relic/50">
                       <img src={url} alt={`${selectedHero.name} ${index + 1}`} className="aspect-[4/3] w-full object-cover" />
-                    </div>
+                    </button>
                   ))}
                   {selectedHero.galleryUrls.length === 0 ? (
-                    <p className="col-span-full rounded-lg border border-white/10 bg-black/20 p-4 text-sm text-zinc-400">Галерея пока не заполнена.</p>
+                    <p className="col-span-full rounded-lg border border-white/10 bg-black/20 p-4 text-sm text-zinc-400">Сборка героя пока не заполнена.</p>
                   ) : null}
                 </div>
               </div>
-
-              <div className="rounded-lg border border-white/10 bg-black/20 p-5">
-                <h3 className="text-2xl font-black text-white">Использование</h3>
-                <p className="mt-3 text-sm leading-7 text-zinc-400">
-                  Роль: {roleLabel(selectedHero.role)}. Рейтинг базы: {selectedHero.rating}/5. Блок готов для билдов, артефактов и заметок администратора.
-                </p>
-              </div>
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {selectedScreenshot ? (
+        <div className="fixed inset-0 z-[60] grid place-items-center bg-black/86 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true">
+          <div className="relative max-h-[92dvh] w-full max-w-5xl overflow-hidden rounded-[18px] border border-relic/25 bg-black shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setSelectedScreenshot("")}
+              className="absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-[14px] border border-relic/35 bg-black/70 text-zinc-300 hover:text-white"
+              aria-label="Закрыть скриншот"
+            >
+              <X size={18} />
+            </button>
+            <img src={selectedScreenshot} alt="Скриншот сборки героя" className="max-h-[92dvh] w-full object-contain" />
           </div>
         </div>
       ) : null}

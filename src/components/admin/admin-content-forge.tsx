@@ -44,10 +44,18 @@ const raidRoles = [
   { value: "hp", label: "Здоровье" }
 ];
 
+const heroRarities = [
+  { value: "mythical", label: "Мифический" },
+  { value: "legendary", label: "Легендарный" },
+  { value: "epic", label: "Эпический" },
+  { value: "rare", label: "Редкий" }
+];
+
 type ManagedHero = {
   id: string;
   name?: string;
   faction?: string;
+  rarity?: string;
   role?: string;
   markdownComment?: string;
   isPublished?: boolean;
@@ -88,6 +96,7 @@ export function AdminContentForge() {
   const [newsImage, setNewsImage] = useState<File | null>(null);
   const [heroName, setHeroName] = useState("");
   const [heroFaction, setHeroFaction] = useState("");
+  const [heroRarity, setHeroRarity] = useState("legendary");
   const [heroRole, setHeroRole] = useState("support");
   const [heroDescription, setHeroDescription] = useState("");
   const [avatar, setAvatar] = useState<File | null>(null);
@@ -96,6 +105,7 @@ export function AdminContentForge() {
   const [editingHeroId, setEditingHeroId] = useState("");
   const [editHeroName, setEditHeroName] = useState("");
   const [editHeroFaction, setEditHeroFaction] = useState("");
+  const [editHeroRarity, setEditHeroRarity] = useState("legendary");
   const [editHeroRole, setEditHeroRole] = useState("");
   const [editHeroDescription, setEditHeroDescription] = useState("");
   const [broadcastTitle, setBroadcastTitle] = useState("");
@@ -297,6 +307,7 @@ export function AdminContentForge() {
     setEditingHeroId(hero.id);
     setEditHeroName(hero.name ?? "");
     setEditHeroFaction(hero.faction ?? "");
+    setEditHeroRarity(heroRarities.some((rarity) => rarity.value === hero.rarity) ? hero.rarity ?? "legendary" : "legendary");
     setEditHeroRole(raidRoles.some((role) => role.value === hero.role) ? hero.role ?? "support" : "support");
     setEditHeroDescription(hero.markdownComment ?? "");
   }
@@ -313,6 +324,7 @@ export function AdminContentForge() {
       await updateDoc(doc(db, collections.heroes, editingHeroId), {
         name: editHeroName.trim(),
         faction: editHeroFaction.trim() || "Unknown",
+        rarity: editHeroRarity,
         role: editHeroRole,
         markdownComment: editHeroDescription.trim(),
         updatedAt: serverTimestamp()
@@ -362,7 +374,7 @@ export function AdminContentForge() {
         slug,
         faction: heroFaction.trim() || "Unknown",
         affinity: "void",
-        rarity: "legendary",
+        rarity: heroRarity,
         role: heroRole,
         avatar: {
           ...avatarAsset,
@@ -389,6 +401,7 @@ export function AdminContentForge() {
 
       setHeroName("");
       setHeroFaction("");
+      setHeroRarity("legendary");
       setHeroRole("support");
       setHeroDescription("");
       setAvatar(null);
@@ -565,6 +578,13 @@ export function AdminContentForge() {
               </option>
             ))}
           </select>
+          <select value={heroRarity} onChange={(event) => setHeroRarity(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
+            {heroRarities.map((rarity) => (
+              <option key={rarity.value} value={rarity.value}>
+                {rarity.label}
+              </option>
+            ))}
+          </select>
           <label className="block text-sm text-zinc-300">
             Главное фото
             <input type="file" accept="image/*" onChange={(event) => setAvatar(event.target.files?.[0] ?? null)} required className="mt-2 block w-full text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-relic file:px-3 file:py-2 file:font-bold file:text-black" />
@@ -615,6 +635,13 @@ export function AdminContentForge() {
               {raidRoles.map((role) => (
                 <option key={role.value} value={role.value}>
                   {role.label}
+                </option>
+              ))}
+            </select>
+            <select value={editHeroRarity} onChange={(event) => setEditHeroRarity(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
+              {heroRarities.map((rarity) => (
+                <option key={rarity.value} value={rarity.value}>
+                  {rarity.label}
                 </option>
               ))}
             </select>

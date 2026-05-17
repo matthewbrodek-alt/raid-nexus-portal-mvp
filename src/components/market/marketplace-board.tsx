@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, Filter, MessageSquare, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import { Eye, Filter, MessageSquare, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { GlassPanel } from "@/components/ui/glass-panel";
@@ -12,6 +12,7 @@ import type { MarketplaceAccount } from "@/lib/types";
 
 type FirestoreMarketplaceAccount = MarketplaceAccount & {
   screenshot?: { secureUrl?: string; url?: string } | null;
+  gallery?: Array<{ secureUrl?: string; url?: string }> | null;
   createdAt?: { seconds?: number };
 };
 
@@ -68,6 +69,8 @@ function normalizeAccount(item: FirestoreMarketplaceAccount): MarketplaceAccount
   return {
     ...item,
     screenshotUrl: item.screenshotUrl ?? item.screenshot?.secureUrl ?? item.screenshot?.url,
+    mythicCount: item.mythicCount ?? 0,
+    galleryUrls: item.galleryUrls ?? item.gallery?.map((asset) => asset.secureUrl ?? asset.url ?? "").filter(Boolean) ?? [],
     status: item.status ?? "available",
     heroes: item.heroes ?? [],
     tags: item.tags ?? []
@@ -97,11 +100,13 @@ export function MarketplaceBoard() {
   const t = copy[language];
   const [accounts, setAccounts] = useState<MarketplaceAccount[]>(marketplaceHighlights.map((item) => ({ ...item, status: "available" as const })));
   const [search, setSearch] = useState("");
+  const [minMythical, setMinMythical] = useState("");
   const [minLegendary, setMinLegendary] = useState("");
   const [minVoid, setMinVoid] = useState("");
   const [minLevel, setMinLevel] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [selectedAccount, setSelectedAccount] = useState<MarketplaceAccount | null>(null);
+  const [previewImage, setPreviewImage] = useState("");
 
   useEffect(() => {
     const accountsQuery = query(collection(db, collections.marketplaceAccounts), where("status", "in", ["available", "reserved"]));
@@ -117,6 +122,7 @@ export function MarketplaceBoard() {
 
   const filteredAccounts = useMemo(() => {
     const queryText = search.trim().toLowerCase();
+    const mythical = Number(minMythical) || 0;
     const legendary = Number(minLegendary) || 0;
     const voidCount = Number(minVoid) || 0;
     const level = Number(minLevel) || 0;
@@ -127,16 +133,18 @@ export function MarketplaceBoard() {
 
       return (
         (!queryText || haystack.includes(queryText)) &&
+        (item.mythicCount ?? 0) >= mythical &&
         item.legendaryCount >= legendary &&
         item.voidCount >= voidCount &&
         item.level >= level &&
         item.price <= price
       );
     });
-  }, [accounts, maxPrice, minLegendary, minLevel, minVoid, search]);
+  }, [accounts, maxPrice, minLegendary, minLevel, minMythical, minVoid, search]);
 
   function resetFilters() {
     setSearch("");
+    setMinMythical("");
     setMinLegendary("");
     setMinVoid("");
     setMinLevel("");
@@ -161,6 +169,7 @@ export function MarketplaceBoard() {
           <div className="grid gap-3">
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t.search} className="rounded-md border-white/10 bg-black/40 text-sm text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
             <div className="grid gap-3 sm:grid-cols-2">
+              <input type="number" value={minMythical} onChange={(event) => setMinMythical(event.target.value)} placeholder={language === "ru" ? "Мифические от" : "Mythical from"} className="rounded-md border-white/10 bg-black/40 text-sm text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
               <input type="number" value={minLegendary} onChange={(event) => setMinLegendary(event.target.value)} placeholder={t.minLegendary} className="rounded-md border-white/10 bg-black/40 text-sm text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
               <input type="number" value={minVoid} onChange={(event) => setMinVoid(event.target.value)} placeholder={t.minVoid} className="rounded-md border-white/10 bg-black/40 text-sm text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
               <input type="number" value={minLevel} onChange={(event) => setMinLevel(event.target.value)} placeholder={t.minLevel} className="rounded-md border-white/10 bg-black/40 text-sm text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
@@ -193,10 +202,14 @@ export function MarketplaceBoard() {
                 </div>
                 <p className="shrink-0 text-2xl font-black text-relic">{formatPrice(account.price)} RUB</p>
               </div>
-              <div className="grid grid-cols-3 gap-2 text-sm">
+              <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
                 <div className="rounded-md border border-white/10 bg-black/25 p-3">
                   <p className="text-zinc-500">{t.level}</p>
                   <p className="font-bold text-white">{account.level}</p>
+                </div>
+                <div className="rounded-md border border-white/10 bg-black/25 p-3">
+                  <p className="text-zinc-500">{language === "ru" ? "Мифические" : "Mythical"}</p>
+                  <p className="font-bold text-white">{account.mythicCount ?? 0}</p>
                 </div>
                 <div className="rounded-md border border-white/10 bg-black/25 p-3">
                   <p className="text-zinc-500">{t.legendary}</p>
@@ -255,11 +268,24 @@ export function MarketplaceBoard() {
                     <span key={tag} className="rounded-full border border-white/10 px-3 py-1 text-xs text-zinc-300">{tag}</span>
                   ))}
                 </div>
+                {(selectedAccount.galleryUrls ?? []).length > 0 ? (
+                  <div className="mt-6">
+                    <h3 className="text-lg font-black text-white">{language === "ru" ? "Скриншоты аккаунта" : "Account screenshots"}</h3>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                      {(selectedAccount.galleryUrls ?? []).slice(0, 5).map((url, index) => (
+                        <button key={url} type="button" onClick={() => setPreviewImage(url)} className="overflow-hidden rounded-[14px] border border-white/10 bg-black/30 transition hover:border-relic/50">
+                          <img src={url} alt={`Account screenshot ${index + 1}`} className="aspect-video w-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
               <div className="rounded-lg border border-relic/20 bg-relic/[0.06] p-5">
                 <p className="text-4xl font-black text-relic">{formatPrice(selectedAccount.price)} RUB</p>
                 <div className="mt-5 grid gap-2 text-sm">
                   <p className="flex items-center justify-between border-b border-white/10 pb-2 text-zinc-400"><span>{t.level}</span><b className="text-white">{selectedAccount.level}</b></p>
+                  <p className="flex items-center justify-between border-b border-white/10 pb-2 text-zinc-400"><span>{language === "ru" ? "Мифические" : "Mythical"}</span><b className="text-white">{selectedAccount.mythicCount ?? 0}</b></p>
                   <p className="flex items-center justify-between border-b border-white/10 pb-2 text-zinc-400"><span>{t.legendary}</span><b className="text-white">{selectedAccount.legendaryCount}</b></p>
                   <p className="flex items-center justify-between border-b border-white/10 pb-2 text-zinc-400"><span>{t.void}</span><b className="text-white">{selectedAccount.voidCount}</b></p>
                   {selectedAccount.power ? <p className="flex items-center justify-between border-b border-white/10 pb-2 text-zinc-400"><span>{t.power}</span><b className="text-white">{formatPrice(selectedAccount.power)}</b></p> : null}
@@ -273,6 +299,22 @@ export function MarketplaceBoard() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {previewImage ? (
+        <div className="fixed inset-0 z-[60] grid place-items-center bg-black/86 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true">
+          <div className="relative max-h-[92dvh] w-full max-w-5xl overflow-hidden rounded-[18px] border border-relic/25 bg-black shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setPreviewImage("")}
+              className="absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-[14px] border border-relic/35 bg-black/70 text-zinc-300 hover:text-white"
+              aria-label="Close screenshot"
+            >
+              <X size={18} />
+            </button>
+            <img src={previewImage} alt="Account screenshot" className="max-h-[92dvh] w-full object-contain" />
           </div>
         </div>
       ) : null}

@@ -24,6 +24,7 @@ export type MarketplaceAccount = {
   id: string;
   title: string;
   level: number;
+  mythicCount?: number;
   legendaryCount: number;
   voidCount: number;
   price: number;

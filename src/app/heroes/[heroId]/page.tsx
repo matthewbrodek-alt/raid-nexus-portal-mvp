@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Images, ScrollText, Shield } from "lucide-react";
+import { ArrowLeft, Images, ScrollText } from "lucide-react";
 import { HeroYoutube } from "@/components/heroes/hero-youtube";
 import { PageShell } from "@/components/layout/page-shell";
 import { GlassPanel } from "@/components/ui/glass-panel";
@@ -30,7 +30,7 @@ export default async function HeroDetailPage({ params }: HeroDetailPageProps) {
     <PageShell
       eyebrow="Hero DB"
       title={hero.name}
-      description={`${hero.faction} / ${hero.rarity} / ${hero.role}. Подробная страница героя с комментарием, галереей и YouTube-гайдом под hero-блоком.`}
+      description={`${hero.faction} / ${hero.rarity} / ${hero.role}. Подробная страница героя с описанием, сборкой и YouTube-гайдом.`}
     >
       <Link href="/heroes" className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-relic">
         <ArrowLeft size={16} />
@@ -64,29 +64,20 @@ export default async function HeroDetailPage({ params }: HeroDetailPageProps) {
           <GlassPanel className="p-6">
             <div className="mb-4 flex items-center gap-3">
               <ScrollText className="text-relic" />
-              <h2 className="text-2xl font-bold text-white">Комментарий</h2>
+              <h2 className="text-2xl font-bold text-white">Описание</h2>
             </div>
             <p className="text-sm leading-7 text-zinc-300">{hero.comment}</p>
           </GlassPanel>
           <GlassPanel className="p-6">
             <div className="mb-4 flex items-center gap-3">
               <Images className="text-relic" />
-              <h2 className="text-2xl font-bold text-white">Галерея</h2>
+              <h2 className="text-2xl font-bold text-white">Сборка героя</h2>
             </div>
             <div className="grid grid-cols-3 gap-3">
               {[1, 2, 3].map((slot) => (
                 <div key={slot} className="aspect-video rounded-lg border border-white/10 bg-white/[0.04]" />
               ))}
             </div>
-          </GlassPanel>
-          <GlassPanel className="p-6">
-            <div className="mb-4 flex items-center gap-3">
-              <Shield className="text-relic" />
-              <h2 className="text-2xl font-bold text-white">Использование</h2>
-            </div>
-            <p className="text-sm leading-7 text-zinc-400">
-              Блок готов для данных из Firestore: билды, мастерки, артефакты, blessings, team comps и заметки админа.
-            </p>
           </GlassPanel>
         </div>
       </div>

@@ -5,22 +5,29 @@ import { CalendarDays, Crown, Home, Menu, MessageCircle, Newspaper, Shield, Shop
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { RaidLogo } from "@/components/brand/raid-logo";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { useLanguage, type Language } from "@/lib/i18n/use-language";
 
 const mobileLinks = [
-  { label: "Главная", href: "/", icon: Home },
-  { label: "Новости", href: "#news", icon: Newspaper },
-  { label: "Герои", href: "/heroes", icon: Swords },
-  { label: "Маркет", href: "/marketplace", icon: ShoppingBag },
-  { label: "Календарь", href: "#calendar", icon: CalendarDays },
-  { label: "Кланы", href: "/clans", icon: Shield },
-  { label: "Чат", href: "/chat", icon: MessageCircle },
-  { label: "Донат", href: "/topup", icon: Crown },
-  { label: "Личный кабинет", href: "/dashboard", icon: UserRound }
+  { label: { ru: "Главная", en: "Home" }, href: "/", icon: Home },
+  { label: { ru: "Новости", en: "News" }, href: "#news", icon: Newspaper },
+  { label: { ru: "Герои", en: "Heroes" }, href: "/heroes", icon: Swords },
+  { label: { ru: "Маркет", en: "Market" }, href: "/marketplace", icon: ShoppingBag },
+  { label: { ru: "Календарь", en: "Calendar" }, href: "#calendar", icon: CalendarDays },
+  { label: { ru: "Кланы", en: "Clans" }, href: "/clans", icon: Shield },
+  { label: { ru: "Чат", en: "Chat" }, href: "/chat", icon: MessageCircle },
+  { label: { ru: "Донат", en: "Donate" }, href: "/topup", icon: Crown },
+  { label: { ru: "Личный кабинет", en: "Dashboard" }, href: "/dashboard", icon: UserRound }
 ];
+
+function text(value: { ru: string; en: string }, language: Language) {
+  return value[language];
+}
 
 export function HomeMobileHeader() {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const { language } = useLanguage();
 
   useEffect(() => {
     setMounted(true);
@@ -40,10 +47,14 @@ export function HomeMobileHeader() {
             type="button"
             onClick={() => setOpen(false)}
             className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] border border-white/10 bg-black/50 text-zinc-300 transition hover:border-relic/50 hover:text-relic"
-            aria-label="Закрыть меню"
+            aria-label={language === "ru" ? "Закрыть меню" : "Close menu"}
           >
             <X size={18} />
           </button>
+        </div>
+
+        <div className="mb-4">
+          <LanguageSwitcher />
         </div>
 
         <nav className="space-y-2">
@@ -52,13 +63,13 @@ export function HomeMobileHeader() {
 
             return (
               <Link
-                key={item.label}
+                key={item.href}
                 href={item.href}
                 onClick={() => setOpen(false)}
                 className="raid-side-link flex h-14 items-center gap-4 border border-white/5 bg-black/55 px-4 text-sm font-semibold uppercase tracking-[0.1em] text-zinc-300 transition hover:border-relic/35 hover:text-relic"
               >
                 <Icon className="relative z-10 h-5 w-5 shrink-0" />
-                <span className="relative z-10">{item.label}</span>
+                <span className="relative z-10">{text(item.label, language)}</span>
               </Link>
             );
           })}
@@ -77,7 +88,7 @@ export function HomeMobileHeader() {
           type="button"
           onClick={() => setOpen(true)}
           className="grid h-12 w-12 shrink-0 place-items-center rounded-[16px] border border-relic/40 bg-black/55 text-relic shadow-[0_0_24px_rgba(216,168,71,0.16)]"
-          aria-label="Открыть меню"
+          aria-label={language === "ru" ? "Открыть меню" : "Open menu"}
         >
           <Menu size={24} />
         </button>

@@ -39,6 +39,7 @@ export function AdminMarketplaceManager() {
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [level, setLevel] = useState("");
+  const [mythicCount, setMythicCount] = useState("");
   const [legendaryCount, setLegendaryCount] = useState("");
   const [voidCount, setVoidCount] = useState("");
   const [power, setPower] = useState("");
@@ -46,6 +47,7 @@ export function AdminMarketplaceManager() {
   const [tags, setTags] = useState("");
   const [description, setDescription] = useState("");
   const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [galleryScreenshots, setGalleryScreenshots] = useState<FileList | null>(null);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
 
@@ -64,11 +66,14 @@ export function AdminMarketplaceManager() {
 
     try {
       const uploaded = screenshot ? await uploadMarketplaceImage(screenshot) : null;
+      const galleryFiles = Array.from(galleryScreenshots ?? []).slice(0, 5);
+      const galleryAssets = await Promise.all(galleryFiles.map((file) => uploadMarketplaceImage(file)));
 
       await addDoc(collection(db, collections.marketplaceAccounts), {
         title: title.trim(),
         price: Number(price) || 0,
         level: Number(level) || 1,
+        mythicCount: Number(mythicCount) || 0,
         legendaryCount: Number(legendaryCount) || 0,
         voidCount: Number(voidCount) || 0,
         power: Number(power) || 0,
@@ -84,6 +89,13 @@ export function AdminMarketplaceManager() {
               publicId: uploaded.publicId
             }
           : null,
+        gallery: galleryAssets.map((asset, index) => ({
+          secureUrl: asset.secureUrl,
+          url: asset.url,
+          publicId: asset.publicId,
+          sortOrder: index + 1
+        })),
+        galleryUrls: galleryAssets.map((asset) => asset.secureUrl ?? asset.url).filter(Boolean),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
@@ -91,6 +103,7 @@ export function AdminMarketplaceManager() {
       setTitle("");
       setPrice("");
       setLevel("");
+      setMythicCount("");
       setLegendaryCount("");
       setVoidCount("");
       setPower("");
@@ -98,6 +111,7 @@ export function AdminMarketplaceManager() {
       setTags("");
       setDescription("");
       setScreenshot(null);
+      setGalleryScreenshots(null);
       setStatus("Marketplace lot added.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not add marketplace lot.");
@@ -133,6 +147,7 @@ export function AdminMarketplaceManager() {
             <input type="number" value={price} onChange={(event) => setPrice(event.target.value)} required placeholder="Price, RUB" className="rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
             <input type="number" value={level} onChange={(event) => setLevel(event.target.value)} placeholder="Account level" className="rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
             <input type="number" value={power} onChange={(event) => setPower(event.target.value)} placeholder="Power" className="rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+            <input type="number" value={mythicCount} onChange={(event) => setMythicCount(event.target.value)} placeholder="Mythical count" className="rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
             <input type="number" value={legendaryCount} onChange={(event) => setLegendaryCount(event.target.value)} placeholder="Legendary count" className="rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
             <input type="number" value={voidCount} onChange={(event) => setVoidCount(event.target.value)} placeholder="Void count" className="rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
           </div>
@@ -143,6 +158,11 @@ export function AdminMarketplaceManager() {
             <ImagePlus size={17} className="text-relic" />
             {screenshot ? screenshot.name : "Upload main screenshot"}
             <input type="file" accept="image/*" className="hidden" onChange={(event) => setScreenshot(event.target.files?.[0] ?? null)} />
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 rounded-md border border-white/10 bg-black/25 p-3 text-sm text-zinc-300 hover:text-white">
+            <ImagePlus size={17} className="text-relic" />
+            {galleryScreenshots?.length ? `${Math.min(galleryScreenshots.length, 5)} extra screenshots selected` : "Upload up to 5 extra screenshots"}
+            <input type="file" accept="image/*" multiple className="hidden" onChange={(event) => setGalleryScreenshots(event.target.files)} />
           </label>
           <button disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
             <Save size={16} />
@@ -157,7 +177,7 @@ export function AdminMarketplaceManager() {
               <div className="min-w-0">
                 <p className="truncate font-semibold text-white">{lot.title}</p>
                 <p className="truncate text-xs text-zinc-500">
-                  {lot.level} lvl / {lot.legendaryCount} legendary / {lot.price} RUB
+                  {lot.level} lvl / {lot.mythicCount ?? 0} mythical / {lot.legendaryCount} legendary / {lot.voidCount} void / {lot.price} RUB
                 </p>
               </div>
               <button type="button" onClick={() => void removeLot(lot.id)} className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-blood/30 text-ember hover:bg-blood/15">

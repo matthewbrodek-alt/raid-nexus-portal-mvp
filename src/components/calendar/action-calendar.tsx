@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { db } from "@/lib/firebase/client";
@@ -172,20 +172,6 @@ export function ActionCalendar({ events }: ActionCalendarProps) {
             </div>
           );
         })}
-      </div>
-
-      <div className="mt-4 max-h-36 space-y-2 overflow-y-auto pr-1">
-        {calendarEvents.slice(0, 4).map((event) => (
-          <div key={`${event.title}-${event.date}`} className="raid-glow-button grid grid-cols-[44px_1fr] items-center gap-3 border border-white/10 bg-black/24 p-2.5">
-            <span className="relative z-10 grid h-11 w-11 place-items-center rounded-[12px] border border-relic/25 bg-relic/10 text-relic">
-              <CalendarDays size={20} />
-            </span>
-            <div className="relative z-10 min-w-0">
-              <h4 className="truncate font-[var(--font-cinzel)] text-sm font-semibold leading-tight text-white">{event.title}</h4>
-              <p className="mt-1 truncate text-xs text-zinc-500">{event.date}</p>
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );

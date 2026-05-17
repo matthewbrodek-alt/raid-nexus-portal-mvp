@@ -11,10 +11,10 @@ export function useLanguage() {
 
   useEffect(() => {
     const saved = window.localStorage.getItem(storageKey);
+    const initialLanguage = saved === "ru" || saved === "en" ? saved : "ru";
 
-    if (saved === "ru" || saved === "en") {
-      setLanguageState(saved);
-    }
+    setLanguageState(initialLanguage);
+    document.documentElement.lang = initialLanguage;
 
     function handleLanguageChange(event: Event) {
       const customEvent = event as CustomEvent<Language>;
