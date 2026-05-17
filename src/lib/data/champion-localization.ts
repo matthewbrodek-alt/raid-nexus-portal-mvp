@@ -1,61 +1,26 @@
 import type { ChampionMultiplierEntry } from "@/lib/data/champion-multipliers";
+import { raidLegendsRussianNames } from "@/lib/data/raid-legends-russian-names";
 
-const officialLikeRussianNames: Record<string, string> = {
-  "Alaz the Sunbearer": "Алаз Солнценосный",
-  "Anaxia the Reborn": "Анаксия Возрожденная",
-  "Androc the Glorious": "Андрок Славный",
-  "Aphidus the Hivelord": "Афидус Повелитель Улья",
-  Arbais: "Арбаис",
-  Arbiter: "Арбитр",
-  "Arix the Justiciar": "Арикс Юстициар",
-  "Cardiel": "Кардиэль",
-  "Claidna": "Клейдна",
-  "Duchess Lilitu": "Герцогиня Лилиту",
-  "Frolni the Mechanist": "Фролни Механист",
-  "Galathir": "Галатир",
-  "Gharol Bloodmaul": "Гарол Кровавая Кувалда",
-  "Gizmak the Terrible": "Гизмак Ужасный",
-  "Harima": "Харима",
-  "Karnage the Anarch": "Карнаж Анарх",
-  "Khoronar": "Хоронар",
-  "Krisk the Ageless": "Криск Вневременный",
-  "Krixia": "Криксия",
-  "Lady Mikage": "Леди Микаге",
-  "Lazarius the Incarnate": "Лазариус Воплощенный",
-  "Marichka the Unbreakable": "Маричка Несокрушимая",
-  "Mezomel Luperfang": "Мезомель Луперфанг",
-  "Nais the Shadowthief": "Наис Похититель Теней",
-  "Siegfrund the Nephilim": "Зигфрунд Нефилим",
-  "Siphi the Lost Bride": "Сифи Потерянная Невеста",
-  "Taras the Fierce": "Тарас Свирепый",
-  "The Calamitus": "Каламитус",
-  "Trunda Giltmallet": "Трунда Позолоченная Булава",
-  "Valkyrie": "Валькирия",
-  "Venus": "Венера",
-  "Warlord": "Военачальник",
-  "Wight King Narses": "Король нежити Нарсес",
-  "Wight Queen Ankora": "Королева нежити Анкора",
-  "Xenomorph": "Ксеноморф",
-  "Yumeko": "Юмеко",
-  "Zavia": "Завия",
-  "Zinogre Blademaster": "Зиногр Мастер Клинка"
+const manualRussianNameOverrides: Record<string, string> = {
+  "Tekteon Fissureflesh": "Тектеон Фиссурфлеш"
 };
 
 const russianAliases: Record<string, string[]> = {
   Arbiter: ["арба", "арбитр"],
   "Duchess Lilitu": ["герцогиня", "лилиту", "дюшес"],
   Harima: ["харима"],
-  "Krisk the Ageless": ["криск"],
+  "Joan the Luminant": ["джоан", "джоан озаренная"],
   "Lady Mikage": ["микаге", "леди микаге"],
   "Marichka the Unbreakable": ["маричка"],
   "Siphi the Lost Bride": ["сифи"],
   "Taras the Fierce": ["тарас"],
+  "Tekteon Fissureflesh": ["тектеон", "тектеон фиссурфлеш"],
   "Trunda Giltmallet": ["трунда"],
   Warlord: ["варлорд", "военачальник"],
   Yumeko: ["юмеко"]
 };
 
-const replacements: Array<[RegExp, string]> = [
+const transliterationPairs: Array<[RegExp, string]> = [
   [/tion/g, "шн"],
   [/sion/g, "жн"],
   [/ch/g, "ч"],
@@ -117,7 +82,7 @@ export function normalizeChampionSearch(value: string) {
 export function transliterateChampionName(value: string) {
   let prepared = value.toLowerCase();
 
-  for (const [pattern, replacement] of replacements) {
+  for (const [pattern, replacement] of transliterationPairs) {
     prepared = prepared.replace(pattern, replacement);
   }
 
@@ -132,12 +97,16 @@ export function transliterateChampionName(value: string) {
   return titleCase(transliterated);
 }
 
+export function formatEnglishChampionName(nameEn: string) {
+  return nameEn.replace(/\bthe\b/g, "The");
+}
+
 export function getChampionRussianName(champion: ChampionMultiplierEntry) {
   return champion.nameRu || getChampionRussianNameByEnglish(champion.nameEn);
 }
 
 export function getChampionRussianNameByEnglish(nameEn: string) {
-  return officialLikeRussianNames[nameEn] || transliterateChampionName(nameEn);
+  return raidLegendsRussianNames[nameEn] || manualRussianNameOverrides[nameEn] || transliterateChampionName(nameEn);
 }
 
 export function getChampionAliases(champion: ChampionMultiplierEntry) {
@@ -145,6 +114,7 @@ export function getChampionAliases(champion: ChampionMultiplierEntry) {
 
   return [
     champion.nameEn,
+    formatEnglishChampionName(champion.nameEn),
     champion.nameRu ?? "",
     russianName,
     transliterateChampionName(champion.nameEn),
@@ -153,12 +123,5 @@ export function getChampionAliases(champion: ChampionMultiplierEntry) {
 }
 
 export function getChampionSearchHaystack(champion: ChampionMultiplierEntry) {
-  return normalizeChampionSearch(
-    [
-      ...getChampionAliases(champion),
-      champion.rarity,
-      champion.faction,
-      ...champion.skills.map((skill) => `${skill.slot} ${skill.name} ${skill.multiplier} ${skill.form ?? ""}`)
-    ].join(" ")
-  );
+  return normalizeChampionSearch([...getChampionAliases(champion), champion.rarity, champion.faction].join(" "));
 }

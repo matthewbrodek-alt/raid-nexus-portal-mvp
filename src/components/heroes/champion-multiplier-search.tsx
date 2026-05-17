@@ -1,9 +1,10 @@
 "use client";
 
-import { ExternalLink, Search, Sparkles, Swords } from "lucide-react";
+import { ChevronDown, ChevronUp, ExternalLink, Search, Sparkles, Swords } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import {
+  formatEnglishChampionName,
   getChampionRussianName,
   getChampionSearchHaystack,
   normalizeChampionSearch
@@ -35,6 +36,9 @@ const copy: Record<
     multiplier: string;
     defaultForm: string;
     showMore: string;
+    showList: string;
+    hideList: string;
+    startSearch: string;
     noResults: string;
     lastUpdate: string;
     filters: Record<RarityFilter, string>;
@@ -42,13 +46,13 @@ const copy: Record<
   }
 > = {
   ru: {
-    eyebrow: "Damage multipliers",
-    title: "Множители мифических и легендарных героев",
+    eyebrow: "Множители урона",
+    title: "Мифические и легендарные герои",
     description:
-      "Список показывает только мифических и легендарных героев. Поиск работает по английскому имени, русскому имени, русской транслитерации, фракции и множителям навыков.",
+      "Список закрыт по умолчанию. Введите имя героя на русском или английском либо откройте список вручную.",
     totalLabel: "героев в базе",
-    searchLabel: "Поиск героя или множителя",
-    placeholder: "Например: Арбитр, Сифи, Тарас, Lady Mikage, 5.6 ATK...",
+    searchLabel: "Поиск героя",
+    placeholder: "Например: Джоан, Арбитр, Сифи, Taras, Joan...",
     foundHeroes: "Найдено героев",
     damageSkills: "навыков с уроном",
     source: "Источник",
@@ -58,8 +62,11 @@ const copy: Record<
     multiplier: "Множитель",
     defaultForm: "Основная",
     showMore: "Показать еще",
+    showList: "Показать список",
+    hideList: "Скрыть список",
+    startSearch: "Введите минимум 2 символа или откройте список вручную.",
     noResults: "Герой не найден. Попробуйте русское или английское имя, либо укоротите запрос.",
-    lastUpdate: "База множителей: мифические и легендарные герои",
+    lastUpdate: "Русские имена взяты из raid-legends.ru",
     filters: {
       all: "Все",
       Mythical: "Мифические",
@@ -72,12 +79,12 @@ const copy: Record<
   },
   en: {
     eyebrow: "Damage multipliers",
-    title: "Mythical and Legendary champion multipliers",
+    title: "Mythical and Legendary champions",
     description:
-      "The list includes only Mythical and Legendary champions. Search supports English names, Russian names, Russian transliteration, factions and skill multipliers.",
+      "The full list is collapsed by default. Search by Russian or English champion name, or open the list manually.",
     totalLabel: "champions in database",
-    searchLabel: "Search champion or multiplier",
-    placeholder: "For example: Arbiter, Siphi, Taras, Lady Mikage, 5.6 ATK...",
+    searchLabel: "Search champion",
+    placeholder: "For example: Joan, Arbiter, Siphi, Taras...",
     foundHeroes: "Champions found",
     damageSkills: "damage skills",
     source: "Source",
@@ -87,8 +94,11 @@ const copy: Record<
     multiplier: "Multiplier",
     defaultForm: "Default",
     showMore: "Show more",
+    showList: "Show list",
+    hideList: "Hide list",
+    startSearch: "Enter at least 2 characters or open the list manually.",
     noResults: "Champion not found. Try the English/Russian name or shorten the query.",
-    lastUpdate: "Multiplier database: Mythical and Legendary champions",
+    lastUpdate: "Russian names sourced from raid-legends.ru",
     filters: {
       all: "All",
       Mythical: "Mythical",
@@ -101,12 +111,11 @@ const copy: Record<
   }
 };
 
-function getDisplayName(champion: ChampionMultiplierEntry, language: Language) {
-  return language === "ru" ? getChampionRussianName(champion) : champion.nameEn;
-}
+function getFormattedDisplayName(champion: ChampionMultiplierEntry, language: Language) {
+  const englishName = formatEnglishChampionName(champion.nameEn);
+  const russianName = getChampionRussianName(champion);
 
-function getSecondaryName(champion: ChampionMultiplierEntry, language: Language) {
-  return language === "ru" ? champion.nameEn : getChampionRussianName(champion);
+  return language === "ru" ? `${russianName} (${englishName})` : `${englishName} (${russianName})`;
 }
 
 function getRarityOrder(rarity: ChampionMultiplierEntry["rarity"]) {
@@ -119,13 +128,19 @@ export function ChampionMultiplierSearch() {
   const [query, setQuery] = useState("");
   const [rarityFilter, setRarityFilter] = useState<RarityFilter>("all");
   const [visibleCount, setVisibleCount] = useState(18);
+  const [isListOpen, setIsListOpen] = useState(false);
   const normalizedQuery = normalizeChampionSearch(query);
+  const shouldShowResults = isListOpen || normalizedQuery.length >= 2;
 
   useEffect(() => {
     setVisibleCount(18);
-  }, [normalizedQuery, rarityFilter]);
+  }, [normalizedQuery, rarityFilter, isListOpen]);
 
   const filteredChampions = useMemo(() => {
+    if (!shouldShowResults) {
+      return [];
+    }
+
     return allChampionMultipliers
       .filter((champion) => rarityFilter === "all" || champion.rarity === rarityFilter)
       .filter((champion) => {
@@ -142,9 +157,9 @@ export function ChampionMultiplierSearch() {
           return rarityDifference;
         }
 
-        return getDisplayName(a, language).localeCompare(getDisplayName(b, language), language === "ru" ? "ru" : "en");
+        return getChampionRussianName(a).localeCompare(getChampionRussianName(b), language === "ru" ? "ru" : "en");
       });
-  }, [language, normalizedQuery, rarityFilter]);
+  }, [language, normalizedQuery, rarityFilter, shouldShowResults]);
 
   const results = filteredChampions.slice(0, visibleCount);
   const totalSkills = results.reduce((sum, champion) => sum + champion.skills.length, 0);
@@ -197,18 +212,44 @@ export function ChampionMultiplierSearch() {
               <button
                 key={item}
                 type="button"
-                onClick={() => setRarityFilter(item)}
+                onClick={() => {
+                  setRarityFilter(item);
+                  setIsListOpen(true);
+                }}
                 className={`rounded-md border px-4 py-2 text-sm font-bold transition ${
-                  rarityFilter === item ? "border-relic/55 bg-relic text-black" : "border-white/10 bg-black/30 text-zinc-300 hover:border-relic/50 hover:text-relic"
+                  rarityFilter === item
+                    ? "border-relic/55 bg-relic text-black"
+                    : "border-white/10 bg-black/30 text-zinc-300 hover:border-relic/50 hover:text-relic"
                 }`}
               >
                 {t.filters[item]}
               </button>
             ))}
+            <button
+              type="button"
+              onClick={() => setIsListOpen((current) => !current)}
+              className="inline-flex items-center gap-2 rounded-md border border-relic/30 bg-relic/[0.08] px-4 py-2 text-sm font-bold text-relic transition hover:bg-relic hover:text-black"
+            >
+              {isListOpen ? (
+                <>
+                  {t.hideList}
+                  <ChevronUp size={16} />
+                </>
+              ) : (
+                <>
+                  {t.showList}
+                  <ChevronDown size={16} />
+                </>
+              )}
+            </button>
           </div>
         </div>
 
-        {filteredChampions.length === 0 ? (
+        {!shouldShowResults ? (
+          <div className="mt-5 rounded-lg border border-white/10 bg-black/25 p-5 text-sm text-zinc-400">{t.startSearch}</div>
+        ) : null}
+
+        {shouldShowResults && filteredChampions.length === 0 ? (
           <div className="mt-5 rounded-lg border border-ember/20 bg-ember/[0.07] p-5 text-sm text-zinc-300">{t.noResults}</div>
         ) : null}
 
@@ -227,10 +268,7 @@ export function ChampionMultiplierSearch() {
               <div key={champion.nameEn} className="rounded-lg border border-white/10 bg-black/25">
                 <div className="flex flex-col gap-3 border-b border-white/10 p-4 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-xl font-bold text-white">{getDisplayName(champion, language)}</h3>
-                      <span className="text-sm text-zinc-500">/ {getSecondaryName(champion, language)}</span>
-                    </div>
+                    <h3 className="text-xl font-bold text-white">{getFormattedDisplayName(champion, language)}</h3>
                     <p className="mt-1 text-sm text-zinc-400">
                       {t.rarity[champion.rarity]} · {champion.faction}
                     </p>
