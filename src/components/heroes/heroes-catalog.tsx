@@ -2,22 +2,31 @@
 
 import { X } from "lucide-react";
 import { collection, deleteDoc, doc, onSnapshot, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { HeroCard } from "@/components/heroes/hero-card";
+import { getChampionRussianNameByEnglish, normalizeChampionSearch, transliterateChampionName } from "@/lib/data/champion-localization";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
+import { useLanguage } from "@/lib/i18n/use-language";
 import type { HeroProfile } from "@/lib/types";
 
 type FirestoreHero = {
   slug?: string;
   name?: string;
+  nameRu?: string;
   faction?: string;
   rarity?: string;
   role?: string;
   avatar?: { secureUrl?: string; url?: string };
   gallery?: Array<{ secureUrl?: string; url?: string }>;
   markdownComment?: string;
+};
+
+type HeroesCatalogProps = {
+  factionFilter?: string;
+  roleFilter?: string;
+  searchQuery?: string;
 };
 
 const raidFactions = [
@@ -71,12 +80,14 @@ function normalizeRarity(value?: string): HeroProfile["rarity"] {
   return "Legendary";
 }
 
-export function HeroesCatalog() {
+export function HeroesCatalog({ factionFilter = "all", roleFilter = "all", searchQuery = "" }: HeroesCatalogProps) {
   const { profile } = useAuth();
+  const { language } = useLanguage();
   const [heroes, setHeroes] = useState<HeroProfile[]>([]);
   const [selectedHero, setSelectedHero] = useState<HeroProfile | null>(null);
   const [selectedScreenshot, setSelectedScreenshot] = useState("");
   const [editName, setEditName] = useState("");
+  const [editNameRu, setEditNameRu] = useState("");
   const [editFaction, setEditFaction] = useState("");
   const [editRarity, setEditRarity] = useState<HeroProfile["rarity"]>("Legendary");
   const [editRole, setEditRole] = useState("support");
@@ -95,6 +106,7 @@ export function HeroesCatalog() {
             id: item.id,
             slug: data.slug ?? item.id,
             name: data.name ?? "Unknown Hero",
+            nameRu: data.nameRu,
             faction: data.faction ?? "Unknown",
             rarity: normalizeRarity(data.rarity),
             role: data.role ?? "support",
@@ -111,6 +123,7 @@ export function HeroesCatalog() {
   function openHero(hero: HeroProfile) {
     setSelectedHero(hero);
     setEditName(hero.name);
+    setEditNameRu(hero.nameRu ?? getChampionRussianNameByEnglish(hero.name));
     setEditFaction(hero.faction);
     setEditRarity(hero.rarity);
     setEditRole(raidRoles.some((role) => role.value === hero.role) ? hero.role : "support");
@@ -124,12 +137,49 @@ export function HeroesCatalog() {
 
     await updateDoc(doc(db, collections.heroes, selectedHero.id), {
       name: editName.trim(),
+      nameRu: editNameRu.trim(),
       faction: editFaction || "Unknown",
       rarity: editRarity.toLowerCase(),
       role: editRole,
       markdownComment: editComment.trim(),
       updatedAt: serverTimestamp()
     });
+  }
+
+  const filteredHeroes = useMemo(() => {
+    const normalizedQuery = normalizeChampionSearch(searchQuery);
+
+    return heroes.filter((hero) => {
+      const matchesFaction = factionFilter === "all" || hero.faction === factionFilter;
+      const matchesRole = roleFilter === "all" || hero.role === roleFilter;
+
+      if (!matchesFaction || !matchesRole) {
+        return false;
+      }
+
+      if (normalizedQuery.length < 2) {
+        return true;
+      }
+
+      const haystack = normalizeChampionSearch(
+        [
+          hero.name,
+          hero.nameRu ?? "",
+          getChampionRussianNameByEnglish(hero.name),
+          transliterateChampionName(hero.name),
+          hero.faction,
+          hero.role,
+          hero.rarity,
+          hero.comment
+        ].join(" ")
+      );
+
+      return haystack.includes(normalizedQuery);
+    });
+  }, [factionFilter, heroes, roleFilter, searchQuery]);
+
+  function getSelectedHeroName(hero: HeroProfile) {
+    return language === "ru" ? hero.nameRu || getChampionRussianNameByEnglish(hero.name) : hero.name;
   }
 
   async function deleteSelectedHero() {
@@ -143,9 +193,9 @@ export function HeroesCatalog() {
 
   return (
     <>
-      {heroes.length > 0 ? (
+      {filteredHeroes.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {heroes.map((hero) => (
+          {filteredHeroes.map((hero) => (
             <button key={hero.id} type="button" onClick={() => openHero(hero)} className="block text-left transition hover:-translate-y-1">
               <HeroCard hero={hero} />
             </button>
@@ -153,9 +203,11 @@ export function HeroesCatalog() {
         </div>
       ) : (
         <div className="rounded-lg border border-white/10 bg-black/25 p-6 text-center">
-          <h2 className="text-2xl font-black text-white">База героев пока пустая</h2>
+          <h2 className="text-2xl font-black text-white">{heroes.length === 0 ? "База героев пока пустая" : "Герои не найдены"}</h2>
           <p className="mt-2 text-sm leading-6 text-zinc-400">
-            Добавь героев через Content Forge в админ-панели. После этого их можно будет открывать, редактировать и удалять здесь.
+            {heroes.length === 0
+              ? "Добавь героев через Content Forge в админ-панели. После этого их можно будет открывать, редактировать и удалять здесь."
+              : "Измени поисковый запрос, фракцию или роль, чтобы увидеть другие карточки героев."}
           </p>
         </div>
       )}
@@ -173,7 +225,8 @@ export function HeroesCatalog() {
             >
               <div className="flex h-full flex-col justify-end">
                 <p className="text-sm text-relic">{selectedHero.faction}</p>
-                <h2 className="text-4xl font-black text-white">{selectedHero.name}</h2>
+                <h2 className="text-4xl font-black text-white">{getSelectedHeroName(selectedHero)}</h2>
+                {language === "ru" && getSelectedHeroName(selectedHero) !== selectedHero.name ? <p className="mt-1 text-sm text-zinc-300">{selectedHero.name}</p> : null}
                 <span className="mt-4 w-fit rounded-md border border-relic/30 bg-relic/10 px-3 py-2 text-sm font-bold text-relic">
                   {selectedHero.rarity}
                 </span>
@@ -194,7 +247,8 @@ export function HeroesCatalog() {
               {canManageHeroes ? (
                 <div className="space-y-3 rounded-[18px] border border-relic/20 bg-relic/[0.06] p-5">
                   <h3 className="text-xl font-black text-white">Админ-правка</h3>
-                  <input value={editName} onChange={(event) => setEditName(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic" />
+                  <input value={editName} onChange={(event) => setEditName(event.target.value)} placeholder="English name" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+                  <input value={editNameRu} onChange={(event) => setEditNameRu(event.target.value)} placeholder="Русское имя" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
                   <select value={editFaction} onChange={(event) => setEditFaction(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
                     <option value="">Фракция</option>
                     {raidFactions.map((faction) => (

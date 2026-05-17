@@ -11,6 +11,7 @@ export type HeroProfile = {
   id: string;
   slug?: string;
   name: string;
+  nameRu?: string;
   faction: string;
   rarity: "Legendary" | "Epic" | "Rare" | "Mythical";
   role: string;

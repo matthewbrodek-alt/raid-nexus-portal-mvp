@@ -54,6 +54,7 @@ const heroRarities = [
 type ManagedHero = {
   id: string;
   name?: string;
+  nameRu?: string;
   faction?: string;
   rarity?: string;
   role?: string;
@@ -95,6 +96,7 @@ export function AdminContentForge() {
   const [newsBody, setNewsBody] = useState("");
   const [newsImage, setNewsImage] = useState<File | null>(null);
   const [heroName, setHeroName] = useState("");
+  const [heroNameRu, setHeroNameRu] = useState("");
   const [heroFaction, setHeroFaction] = useState("");
   const [heroRarity, setHeroRarity] = useState("legendary");
   const [heroRole, setHeroRole] = useState("support");
@@ -104,6 +106,7 @@ export function AdminContentForge() {
   const [managedHeroes, setManagedHeroes] = useState<ManagedHero[]>([]);
   const [editingHeroId, setEditingHeroId] = useState("");
   const [editHeroName, setEditHeroName] = useState("");
+  const [editHeroNameRu, setEditHeroNameRu] = useState("");
   const [editHeroFaction, setEditHeroFaction] = useState("");
   const [editHeroRarity, setEditHeroRarity] = useState("legendary");
   const [editHeroRole, setEditHeroRole] = useState("");
@@ -306,6 +309,7 @@ export function AdminContentForge() {
   function startEditHero(hero: ManagedHero) {
     setEditingHeroId(hero.id);
     setEditHeroName(hero.name ?? "");
+    setEditHeroNameRu(hero.nameRu ?? "");
     setEditHeroFaction(hero.faction ?? "");
     setEditHeroRarity(heroRarities.some((rarity) => rarity.value === hero.rarity) ? hero.rarity ?? "legendary" : "legendary");
     setEditHeroRole(raidRoles.some((role) => role.value === hero.role) ? hero.role ?? "support" : "support");
@@ -323,6 +327,7 @@ export function AdminContentForge() {
     try {
       await updateDoc(doc(db, collections.heroes, editingHeroId), {
         name: editHeroName.trim(),
+        nameRu: editHeroNameRu.trim(),
         faction: editHeroFaction.trim() || "Unknown",
         rarity: editHeroRarity,
         role: editHeroRole,
@@ -371,6 +376,7 @@ export function AdminContentForge() {
 
       await addDoc(collection(db, collections.heroes), {
         name,
+        nameRu: heroNameRu.trim(),
         slug,
         faction: heroFaction.trim() || "Unknown",
         affinity: "void",
@@ -400,6 +406,7 @@ export function AdminContentForge() {
       });
 
       setHeroName("");
+      setHeroNameRu("");
       setHeroFaction("");
       setHeroRarity("legendary");
       setHeroRole("support");
@@ -562,6 +569,7 @@ export function AdminContentForge() {
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <input value={heroName} onChange={(event) => setHeroName(event.target.value)} required placeholder="Имя героя" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+            <input value={heroNameRu} onChange={(event) => setHeroNameRu(event.target.value)} placeholder="Русское имя героя" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
             <select value={heroFaction} onChange={(event) => setHeroFaction(event.target.value)} required className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
               <option value="">Фракция</option>
               {raidFactions.map((faction) => (
@@ -623,6 +631,7 @@ export function AdminContentForge() {
 
           <div className="space-y-3 rounded-lg border border-white/10 bg-black/25 p-3">
             <input value={editHeroName} onChange={(event) => setEditHeroName(event.target.value)} placeholder="Имя героя" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+            <input value={editHeroNameRu} onChange={(event) => setEditHeroNameRu(event.target.value)} placeholder="Русское имя героя" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
             <select value={editHeroFaction} onChange={(event) => setEditHeroFaction(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
               <option value="">Фракция</option>
               {raidFactions.map((faction) => (
