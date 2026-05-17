@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   Bell,
@@ -24,20 +26,54 @@ import { LatestNewsRail } from "@/components/home/latest-news-rail";
 import { PortalOffers } from "@/components/home/portal-offers";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { raidEvents } from "@/lib/data/mock";
+import { useLanguage, type Language } from "@/lib/i18n/use-language";
 
 const sidebarLinks = [
-  { label: "Главная", href: "/", icon: HomeIcon, active: true },
-  { label: "Новости", href: "#news", icon: Newspaper },
-  { label: "Герои", href: "/heroes", icon: Swords },
-  { label: "Маркет", href: "/marketplace", icon: ShoppingBag },
-  { label: "Календарь", href: "#calendar", icon: CalendarDays },
-  { label: "Кланы", href: "/clans", icon: Shield },
-  { label: "Чат", href: "/chat", icon: MessageCircle },
-  { label: "Донат", href: "/topup", icon: Crown },
-  { label: "Личный кабинет", href: "/dashboard", icon: Users }
+  { label: { ru: "Главная", en: "Home" }, href: "/", icon: HomeIcon, active: true },
+  { label: { ru: "Новости", en: "News" }, href: "#news", icon: Newspaper },
+  { label: { ru: "Герои", en: "Heroes" }, href: "/heroes", icon: Swords },
+  { label: { ru: "Маркет", en: "Market" }, href: "/marketplace", icon: ShoppingBag },
+  { label: { ru: "Календарь", en: "Calendar" }, href: "#calendar", icon: CalendarDays },
+  { label: { ru: "Кланы", en: "Clans" }, href: "/clans", icon: Shield },
+  { label: { ru: "Чат", en: "Chat" }, href: "/chat", icon: MessageCircle },
+  { label: { ru: "Донат", en: "Donate" }, href: "/topup", icon: Crown },
+  { label: { ru: "Личный кабинет", en: "Dashboard" }, href: "/dashboard", icon: Users }
 ];
 
+const pageCopy: Record<
+  Language,
+  {
+    downloadTitle: string;
+    downloadText: string;
+    communityTitle: string;
+    notifications: string;
+    footerAccount: string;
+  }
+> = {
+  ru: {
+    downloadTitle: "Скачать RAID",
+    downloadText: "Начни своё приключение",
+    communityTitle: "Присоединяйся к сообществу",
+    notifications: "Уведомления",
+    footerAccount: "Личный кабинет"
+  },
+  en: {
+    downloadTitle: "Download RAID",
+    downloadText: "Start your adventure",
+    communityTitle: "Join the community",
+    notifications: "Notifications",
+    footerAccount: "Dashboard"
+  }
+};
+
+function text(value: { ru: string; en: string }, language: Language) {
+  return value[language];
+}
+
 export default function Home() {
+  const { language } = useLanguage();
+  const labels = pageCopy[language];
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-transparent text-pale">
       <HomeBackgroundVideo />
@@ -53,16 +89,17 @@ export default function Home() {
             <div className="space-y-2">
               {sidebarLinks.map((item) => {
                 const Icon = item.icon;
+                const label = text(item.label, language);
 
                 return (
                   <Link
-                    key={item.label}
+                    key={item.href}
                     href={item.href}
                     data-active={item.active ? "true" : "false"}
                     className="raid-side-link flex h-14 items-center gap-5 border border-transparent px-4 text-sm font-semibold uppercase tracking-[0.08em] text-zinc-400 transition hover:border-relic/35 hover:text-relic"
                   >
                     <Icon className="relative z-10 h-6 w-6 shrink-0" />
-                    <span className="relative z-10">{item.label}</span>
+                    <span className="relative z-10">{label}</span>
                   </Link>
                 );
               })}
@@ -77,14 +114,14 @@ export default function Home() {
               className="raid-glow-button flex items-center justify-between border border-relic/24 bg-black/32 px-5 py-4 text-left"
             >
               <span>
-                <span className="block text-xs font-bold uppercase tracking-[0.28em] text-relic">Скачать RAID</span>
-                <span className="mt-1 block text-sm text-zinc-400">Начни своё приключение</span>
+                <span className="block text-xs font-bold uppercase tracking-[0.28em] text-relic">{labels.downloadTitle}</span>
+                <span className="mt-1 block text-sm text-zinc-400">{labels.downloadText}</span>
               </span>
               <Download className="text-relic" size={22} />
             </Link>
 
             <div className="rounded-[18px] border border-relic/18 bg-black/28 p-5">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">Присоединяйся к сообществу</p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">{labels.communityTitle}</p>
               <div className="mt-4 flex gap-3">
                 {["D", "F", "X", "Y"].map((item) => (
                   <span key={item} className="grid h-9 w-9 place-items-center rounded-full bg-[#112033] text-xs font-black text-white">
@@ -105,7 +142,7 @@ export default function Home() {
             <div className="ml-auto flex items-center gap-5">
               <LanguageSwitcher />
               <span className="h-8 w-px bg-relic/18" />
-              <button className="raid-glow-button grid h-11 w-11 place-items-center border border-transparent text-zinc-300" aria-label="Notifications">
+              <button className="raid-glow-button grid h-11 w-11 place-items-center border border-transparent text-zinc-300" aria-label={labels.notifications}>
                 <Bell size={20} />
               </button>
               <span className="h-8 w-px bg-relic/18" />
@@ -133,7 +170,7 @@ export default function Home() {
           <footer className="mt-8 flex items-center justify-between border-t border-relic/12 py-5 text-xs uppercase tracking-[0.18em] text-zinc-500">
             <span>RAID Shadow Legends</span>
             <Link href="/dashboard" className="inline-flex items-center gap-2 text-relic transition hover:text-[#ffe1a0]">
-              Личный кабинет
+              {labels.footerAccount}
               <ChevronRight size={16} />
             </Link>
           </footer>

@@ -1,6 +1,8 @@
 export type RaidEvent = {
   title: string;
   date: string;
+  startDate?: string;
+  endDate?: string;
   description: string;
   type: "summon" | "tournament" | "topup" | "fusion";
 };

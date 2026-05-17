@@ -5,6 +5,7 @@ import { doc, onSnapshot } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
+import { useLanguage } from "@/lib/i18n/use-language";
 
 type BroadcastSettings = {
   title?: string;
@@ -34,7 +35,9 @@ function normalizeYoutubeUrl(value?: string) {
 }
 
 export function HomeBroadcast() {
+  const { language } = useLanguage();
   const [settings, setSettings] = useState<BroadcastSettings>(defaultSettings);
+  const defaultTitle = language === "ru" ? "Эмбрис в 9 леса, что он может!?" : "RAID Broadcast";
 
   useEffect(() => {
     return onSnapshot(doc(db, collections.siteSettings, "homeBroadcast"), (snapshot) => {
@@ -49,7 +52,7 @@ export function HomeBroadcast() {
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-bold uppercase tracking-[0.36em] text-relic">Raid Broadcast</p>
-          <h2 className="raid-title-metal mt-3 text-xl font-black uppercase leading-tight">{settings.title || defaultSettings.title}</h2>
+          <h2 className="raid-title-metal mt-3 text-xl font-black uppercase leading-tight">{settings.title && settings.title !== defaultSettings.title ? settings.title : defaultTitle}</h2>
         </div>
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-relic/55 text-relic shadow-[0_0_22px_rgba(216,168,71,0.16)]">
           <PlayCircle size={20} />
@@ -62,7 +65,7 @@ export function HomeBroadcast() {
         <iframe
           className="aspect-video w-full border border-relic/25 bg-black"
           src={playbackUrl}
-          title={settings.title || "Raid broadcast"}
+          title={settings.title && settings.title !== defaultSettings.title ? settings.title : defaultTitle}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowFullScreen
         />

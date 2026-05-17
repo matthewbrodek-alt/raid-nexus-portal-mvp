@@ -13,20 +13,34 @@ type CalendarItem = {
   description?: string;
   type?: string;
   date?: string;
+  startDate?: string;
+  endDate?: string;
   isPublished?: boolean;
 };
+
+function getDisplayDate(item: CalendarItem) {
+  const start = item.startDate || item.date || "";
+  const end = item.endDate || "";
+
+  if (!start) {
+    return "без даты";
+  }
+
+  return end ? `${start} - ${end}` : start;
+}
 
 export function AdminCalendarEditor() {
   const [events, setEvents] = useState<CalendarItem[]>([]);
   const [editingId, setEditingId] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [date, setDate] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [type, setType] = useState("tournament");
   const [status, setStatus] = useState("");
 
   useEffect(() => {
-    const calendarQuery = query(collection(db, collections.heroCalendar), orderBy("createdAt", "desc"), limit(12));
+    const calendarQuery = query(collection(db, collections.heroCalendar), orderBy("createdAt", "desc"), limit(24));
 
     return onSnapshot(calendarQuery, (snapshot) => {
       setEvents(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<CalendarItem, "id">) })));
@@ -37,7 +51,8 @@ export function AdminCalendarEditor() {
     setEditingId("");
     setTitle("");
     setDescription("");
-    setDate("");
+    setStartDate("");
+    setEndDate("");
     setType("tournament");
   }
 
@@ -45,17 +60,22 @@ export function AdminCalendarEditor() {
     setEditingId(event.id);
     setTitle(event.title ?? "");
     setDescription(event.description ?? "");
-    setDate(event.date ?? "");
+    setStartDate(event.startDate ?? event.date ?? "");
+    setEndDate(event.endDate ?? "");
     setType(event.type ?? "tournament");
   }
 
   async function saveEvent(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    const normalizedStartDate = startDate.trim();
+    const normalizedEndDate = endDate.trim();
     const payload = {
       title: title.trim(),
       description: description.trim(),
-      date: date.trim(),
+      date: normalizedEndDate ? `${normalizedStartDate} - ${normalizedEndDate}` : normalizedStartDate,
+      startDate: normalizedStartDate,
+      endDate: normalizedEndDate,
       type,
       isPublished: true,
       updatedAt: serverTimestamp()
@@ -100,12 +120,22 @@ export function AdminCalendarEditor() {
 
       <form onSubmit={saveEvent} className="space-y-3">
         <input value={title} onChange={(event) => setTitle(event.target.value)} required placeholder="Название акции" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
-        <input type="date" value={date} onChange={(event) => setDate(event.target.value)} placeholder="Дата" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+            Дата начала
+            <input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} required className="mt-2 w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+          </label>
+          <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+            Дата окончания
+            <input type="date" value={endDate} min={startDate || undefined} onChange={(event) => setEndDate(event.target.value)} className="mt-2 w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+          </label>
+        </div>
+        <p className="text-xs leading-5 text-zinc-500">Если дата окончания пустая, событие будет считаться однодневным.</p>
         <select value={type} onChange={(event) => setType(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
-          <option value="summon">Summon</option>
-          <option value="tournament">Tournament</option>
-          <option value="fusion">Fusion</option>
-          <option value="topup">Top-up</option>
+          <option value="summon">Призыв</option>
+          <option value="tournament">Турнир</option>
+          <option value="fusion">Слияние</option>
+          <option value="topup">Донат</option>
         </select>
         <textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={4} required placeholder="Описание акции" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
         <div className="grid gap-2 sm:grid-cols-2">
@@ -127,7 +157,7 @@ export function AdminCalendarEditor() {
             <button type="button" onClick={() => editEvent(item)} className="min-w-0 flex-1 text-left">
               <p className="break-words font-semibold leading-snug text-white">{item.title}</p>
               <p className="mt-1 break-words text-xs leading-5 text-zinc-500">
-                {item.date || "без даты"} · {item.type}
+                {getDisplayDate(item)} · {item.type}
               </p>
               {item.description ? <p className="mt-1 line-clamp-2 break-words text-xs leading-5 text-zinc-400">{item.description}</p> : null}
             </button>

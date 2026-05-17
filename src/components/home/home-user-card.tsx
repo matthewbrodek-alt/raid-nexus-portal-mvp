@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { UserRound } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-provider";
+import { useLanguage } from "@/lib/i18n/use-language";
 
 export function HomeUserCard() {
+  const { language } = useLanguage();
   const { profile, user } = useAuth();
-  const displayName = profile?.displayName || user?.email || "Личный кабинет";
-  const subtitle = profile ? "Личный кабинет" : "Войти в аккаунт";
+  const displayName = profile?.displayName || user?.email || (language === "ru" ? "Личный кабинет" : "Dashboard");
+  const subtitle = profile ? (language === "ru" ? "Личный кабинет" : "Dashboard") : language === "ru" ? "Войти в аккаунт" : "Sign in";
 
   return (
     <Link href="/dashboard" className="raid-glow-button flex h-16 items-center gap-3 border border-relic/22 bg-black/32 px-4">

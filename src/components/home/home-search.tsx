@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
+import { useLanguage, type Language } from "@/lib/i18n/use-language";
 
 type SearchItem = {
   id: string;
@@ -17,8 +18,11 @@ type SearchItem = {
 
 type FirestoreNews = {
   title?: string;
+  titleEn?: string;
   summary?: string;
+  summaryEn?: string;
   markdownBody?: string;
+  markdownBodyEn?: string;
 };
 
 type FirestoreHero = {
@@ -35,15 +39,99 @@ type FirestoreMarketLot = {
   heroes?: string[];
 };
 
-const staticItems: SearchItem[] = [
-  { id: "page-news", type: "Раздел", title: "Новости", description: "Последние новости портала", href: "/#news" },
-  { id: "page-heroes", type: "Раздел", title: "Герои", description: "База героев, фракции, роли и галерея", href: "/heroes" },
-  { id: "page-market", type: "Раздел", title: "Маркет", description: "Лоты, аккаунты и предложения", href: "/marketplace" },
-  { id: "page-clans", type: "Раздел", title: "Кланы", description: "Объявления участников и набор в кланы", href: "/clans" },
-  { id: "page-topup", type: "Раздел", title: "Донат", description: "Заявка на покупку набора через менеджера", href: "/topup" },
-  { id: "page-useful", type: "Раздел", title: "Полезное", description: "Гайды и калькуляторы", href: "/useful" },
-  { id: "page-chat", type: "Раздел", title: "Чат", description: "Общий чат и личные сообщения", href: "/chat" }
-];
+const copy: Record<
+  Language,
+  {
+    placeholder: string;
+    section: string;
+    news: string;
+    heroes: string;
+    market: string;
+    clans: string;
+    donate: string;
+    useful: string;
+    chat: string;
+    newsDescription: string;
+    heroesDescription: string;
+    marketDescription: string;
+    clansDescription: string;
+    donateDescription: string;
+    usefulDescription: string;
+    chatDescription: string;
+    newsType: string;
+    heroType: string;
+    marketType: string;
+    defaultNews: string;
+    defaultHero: string;
+    defaultMarket: string;
+    noResults: string;
+  }
+> = {
+  ru: {
+    placeholder: "Поиск по порталу...",
+    section: "Раздел",
+    news: "Новости",
+    heroes: "Герои",
+    market: "Маркет",
+    clans: "Кланы",
+    donate: "Донат",
+    useful: "Полезное",
+    chat: "Чат",
+    newsDescription: "Последние новости портала",
+    heroesDescription: "База героев, фракции, роли и сборки",
+    marketDescription: "Лоты, аккаунты и предложения",
+    clansDescription: "Объявления участников и набор в кланы",
+    donateDescription: "Заявка на покупку набора через менеджера",
+    usefulDescription: "Гайды и калькуляторы",
+    chatDescription: "Общий чат и личные сообщения",
+    newsType: "Новость",
+    heroType: "Герой",
+    marketType: "Маркет",
+    defaultNews: "Новость",
+    defaultHero: "Герой",
+    defaultMarket: "Лот маркета",
+    noResults: "Ничего не найдено."
+  },
+  en: {
+    placeholder: "Search the portal...",
+    section: "Section",
+    news: "News",
+    heroes: "Heroes",
+    market: "Market",
+    clans: "Clans",
+    donate: "Donate",
+    useful: "Useful",
+    chat: "Chat",
+    newsDescription: "Latest portal news",
+    heroesDescription: "Hero database, factions, roles and builds",
+    marketDescription: "Lots, accounts and offers",
+    clansDescription: "Member announcements and clan recruiting",
+    donateDescription: "Request a pack purchase through a manager",
+    usefulDescription: "Guides and calculators",
+    chatDescription: "Global chat and direct messages",
+    newsType: "News",
+    heroType: "Hero",
+    marketType: "Market",
+    defaultNews: "News item",
+    defaultHero: "Hero",
+    defaultMarket: "Market lot",
+    noResults: "Nothing found."
+  }
+};
+
+function getStaticItems(language: Language): SearchItem[] {
+  const labels = copy[language];
+
+  return [
+    { id: "page-news", type: labels.section, title: labels.news, description: labels.newsDescription, href: "/#news" },
+    { id: "page-heroes", type: labels.section, title: labels.heroes, description: labels.heroesDescription, href: "/heroes" },
+    { id: "page-market", type: labels.section, title: labels.market, description: labels.marketDescription, href: "/marketplace" },
+    { id: "page-clans", type: labels.section, title: labels.clans, description: labels.clansDescription, href: "/clans" },
+    { id: "page-topup", type: labels.section, title: labels.donate, description: labels.donateDescription, href: "/topup" },
+    { id: "page-useful", type: labels.section, title: labels.useful, description: labels.usefulDescription, href: "/useful" },
+    { id: "page-chat", type: labels.section, title: labels.chat, description: labels.chatDescription, href: "/chat" }
+  ];
+}
 
 function normalize(value: string) {
   return value.trim().toLowerCase();
@@ -54,9 +142,11 @@ function matches(item: SearchItem, queryText: string) {
 }
 
 export function HomeSearch() {
+  const { language } = useLanguage();
+  const labels = copy[language];
   const [value, setValue] = useState("");
   const [focused, setFocused] = useState(false);
-  const [items, setItems] = useState<SearchItem[]>(staticItems);
+  const [dynamicItems, setDynamicItems] = useState<SearchItem[]>([]);
 
   useEffect(() => {
     const unsubscribers = [
@@ -65,50 +155,53 @@ export function HomeSearch() {
           const data = item.data() as FirestoreNews;
           return {
             id: `news-${item.id}`,
-            type: "Новость",
-            title: data.title || "Новость",
-            description: data.summary || data.markdownBody || "Материал из новостей",
+            type: labels.newsType,
+            title: language === "en" ? data.titleEn || data.title || labels.defaultNews : data.title || data.titleEn || labels.defaultNews,
+            description:
+              (language === "en" ? data.summaryEn || data.markdownBodyEn || data.summary || data.markdownBody : data.summary || data.markdownBody || data.summaryEn || data.markdownBodyEn) ||
+              labels.newsDescription,
             href: "/#news"
           };
         });
 
-        setItems((current) => [...current.filter((item) => !item.id.startsWith("news-")), ...newsItems]);
+        setDynamicItems((current) => [...current.filter((item) => !item.id.startsWith("news-")), ...newsItems]);
       }),
       onSnapshot(query(collection(db, collections.heroes), where("isPublished", "==", true), limit(40)), (snapshot) => {
         const heroItems = snapshot.docs.map((item) => {
           const data = item.data() as FirestoreHero;
           return {
             id: `hero-${item.id}`,
-            type: "Герой",
-            title: data.name || "Герой",
-            description: [data.faction, data.role, data.markdownComment].filter(Boolean).join(" · ") || "Карточка героя",
+            type: labels.heroType,
+            title: data.name || labels.defaultHero,
+            description: [data.faction, data.role, data.markdownComment].filter(Boolean).join(" · ") || labels.heroesDescription,
             href: "/heroes"
           };
         });
 
-        setItems((current) => [...current.filter((item) => !item.id.startsWith("hero-")), ...heroItems]);
+        setDynamicItems((current) => [...current.filter((item) => !item.id.startsWith("hero-")), ...heroItems]);
       }),
       onSnapshot(query(collection(db, collections.marketplaceAccounts), where("status", "in", ["available", "reserved"]), limit(30)), (snapshot) => {
         const marketItems = snapshot.docs.map((item) => {
           const data = item.data() as FirestoreMarketLot;
           return {
             id: `market-${item.id}`,
-            type: "Маркет",
-            title: data.title || "Лот маркета",
-            description: data.description || [...(data.tags ?? []), ...(data.heroes ?? [])].join(", ") || "Лот на продаже",
+            type: labels.marketType,
+            title: data.title || labels.defaultMarket,
+            description: data.description || [...(data.tags ?? []), ...(data.heroes ?? [])].join(", ") || labels.marketDescription,
             href: "/marketplace"
           };
         });
 
-        setItems((current) => [...current.filter((item) => !item.id.startsWith("market-")), ...marketItems]);
+        setDynamicItems((current) => [...current.filter((item) => !item.id.startsWith("market-")), ...marketItems]);
       })
     ];
 
     return () => {
       unsubscribers.forEach((unsubscribe) => unsubscribe());
     };
-  }, []);
+  }, [labels, language]);
 
+  const items = useMemo(() => [...getStaticItems(language), ...dynamicItems], [dynamicItems, language]);
   const queryText = normalize(value);
   const results = useMemo(() => {
     if (!queryText) {
@@ -127,7 +220,7 @@ export function HomeSearch() {
           onFocus={() => setFocused(true)}
           onBlur={() => window.setTimeout(() => setFocused(false), 120)}
           className="min-w-0 flex-1 border-0 bg-transparent text-sm text-zinc-200 placeholder:text-zinc-500 focus:ring-0"
-          placeholder="Поиск по порталу..."
+          placeholder={labels.placeholder}
         />
         <Search size={20} />
       </label>
@@ -153,7 +246,7 @@ export function HomeSearch() {
               ))}
             </div>
           ) : (
-            <div className="p-4 text-sm text-zinc-400">Ничего не найдено.</div>
+            <div className="p-4 text-sm text-zinc-400">{labels.noResults}</div>
           )}
         </div>
       ) : null}

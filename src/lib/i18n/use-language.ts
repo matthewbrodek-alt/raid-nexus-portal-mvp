@@ -21,13 +21,27 @@ export function useLanguage() {
 
       if (customEvent.detail === "ru" || customEvent.detail === "en") {
         setLanguageState(customEvent.detail);
+        document.documentElement.lang = customEvent.detail;
+      }
+    }
+
+    function handleStorageChange(event: StorageEvent) {
+      if (event.key !== storageKey) {
+        return;
+      }
+
+      if (event.newValue === "ru" || event.newValue === "en") {
+        setLanguageState(event.newValue);
+        document.documentElement.lang = event.newValue;
       }
     }
 
     window.addEventListener("raid-language-change", handleLanguageChange);
+    window.addEventListener("storage", handleStorageChange);
 
     return () => {
       window.removeEventListener("raid-language-change", handleLanguageChange);
+      window.removeEventListener("storage", handleStorageChange);
     };
   }, []);
 
