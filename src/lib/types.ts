@@ -7,6 +7,29 @@ export type RaidEvent = {
   type: "summon" | "tournament" | "topup" | "fusion";
 };
 
+export type PortalEventWidget = {
+  id: string;
+  title?: string;
+  comment?: string;
+  details?: string;
+  type?: "contest" | "special" | "event";
+  deadlineAt?: string;
+  status?: "published" | "archived";
+  image?: {
+    secureUrl?: string;
+    url?: string;
+    alt?: string;
+  } | null;
+  gallery?: Array<{
+    secureUrl?: string;
+    url?: string;
+    alt?: string;
+  }>;
+  participants?: string[];
+  participantCount?: number;
+  createdAt?: { seconds?: number };
+};
+
 export type HeroProfile = {
   id: string;
   slug?: string;

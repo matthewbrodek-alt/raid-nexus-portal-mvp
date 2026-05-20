@@ -5,6 +5,7 @@ export const collections = {
   heroes: "heroes",
   heroCalendar: "heroCalendar",
   portalOffers: "portalOffers",
+  eventWidgets: "eventWidgets",
   donationOffers: "donationOffers",
   news: "news",
   marketplaceAccounts: "marketplaceAccounts",

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import {
-  Bell,
   CalendarDays,
   ChevronRight,
   Crown,
@@ -19,8 +18,10 @@ import { ActionCalendar } from "@/components/calendar/action-calendar";
 import { RaidLogo } from "@/components/brand/raid-logo";
 import { HomeBackgroundVideo } from "@/components/home/home-background-video";
 import { HomeBroadcast } from "@/components/home/home-broadcast";
+import { HomeEventWidgets } from "@/components/home/home-event-widgets";
 import { HomeMobileHeader } from "@/components/home/home-mobile-header";
 import { HomeSearch } from "@/components/home/home-search";
+import { HomeUnreadBell } from "@/components/home/home-unread-bell";
 import { HomeUserCard } from "@/components/home/home-user-card";
 import { LatestNewsRail } from "@/components/home/latest-news-rail";
 import { PortalOffers } from "@/components/home/portal-offers";
@@ -142,9 +143,7 @@ export default function Home() {
             <div className="ml-auto flex items-center gap-5">
               <LanguageSwitcher />
               <span className="h-8 w-px bg-relic/18" />
-              <button className="raid-glow-button grid h-11 w-11 place-items-center border border-transparent text-zinc-300" aria-label={labels.notifications}>
-                <Bell size={20} />
-              </button>
+              <HomeUnreadBell label={labels.notifications} />
               <span className="h-8 w-px bg-relic/18" />
               <HomeUserCard />
             </div>
@@ -176,6 +175,7 @@ export default function Home() {
           </footer>
         </section>
       </div>
+      <HomeEventWidgets />
     </main>
   );
 }

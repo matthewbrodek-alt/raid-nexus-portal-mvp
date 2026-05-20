@@ -25,27 +25,12 @@ type EventRange = {
   endDate: Date;
 };
 
-const calendarStorageKey = "raid-calendar-month-offset";
-
-const monthNames: Record<Language, string[]> = {
-  ru: ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"],
-  en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
-};
-
-const weekdays: Record<Language, string[]> = {
-  ru: ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"],
-  en: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-};
-
 const copy: Record<
   Language,
   {
     eyebrow: string;
-    current: string;
-    next: string;
     empty: string;
     scheduleTitle: string;
-    scheduleSubtitle: string;
     eventColumn: string;
     close: string;
     eventTypes: Record<string, string>;
@@ -53,11 +38,8 @@ const copy: Record<
 > = {
   ru: {
     eyebrow: "Календарь акций",
-    current: "Текущий месяц",
-    next: "Следующий месяц",
     empty: "Событий пока нет",
     scheduleTitle: "Календарь событий",
-    scheduleSubtitle: "Текущий и следующий месяц сохраняются после выбора.",
     eventColumn: "Событие",
     close: "Закрыть календарь",
     eventTypes: {
@@ -69,11 +51,8 @@ const copy: Record<
   },
   en: {
     eyebrow: "Event Calendar",
-    current: "Current month",
-    next: "Next month",
     empty: "No events yet",
     scheduleTitle: "Event Calendar",
-    scheduleSubtitle: "Only current and next month are available and remembered.",
     eventColumn: "Event",
     close: "Close calendar",
     eventTypes: {
@@ -101,11 +80,11 @@ function buildMonthDays(month: Date) {
     cells.push(day);
   }
 
-  while (cells.length % 7 !== 0) {
+  while (cells.length < 42) {
     cells.push(null);
   }
 
-  return cells;
+  return cells.slice(0, 42);
 }
 
 function parseIsoDate(value?: string) {
@@ -197,7 +176,18 @@ function formatPeriod(range: EventRange, language: Language) {
 }
 
 function formatMonth(month: Date, language: Language) {
-  return `${monthNames[language][month.getMonth()]} ${month.getFullYear()}`;
+  return new Intl.DateTimeFormat(language === "ru" ? "ru-RU" : "en-US", {
+    month: "long",
+    year: "numeric"
+  }).format(month);
+}
+
+function formatWeekday(date: Date, language: Language) {
+  return new Intl.DateTimeFormat(language === "ru" ? "ru-RU" : "en-US", {
+    weekday: "short"
+  })
+    .format(date)
+    .replace(".", "");
 }
 
 export function ActionCalendar({ events }: ActionCalendarProps) {
@@ -213,19 +203,11 @@ export function ActionCalendar({ events }: ActionCalendarProps) {
   const month = useMemo(() => new Date(baseMonth.getFullYear(), baseMonth.getMonth() + monthOffset, 1), [baseMonth, monthOffset]);
   const monthOptions = useMemo(
     () => [
-      { offset: 0 as const, month: baseMonth, label: copy[language].current },
-      { offset: 1 as const, month: new Date(baseMonth.getFullYear(), baseMonth.getMonth() + 1, 1), label: copy[language].next }
+      { offset: 0 as const, month: baseMonth },
+      { offset: 1 as const, month: new Date(baseMonth.getFullYear(), baseMonth.getMonth() + 1, 1) }
     ],
-    [baseMonth, language]
+    [baseMonth]
   );
-
-  useEffect(() => {
-    const saved = window.localStorage.getItem(calendarStorageKey);
-
-    if (saved === "1") {
-      setMonthOffset(1);
-    }
-  }, []);
 
   useEffect(() => {
     const calendarQuery = query(collection(db, collections.heroCalendar), where("isPublished", "==", true));
@@ -260,11 +242,6 @@ export function ActionCalendar({ events }: ActionCalendarProps) {
     return map;
   }, [monthEventRanges]);
 
-  function selectMonth(offset: 0 | 1) {
-    setMonthOffset(offset);
-    window.localStorage.setItem(calendarStorageKey, String(offset));
-  }
-
   function openTimeline(day?: number) {
     setSelectedDay(day ?? null);
     setTimelineOpen(true);
@@ -296,21 +273,23 @@ export function ActionCalendar({ events }: ActionCalendarProps) {
               <button
                 key={item.offset}
                 type="button"
-                onClick={() => selectMonth(item.offset)}
+                onClick={() => setMonthOffset(item.offset)}
                 className={`raid-glow-button border px-3 py-2 text-left transition ${
                   monthOffset === item.offset ? "border-relic/55 bg-relic/[0.15] text-white" : "border-relic/16 bg-black/24 text-zinc-400 hover:text-relic"
                 }`}
               >
-                <span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-relic">{item.label}</span>
-                <span className="mt-1 block text-xs font-semibold">{formatMonth(item.month, language)}</span>
+                <span className="block text-xs font-semibold">{formatMonth(item.month, language)}</span>
               </button>
             ))}
           </div>
         </div>
 
         <div className="grid grid-cols-7 gap-1.5 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-relic/80">
-          {weekdays[language].map((day) => (
-            <div key={day}>{day}</div>
+          {Array.from({ length: 7 }, (_, index) => {
+            const day = formatWeekday(new Date(2026, 0, 5 + index), language);
+
+            return <div key={day}>{day}</div>;
+          })}
           ))}
         </div>
 
@@ -325,7 +304,7 @@ export function ActionCalendar({ events }: ActionCalendarProps) {
                 type="button"
                 disabled={!day}
                 onClick={() => day && openTimeline(day)}
-                className={`min-h-[64px] rounded-[14px] border p-1.5 text-left transition ${
+                className={`h-[58px] overflow-hidden rounded-[14px] border p-1.5 text-left transition sm:h-[64px] ${
                   day
                     ? hasEvent
                       ? "border-relic/45 bg-relic/[0.12] shadow-[0_0_20px_rgba(216,168,71,0.12)] hover:border-relic"
@@ -337,12 +316,10 @@ export function ActionCalendar({ events }: ActionCalendarProps) {
                   <>
                     <span className={`text-xs font-bold ${hasEvent ? "text-relic" : "text-zinc-500"}`}>{day}</span>
                     {hasEvent ? (
-                      <span className="mt-1 block space-y-1">
-                        {dayEvents.slice(0, 2).map((range) => (
-                          <span key={`${range.event.title}-${range.startDay}-${range.endDay}`} className="line-clamp-2 block text-[10px] font-semibold leading-3 text-white">
-                            {range.event.title}
-                          </span>
-                        ))}
+                      <span className="mt-1 flex min-w-0 items-center gap-1">
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-relic" />
+                        <span className="truncate text-[10px] font-semibold leading-3 text-white">{dayEvents[0]?.event.title}</span>
+                        {dayEvents.length > 1 ? <span className="shrink-0 text-[10px] font-bold text-relic">+{dayEvents.length - 1}</span> : null}
                       </span>
                     ) : null}
                   </>
@@ -361,7 +338,6 @@ export function ActionCalendar({ events }: ActionCalendarProps) {
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.34em] text-relic">{formatMonth(month, language)}</p>
                   <h2 className="raid-title-metal mt-2 text-3xl font-black">{copy[language].scheduleTitle}</h2>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">{copy[language].scheduleSubtitle}</p>
                 </div>
                 <button
                   type="button"
@@ -387,7 +363,7 @@ export function ActionCalendar({ events }: ActionCalendarProps) {
                             selectedDay === day ? "bg-relic/25 text-white" : "text-zinc-300 hover:bg-relic/10"
                           }`}
                         >
-                          <span className="block">{weekdays[language][(new Date(month.getFullYear(), month.getMonth(), day).getDay() + 6) % 7]}</span>
+                          <span className="block">{formatWeekday(new Date(month.getFullYear(), month.getMonth(), day), language)}</span>
                           <span className="block text-relic">{day}</span>
                         </button>
                       ))}

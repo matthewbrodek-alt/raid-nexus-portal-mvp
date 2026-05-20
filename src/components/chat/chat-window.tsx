@@ -16,10 +16,15 @@ import {
 } from "firebase/firestore";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
-import type { CloudinaryAsset } from "@/lib/cloudinary/types";
 import type { UserProfile } from "@/lib/auth/types";
+import type { CloudinaryAsset } from "@/lib/cloudinary/types";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
+
+type MentionedUser = {
+  uid: string;
+  displayName: string;
+};
 
 type ChatMessage = {
   id: string;
@@ -37,6 +42,7 @@ type ChatMessage = {
     displayName: string;
     text: string;
   } | null;
+  mentions?: MentionedUser[];
   createdAt?: { seconds?: number };
 };
 
@@ -51,7 +57,7 @@ type MemberMenu = {
   avatarUrl?: string;
 };
 
-const basicEmojis = ["😀", "😂", "😍", "👍", "🔥", "❤️", "🙏", "🎉", "😎", "🤔"];
+const basicEmojis = ["\u{1F600}", "\u{1F602}", "\u{1F60D}", "\u{1F44D}", "\u{1F525}", "\u2764\uFE0F", "\u{1F64F}", "\u{1F389}", "\u{1F60E}", "\u{1F914}"];
 
 async function uploadChatImage(file: File) {
   const formData = new FormData();
@@ -65,7 +71,7 @@ async function uploadChatImage(file: File) {
   });
 
   if (!response.ok) {
-    throw new Error("Could not upload screenshot.");
+    throw new Error("Не удалось загрузить изображение.");
   }
 
   return (await response.json()) as CloudinaryAsset;
@@ -73,6 +79,10 @@ async function uploadChatImage(file: File) {
 
 function directThreadId(firstUid: string, secondUid: string) {
   return [firstUid, secondUid].sort().join("__");
+}
+
+function getUserLabel(userProfile: Pick<UserProfile, "displayName" | "email">) {
+  return userProfile.displayName || userProfile.email || "User";
 }
 
 function formatTime(message: ChatMessage) {
@@ -86,6 +96,47 @@ function formatTime(message: ChatMessage) {
   }).format(new Date(message.createdAt.seconds * 1000));
 }
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function renderMessageText(text: string, mentions?: MentionedUser[]) {
+  if (!mentions?.length) {
+    return text;
+  }
+
+  const names = mentions.map((mention) => mention.displayName).filter(Boolean).sort((a, b) => b.length - a.length);
+
+  if (!names.length) {
+    return text;
+  }
+
+  const pattern = new RegExp(`(@(?:${names.map(escapeRegExp).join("|")}))`, "gi");
+
+  return text.split(pattern).map((part, index) => {
+    const matched = names.find((name) => part.toLowerCase() === `@${name}`.toLowerCase());
+
+    if (!matched) {
+      return <span key={`${part}-${index}`}>{part}</span>;
+    }
+
+    return (
+      <span key={`${part}-${index}`} className="rounded bg-relic/15 px-1 font-bold text-relic">
+        @{matched}
+      </span>
+    );
+  });
+}
+
+function extractMentions(text: string, users: UserProfile[], currentUid?: string) {
+  const haystack = text.toLowerCase();
+
+  return users
+    .filter((item) => item.uid !== currentUid)
+    .map((item) => ({ uid: item.uid, displayName: getUserLabel(item) }))
+    .filter((item) => haystack.includes(`@${item.displayName}`.toLowerCase()));
+}
+
 export function ChatWindow() {
   const { profile, user } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -95,6 +146,7 @@ export function ChatWindow() {
   const [search, setSearch] = useState("");
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const [attachmentPreviewUrl, setAttachmentPreviewUrl] = useState("");
   const [imagePreview, setImagePreview] = useState<ImagePreview | null>(null);
   const [memberMenu, setMemberMenu] = useState<MemberMenu | null>(null);
   const [personalBlockedUids, setPersonalBlockedUids] = useState<string[]>([]);
@@ -102,6 +154,7 @@ export function ChatWindow() {
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const canSend = Boolean(message.trim() || attachmentFile) && Boolean(user) && !sending;
   const canModerate = profile?.role === "admin" || profile?.role === "owner";
 
@@ -118,6 +171,36 @@ export function ChatWindow() {
     () => messages.filter((item) => item.uid === user?.uid || !personalBlockedUids.includes(item.uid)),
     [messages, personalBlockedUids, user?.uid]
   );
+  const mentionQuery = useMemo(() => {
+    if (selectedUser) {
+      return null;
+    }
+
+    const match = message.match(/(^|\s)@([^\s@]{0,40})$/);
+    return match ? match[2].toLowerCase() : null;
+  }, [message, selectedUser]);
+  const mentionSuggestions = useMemo(() => {
+    if (mentionQuery === null) {
+      return [];
+    }
+
+    return users
+      .filter((item) => item.uid !== user?.uid)
+      .filter((item) => getUserLabel(item).toLowerCase().includes(mentionQuery))
+      .slice(0, 6);
+  }, [mentionQuery, user?.uid, users]);
+
+  useEffect(() => {
+    if (!attachmentFile) {
+      setAttachmentPreviewUrl("");
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(attachmentFile);
+    setAttachmentPreviewUrl(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [attachmentFile]);
 
   useEffect(() => {
     if (!user) {
@@ -126,7 +209,7 @@ export function ChatWindow() {
     }
 
     const stored = window.localStorage.getItem(`raid-personal-blocks-${user.uid}`);
-    setPersonalBlockedUids(stored ? JSON.parse(stored) as string[] : []);
+    setPersonalBlockedUids(stored ? (JSON.parse(stored) as string[]) : []);
   }, [user]);
 
   useEffect(() => {
@@ -235,6 +318,24 @@ export function ChatWindow() {
     setMemberMenu(null);
   }
 
+  function applySelectedFile(file?: File | null) {
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      return;
+    }
+
+    setAttachmentFile(file);
+  }
+
+  function insertMention(targetUser: UserProfile) {
+    const label = getUserLabel(targetUser);
+    setMessage((current) => current.replace(/(^|\s)@([^\s@]*)$/, `$1@${label} `));
+    requestAnimationFrame(() => textareaRef.current?.focus());
+  }
+
   async function sendMessage() {
     const text = message.trim();
 
@@ -246,7 +347,7 @@ export function ChatWindow() {
 
     try {
       const uploadedAttachment = attachmentFile ? await uploadChatImage(attachmentFile) : null;
-      const lastMessageText = text || "Скриншот";
+      const lastMessageText = text || "Изображение";
       const baseMessage = {
         uid: user.uid,
         displayName: profile.displayName,
@@ -256,7 +357,7 @@ export function ChatWindow() {
           ? {
               secureUrl: uploadedAttachment.secureUrl,
               url: uploadedAttachment.url,
-              alt: attachmentFile?.name ?? "Screenshot"
+              alt: attachmentFile?.name ?? "Image"
             }
           : null,
         replyTo: replyTo
@@ -266,6 +367,7 @@ export function ChatWindow() {
               text: replyTo.text.slice(0, 180)
             }
           : null,
+        mentions: selectedUser ? [] : extractMentions(text, users, user.uid),
         createdAt: serverTimestamp()
       };
 
@@ -307,6 +409,7 @@ export function ChatWindow() {
       setMessage("");
       setReplyTo(null);
       setAttachmentFile(null);
+      setEmojiOpen(false);
     } finally {
       setSending(false);
     }
@@ -315,6 +418,43 @@ export function ChatWindow() {
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     void sendMessage();
+  }
+
+  function handlePaste(event: React.ClipboardEvent<HTMLTextAreaElement>) {
+    const imageFile = Array.from(event.clipboardData.files).find((file) => file.type.startsWith("image/"));
+
+    if (imageFile) {
+      event.preventDefault();
+      applySelectedFile(imageFile);
+    }
+  }
+
+  function renderUserButton(item: UserProfile, compact = false) {
+    const label = getUserLabel(item);
+
+    return (
+      <button
+        key={item.uid}
+        type="button"
+        onClick={() => {
+          setSelectedUser(item);
+          setChatMenuOpen(false);
+        }}
+        className={`flex ${compact ? "w-full" : "min-w-[220px] lg:min-w-0 lg:w-full"} items-center gap-3 rounded-lg p-3 text-left transition ${
+          selectedUser?.uid === item.uid ? "border border-violet-400/45 bg-violet-500/15 text-white" : "border border-white/10 bg-white/[0.03] text-zinc-300 hover:bg-white/[0.06]"
+        }`}
+      >
+        <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-violet-500 to-cyan-600 text-xs font-black text-white">
+          {item.avatarUrl ? <img src={item.avatarUrl} alt={label} className="h-full w-full rounded-full object-cover" /> : label.slice(0, 2).toUpperCase()}
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate font-semibold">{label}</span>
+          <span className="block truncate text-xs text-zinc-500">
+            {item.role} · {item.email}
+          </span>
+        </span>
+      </button>
+    );
   }
 
   return (
@@ -363,33 +503,7 @@ export function ChatWindow() {
               </span>
             </button>
 
-            {filteredUsers.map((item) => (
-              <button
-                key={item.uid}
-                type="button"
-                onClick={() => {
-                  setSelectedUser(item);
-                  setChatMenuOpen(false);
-                }}
-                className={`flex min-w-[220px] items-center gap-3 rounded-lg p-3 text-left transition lg:min-w-0 lg:w-full ${
-                  selectedUser?.uid === item.uid ? "border border-violet-400/45 bg-violet-500/15 text-white" : "border border-white/10 bg-white/[0.03] text-zinc-300 hover:bg-white/[0.06]"
-                }`}
-              >
-                <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-violet-500 to-cyan-600 text-xs font-black text-white">
-                  {item.avatarUrl ? (
-                    <img src={item.avatarUrl} alt={item.displayName || item.email} className="h-full w-full rounded-full object-cover" />
-                  ) : (
-                    (item.displayName || item.email || "U").slice(0, 2).toUpperCase()
-                  )}
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate font-semibold">{item.displayName || item.email}</span>
-                  <span className="block truncate text-xs text-zinc-500">
-                    {item.role} · {item.email}
-                  </span>
-                </span>
-              </button>
-            ))}
+            {filteredUsers.map((item) => renderUserButton(item))}
 
             {user && filteredUsers.length === 0 ? (
               <p className="min-w-[220px] rounded-lg border border-white/10 bg-black/20 p-3 text-sm text-zinc-500 lg:min-w-0">Пользователи не найдены.</p>
@@ -411,16 +525,24 @@ export function ChatWindow() {
               <MessageSquare size={20} />
             </span>
             <div className="hidden min-w-0 lg:block">
-              <h2 className="truncate text-lg font-bold text-white">{selectedUser ? selectedUser.displayName || selectedUser.email : "Общий чат"}</h2>
+              <h2 className="truncate text-lg font-bold text-white">{selectedUser ? getUserLabel(selectedUser) : "Общий чат"}</h2>
               <p className="truncate text-sm text-zinc-500">{selectedUser ? selectedUser.email : "Открытая комната портала"}</p>
             </div>
           </header>
 
-          <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-3 py-3 sm:px-5">
+          <div
+            ref={scrollRef}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => {
+              event.preventDefault();
+              applySelectedFile(event.dataTransfer.files?.[0]);
+            }}
+            className="min-h-0 flex-1 overflow-y-auto px-3 py-3 sm:px-5"
+          >
             {visibleMessages.map((item) => {
               const own = item.uid === user?.uid;
               const attachmentUrl = item.attachment?.secureUrl ?? item.attachment?.url;
-              const attachmentAlt = item.attachment?.alt ?? "Screenshot";
+              const attachmentAlt = item.attachment?.alt ?? "Image";
               const initials = (item.displayName || "U").slice(0, 2).toUpperCase();
 
               return (
@@ -436,7 +558,7 @@ export function ChatWindow() {
                     </button>
                   ) : null}
                   <article
-                    className={`max-w-[82%] rounded-xl px-3 py-2 shadow-lg sm:max-w-[62%] ${
+                    className={`group max-w-[82%] rounded-xl px-3 py-2 shadow-lg sm:max-w-[62%] ${
                       own
                         ? "rounded-br-sm border border-relic/35 bg-[linear-gradient(135deg,rgba(35,21,49,0.96),rgba(200,154,61,0.72))] text-white shadow-[0_0_22px_rgba(200,154,61,0.18)]"
                         : "rounded-bl-sm border border-relic/15 bg-[#050a12]/92 text-white shadow-[0_0_20px_rgba(0,0,0,0.32)]"
@@ -462,9 +584,13 @@ export function ChatWindow() {
                         <img src={attachmentUrl} alt={attachmentAlt} className="max-h-44 object-cover" />
                       </button>
                     ) : null}
-                    {item.text ? <p className="break-words text-[13px] leading-5">{item.text}</p> : null}
+                    {item.text ? <p className="break-words text-[13px] leading-5">{renderMessageText(item.text, item.mentions)}</p> : null}
                     {!selectedUser ? (
-                      <button type="button" onClick={() => setReplyTo(item)} className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-relic hover:text-white">
+                      <button
+                        type="button"
+                        onClick={() => setReplyTo(item)}
+                        className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-relic opacity-0 transition hover:text-white focus-visible:opacity-100 group-hover:opacity-100"
+                      >
                         <CornerDownRight size={13} />
                         Ответить
                       </button>
@@ -480,7 +606,7 @@ export function ChatWindow() {
                 <div>
                   <p className="text-xl font-bold text-white">Начни диалог</p>
                   <p className="mt-2 max-w-md text-sm leading-6 text-zinc-500">
-                    Выбери пользователя сверху или слева для личного сообщения, либо напиши в общий чат.
+                    Выбери пользователя для личного сообщения или напиши в общий чат.
                   </p>
                 </div>
               </div>
@@ -509,18 +635,26 @@ export function ChatWindow() {
                   </button>
                 </div>
               ) : null}
+
               {attachmentFile ? (
-                <div className="mb-2 flex items-center justify-between gap-3 rounded-md border border-white/10 bg-black/25 p-2 text-xs text-zinc-300">
-                  <span className="truncate">{attachmentFile.name}</span>
-                  <button type="button" onClick={() => setAttachmentFile(null)} className="text-zinc-500 hover:text-white">
+                <div className="mb-2 flex items-center gap-3 rounded-xl border border-relic/20 bg-black/35 p-2 text-xs text-zinc-300">
+                  {attachmentPreviewUrl ? (
+                    <img src={attachmentPreviewUrl} alt={attachmentFile.name} className="h-16 w-16 rounded-lg object-cover" />
+                  ) : null}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold text-white">{attachmentFile.name}</p>
+                    <p className="text-zinc-500">Будет отправлено вместе с сообщением</p>
+                  </div>
+                  <button type="button" onClick={() => setAttachmentFile(null)} className="grid h-8 w-8 place-items-center rounded-md border border-white/10 text-zinc-500 hover:text-white">
                     <X size={14} />
                   </button>
                 </div>
               ) : null}
+
               <div className="flex items-end gap-2">
                 <label className="grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-md border border-white/10 bg-black/30 text-relic transition hover:bg-white/[0.06]">
                   <ImagePlus size={18} />
-                  <input type="file" accept="image/*" className="hidden" onChange={(event) => setAttachmentFile(event.target.files?.[0] ?? null)} />
+                  <input type="file" accept="image/*" className="hidden" onChange={(event) => applySelectedFile(event.target.files?.[0])} />
                 </label>
                 <div className="relative">
                   <button
@@ -549,19 +683,40 @@ export function ChatWindow() {
                     </div>
                   ) : null}
                 </div>
-                <textarea
-                  value={message}
-                  onChange={(event) => setMessage(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" && !event.shiftKey) {
-                      event.preventDefault();
-                      void sendMessage();
-                    }
-                  }}
-                  rows={1}
-                  placeholder={selectedUser ? "Личное сообщение..." : "Сообщение в общий чат..."}
-                  className="max-h-28 min-h-11 min-w-0 flex-1 resize-none rounded-md border-white/10 bg-black/30 text-sm text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
-                />
+                <div className="relative min-w-0 flex-1">
+                  {mentionSuggestions.length > 0 ? (
+                    <div className="absolute bottom-[calc(100%+8px)] left-0 right-0 z-20 overflow-hidden rounded-[16px] border border-relic/20 bg-[#060b13]/98 p-2 shadow-[0_18px_44px_rgba(0,0,0,0.48)] backdrop-blur-xl">
+                      {mentionSuggestions.map((item) => (
+                        <button
+                          key={item.uid}
+                          type="button"
+                          onClick={() => insertMention(item)}
+                          className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-zinc-200 transition hover:bg-relic/15 hover:text-white"
+                        >
+                          <span className="grid h-7 w-7 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-violet-500 to-cyan-600 text-[10px] font-black text-white">
+                            {item.avatarUrl ? <img src={item.avatarUrl} alt={getUserLabel(item)} className="h-full w-full object-cover" /> : getUserLabel(item).slice(0, 2).toUpperCase()}
+                          </span>
+                          @{getUserLabel(item)}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                  <textarea
+                    ref={textareaRef}
+                    value={message}
+                    onChange={(event) => setMessage(event.target.value)}
+                    onPaste={handlePaste}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" && !event.shiftKey) {
+                        event.preventDefault();
+                        void sendMessage();
+                      }
+                    }}
+                    rows={1}
+                    placeholder={selectedUser ? "Личное сообщение..." : "Сообщение в общий чат... используйте @имя"}
+                    className="max-h-28 min-h-11 w-full resize-none rounded-md border-white/10 bg-black/30 text-sm text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+                  />
+                </div>
                 <button disabled={!canSend} className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-relic text-black transition hover:bg-[#f0c766] disabled:cursor-not-allowed disabled:opacity-50">
                   <Send size={18} />
                 </button>
@@ -623,31 +778,7 @@ export function ChatWindow() {
                 </span>
               </button>
 
-              {filteredUsers.map((item) => (
-                <button
-                  key={item.uid}
-                  type="button"
-                  onClick={() => {
-                    setSelectedUser(item);
-                    setChatMenuOpen(false);
-                  }}
-                  className={`flex w-full items-center gap-3 rounded-lg p-3 text-left transition ${
-                    selectedUser?.uid === item.uid ? "border border-violet-400/45 bg-violet-500/15 text-white" : "border border-white/10 bg-white/[0.03] text-zinc-300"
-                  }`}
-                >
-                  <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-violet-500 to-cyan-600 text-xs font-black text-white">
-                    {item.avatarUrl ? (
-                      <img src={item.avatarUrl} alt={item.displayName || item.email} className="h-full w-full rounded-full object-cover" />
-                    ) : (
-                      (item.displayName || item.email || "U").slice(0, 2).toUpperCase()
-                    )}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate font-semibold">{item.displayName || item.email}</span>
-                    <span className="block truncate text-xs text-zinc-500">{item.role}</span>
-                  </span>
-                </button>
-              ))}
+              {filteredUsers.map((item) => renderUserButton(item, true))}
             </div>
           </div>
         </div>
@@ -705,7 +836,7 @@ export function ChatWindow() {
               type="button"
               onClick={() => setImagePreview(null)}
               className="absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-md border border-white/10 bg-black/60 text-zinc-300 transition hover:text-white"
-              aria-label="Закрыть скриншот"
+              aria-label="Закрыть изображение"
             >
               <X size={18} />
             </button>

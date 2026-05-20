@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BellRing, ExternalLink, MessageSquare, Send, Table2 } from "lucide-react";
+import { BellRing, CheckCircle2, ExternalLink, MessageSquare, Send, Table2 } from "lucide-react";
 import { addDoc, collection, doc, limit, onSnapshot, orderBy, query, serverTimestamp, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -43,6 +43,8 @@ const copy = {
     defaultLead: "Заявка на донат",
     noTelegram: "telegram не указан",
     reply: "Ответить на сайте",
+    markProcessed: "Отметить обработанным",
+    processed: "Обработано",
     noChatUser: "Нет пользователя для чата",
     empty: "Заявок пока нет."
   },
@@ -66,6 +68,8 @@ const copy = {
     defaultLead: "Top-up request",
     noTelegram: "telegram is missing",
     reply: "Reply on site",
+    markProcessed: "Mark processed",
+    processed: "Processed",
     noChatUser: "No chat user",
     empty: "No requests yet."
   }
@@ -115,18 +119,25 @@ export function AdminCrmPanel() {
 
   const unprocessedCount = useMemo(() => recentLeads.filter(isUnprocessedLead).length, [recentLeads]);
 
-  async function replyOnSite(lead: TopupLead) {
-    if (!lead.uid || !profile) {
+  async function markProcessed(lead: TopupLead) {
+    if (!profile) {
       return;
     }
 
     await updateDoc(doc(db, collections.topupLeads, lead.id), {
       status: "processed",
-      respondedAt: serverTimestamp(),
-      respondedBy: profile.uid,
+      processedAt: serverTimestamp(),
+      processedBy: profile.uid,
       updatedAt: serverTimestamp()
     });
+  }
 
+  async function replyOnSite(lead: TopupLead) {
+    if (!lead.uid || !profile) {
+      return;
+    }
+
+    await markProcessed(lead);
     router.push(`/chat?user=${lead.uid}`);
   }
 
@@ -269,18 +280,37 @@ export function AdminCrmPanel() {
                     {lead.telegram ?? t.noTelegram} / {lead.paymentMethod ?? "manager"} / {lead.status ?? "new"} {formatDate(lead)}
                   </p>
                 </div>
-                {lead.uid ? (
-                  <button
-                    type="button"
-                    onClick={() => void replyOnSite(lead)}
-                    className="inline-flex items-center justify-center gap-2 rounded-md border border-relic/30 bg-relic/10 px-3 py-2 text-sm font-semibold text-relic transition hover:bg-relic/15"
-                  >
-                    <MessageSquare size={16} />
-                    {t.reply}
-                  </button>
-                ) : (
-                  <span className="text-sm text-zinc-500">{t.noChatUser}</span>
-                )}
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {unprocessed ? (
+                    <button
+                      type="button"
+                      onClick={() => void markProcessed(lead)}
+                      className="inline-flex items-center justify-center gap-2 rounded-md border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300 transition hover:bg-emerald-400/15"
+                    >
+                      <CheckCircle2 size={16} />
+                      {t.markProcessed}
+                    </button>
+                  ) : (
+                    <span className="inline-flex items-center gap-2 rounded-md border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-300">
+                      <CheckCircle2 size={16} />
+                      {t.processed}
+                    </span>
+                  )}
+
+                  {lead.uid ? (
+                    <button
+                      type="button"
+                      onClick={() => void replyOnSite(lead)}
+                      className="inline-flex items-center justify-center gap-2 rounded-md border border-relic/30 bg-relic/10 px-3 py-2 text-sm font-semibold text-relic transition hover:bg-relic/15"
+                    >
+                      <MessageSquare size={16} />
+                      {t.reply}
+                    </button>
+                  ) : (
+                    <span className="text-sm text-zinc-500">{t.noChatUser}</span>
+                  )}
+                </div>
               </div>
             );
           })}
