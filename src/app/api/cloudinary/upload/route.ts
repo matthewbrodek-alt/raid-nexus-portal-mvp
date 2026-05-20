@@ -24,9 +24,9 @@ function fileToDataUrl(file: File, buffer: ArrayBuffer) {
 
 export async function POST(request: Request) {
   const formData = await request.formData().catch(() => null);
-  const file = formData?.get("file");
-  const folder = formData?.get("folder");
-  const publicId = formData?.get("publicId");
+  const file = formData?.get("file") ?? null;
+  const folder = formData?.get("folder") ?? null;
+  const publicId = formData?.get("publicId") ?? null;
 
   if (!isUploadFile(file)) {
     return NextResponse.json({ error: "Valid image file is required." }, { status: 400 });
