@@ -290,7 +290,6 @@ export function ActionCalendar({ events }: ActionCalendarProps) {
 
             return <div key={day}>{day}</div>;
           })}
-          ))}
         </div>
 
         <div className="mt-2 grid grid-cols-7 gap-1.5">
