@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Clock3, Gift, X } from "lucide-react";
+import { Clock3, Gift, Trophy, X } from "lucide-react";
 import { arrayUnion, collection, doc, increment, limit, onSnapshot, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -142,27 +142,35 @@ export function HomeEventWidgets() {
               {expanded ? (
                 <div className="mt-3 rounded-xl border border-white/10 bg-black/35 p-3">
                   {widget.details ? <p className="text-xs leading-5 text-zinc-300">{widget.details}</p> : null}
-                  {widget.gallery?.length ? (
-                    <div className="mt-3 grid grid-cols-3 gap-2">
-                      {widget.gallery.slice(0, 3).map((image, index) => {
-                        const galleryUrl = image.secureUrl || image.url;
-                        return galleryUrl ? <img key={`${galleryUrl}-${index}`} src={galleryUrl} alt={image.alt ?? ""} className="h-14 rounded-lg object-cover" /> : null;
-                      })}
-                    </div>
+                  {widget.winnerName ? (
+                    <p className="mt-3 inline-flex items-center gap-2 rounded-lg border border-relic/25 bg-relic/10 px-3 py-2 text-xs font-bold text-relic">
+                      <Trophy size={14} />
+                      Победитель: {widget.winnerName}
+                    </p>
                   ) : null}
                 </div>
               ) : null}
 
               <div className="mt-3">
                 {user ? (
-                  <button
-                    type="button"
-                    onClick={() => void participate(widget)}
-                    disabled={joined}
-                    className="w-full rounded-xl bg-relic px-3 py-2 text-sm font-black text-black transition hover:bg-[#f0c766] disabled:cursor-default disabled:opacity-70"
-                  >
-                    {joined ? "Вы участвуете" : "Участвовать"}
-                  </button>
+                  <div className="grid gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void participate(widget)}
+                      disabled={joined}
+                      className="w-full rounded-xl bg-relic px-3 py-2 text-sm font-black text-black transition hover:bg-[#f0c766] disabled:cursor-default disabled:opacity-70"
+                    >
+                      {joined ? "Вы участвуете" : "Участвовать"}
+                    </button>
+                    {joined && widget.donationUrl ? (
+                      <a
+                        href={widget.donationUrl}
+                        className="block w-full rounded-xl border border-relic/30 bg-black/35 px-3 py-2 text-center text-xs font-black uppercase tracking-[0.12em] text-relic transition hover:bg-relic/10"
+                      >
+                        Открыть донат-набор
+                      </a>
+                    ) : null}
+                  </div>
                 ) : (
                   <Link href="/login" className="block w-full rounded-xl bg-relic px-3 py-2 text-center text-sm font-black text-black transition hover:bg-[#f0c766]">
                     Войти для участия

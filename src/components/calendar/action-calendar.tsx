@@ -223,6 +223,7 @@ export function ActionCalendar({ events }: ActionCalendarProps) {
     const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
     return Array.from({ length: daysInMonth }, (_, index) => index + 1);
   }, [month]);
+  const timelineMinWidth = useMemo(() => 190 + monthDayNumbers.length * 42, [monthDayNumbers.length]);
   const monthEventRanges = useMemo(
     () =>
       calendarEvents
@@ -349,7 +350,10 @@ export function ActionCalendar({ events }: ActionCalendarProps) {
               </div>
 
               <div className="max-h-[74dvh] overflow-auto p-3 sm:p-5">
-                <div className="min-w-[980px] overflow-hidden rounded-[18px] border border-relic/24 bg-black/30">
+                <div
+                  className="overflow-hidden rounded-[18px] border border-relic/24 bg-black/30"
+                  style={{ minWidth: `${timelineMinWidth}px` }}
+                >
                   <div className="grid grid-cols-[190px_1fr] border-b border-relic/18 bg-relic/[0.08]">
                     <div className="border-r border-relic/18 p-3 text-xs font-black uppercase tracking-[0.18em] text-relic">{copy[language].eventColumn}</div>
                     <div className="grid" style={{ gridTemplateColumns: `repeat(${monthDayNumbers.length}, minmax(42px, 1fr))` }}>

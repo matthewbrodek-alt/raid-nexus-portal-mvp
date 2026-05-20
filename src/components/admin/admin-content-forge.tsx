@@ -83,7 +83,8 @@ async function uploadImage(file: File, publicId: string, folder = "heroes") {
   });
 
   if (!response.ok) {
-    throw new Error("Не удалось загрузить изображение в Cloudinary.");
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(payload?.error ?? "Не удалось загрузить изображение в Cloudinary.");
   }
 
   return (await response.json()) as CloudinaryAsset;

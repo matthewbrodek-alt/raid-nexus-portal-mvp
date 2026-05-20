@@ -1,7 +1,7 @@
 "use client";
 
 import { Bot, Clock, Gem, MessageSquareText, ScrollText, ShieldCheck, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDonationOffers } from "@/components/donate/use-donation-offers";
 import { TopupLeadForm } from "@/components/topup/topup-lead-form";
 import { GlassPanel } from "@/components/ui/glass-panel";
@@ -81,6 +81,15 @@ export function DonatePageContent() {
       text: t.faq.join(" ")
     }
   ];
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const packageFromUrl = searchParams.get("package") ?? searchParams.get("pack") ?? "";
+
+    if (packageFromUrl) {
+      setSelectedPackageId(packageFromUrl);
+    }
+  }, []);
 
   return (
     <div className="space-y-8">

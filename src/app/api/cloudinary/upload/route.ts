@@ -5,7 +5,17 @@ import type { CloudinaryFolder } from "@/lib/cloudinary/types";
 export const runtime = "nodejs";
 
 const MAX_FILE_SIZE = 6 * 1024 * 1024;
-const allowedFolders = new Set<CloudinaryFolder>(["heroes", "news", "offers", "marketplace", "chat", "forum", "users", "topup"]);
+const allowedFolders = new Set<CloudinaryFolder>(["heroes", "news", "offers", "marketplace", "chat", "forum", "users", "topup", "event-widgets"]);
+
+function isUploadFile(value: FormDataEntryValue | null): value is File {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      "arrayBuffer" in value &&
+      "size" in value &&
+      "type" in value
+  );
+}
 
 function fileToDataUrl(file: File, buffer: ArrayBuffer) {
   const base64 = Buffer.from(buffer).toString("base64");
@@ -18,8 +28,12 @@ export async function POST(request: Request) {
   const folder = formData?.get("folder");
   const publicId = formData?.get("publicId");
 
-  if (!(file instanceof File) || typeof folder !== "string" || !allowedFolders.has(folder as CloudinaryFolder)) {
-    return NextResponse.json({ error: "Valid file and folder are required." }, { status: 400 });
+  if (!isUploadFile(file)) {
+    return NextResponse.json({ error: "Valid image file is required." }, { status: 400 });
+  }
+
+  if (typeof folder !== "string" || !allowedFolders.has(folder as CloudinaryFolder)) {
+    return NextResponse.json({ error: "Valid upload folder is required." }, { status: 400 });
   }
 
   if (!file.type.startsWith("image/")) {

@@ -14,6 +14,7 @@ export type PortalEventWidget = {
   details?: string;
   type?: "contest" | "special" | "event";
   deadlineAt?: string;
+  donationUrl?: string;
   status?: "published" | "archived";
   image?: {
     secureUrl?: string;
@@ -27,6 +28,9 @@ export type PortalEventWidget = {
   }>;
   participants?: string[];
   participantCount?: number;
+  winnerUid?: string;
+  winnerName?: string;
+  winnerPickedAt?: { seconds?: number };
   createdAt?: { seconds?: number };
 };
 
