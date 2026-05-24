@@ -128,13 +128,17 @@ export function LatestNewsRail() {
   useEffect(() => {
     const newsQuery = query(collection(db, collections.news), where("status", "==", "published"));
 
-    return onSnapshot(newsQuery, (snapshot) => {
-      const items = snapshot.docs
-        .map((item) => ({ id: item.id, ...(item.data() as Omit<NewsItem, "id">) }))
-        .sort((a, b) => (b.publishedAt?.seconds ?? b.createdAt?.seconds ?? 0) - (a.publishedAt?.seconds ?? a.createdAt?.seconds ?? 0))
-        .slice(0, 10);
-      setNews(items.length ? items : fallbackNews);
-    });
+    return onSnapshot(
+      newsQuery,
+      (snapshot) => {
+        const items = snapshot.docs
+          .map((item) => ({ id: item.id, ...(item.data() as Omit<NewsItem, "id">) }))
+          .sort((a, b) => (b.publishedAt?.seconds ?? b.createdAt?.seconds ?? 0) - (a.publishedAt?.seconds ?? a.createdAt?.seconds ?? 0))
+          .slice(0, 10);
+        setNews(items.length ? items : fallbackNews);
+      },
+      () => setNews(fallbackNews)
+    );
   }, []);
 
   useEffect(() => {

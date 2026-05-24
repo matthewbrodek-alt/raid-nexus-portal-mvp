@@ -40,9 +40,13 @@ export function HomeBroadcast() {
   const defaultTitle = language === "ru" ? "Эмбрис в 9 леса, что он может!?" : "RAID Broadcast";
 
   useEffect(() => {
-    return onSnapshot(doc(db, collections.siteSettings, "homeBroadcast"), (snapshot) => {
-      setSettings({ ...defaultSettings, ...((snapshot.data() as BroadcastSettings | undefined) ?? {}) });
-    });
+    return onSnapshot(
+      doc(db, collections.siteSettings, "homeBroadcast"),
+      (snapshot) => {
+        setSettings({ ...defaultSettings, ...((snapshot.data() as BroadcastSettings | undefined) ?? {}) });
+      },
+      () => setSettings(defaultSettings)
+    );
   }, []);
 
   const playbackUrl = useMemo(() => normalizeYoutubeUrl(settings.videoUrl || defaultSettings.videoUrl), [settings.videoUrl]);

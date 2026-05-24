@@ -25,6 +25,11 @@ type EventRange = {
   endDate: Date;
 };
 
+type EventMarker = {
+  day: number;
+  label: "start" | "end" | "single";
+};
+
 const copy: Record<
   Language,
   {
@@ -190,6 +195,29 @@ function formatWeekday(date: Date, language: Language) {
     .replace(".", "");
 }
 
+function getRangeMarkers(range: EventRange): EventMarker[] {
+  if (range.startDay === range.endDay) {
+    return [{ day: range.startDay, label: "single" }];
+  }
+
+  return [
+    { day: range.startDay, label: "start" },
+    { day: range.endDay, label: "end" }
+  ];
+}
+
+function getMarkerLabel(label: EventMarker["label"], language: Language) {
+  if (label === "single") {
+    return language === "ru" ? "День события" : "Event day";
+  }
+
+  if (label === "start") {
+    return language === "ru" ? "Старт" : "Start";
+  }
+
+  return language === "ru" ? "Финиш" : "End";
+}
+
 export function ActionCalendar({ events }: ActionCalendarProps) {
   const { language } = useLanguage();
   const [monthOffset, setMonthOffset] = useState<0 | 1>(0);
@@ -212,18 +240,17 @@ export function ActionCalendar({ events }: ActionCalendarProps) {
   useEffect(() => {
     const calendarQuery = query(collection(db, collections.heroCalendar), where("isPublished", "==", true));
 
-    return onSnapshot(calendarQuery, (snapshot) => {
-      setAdminEvents(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<CalendarItem, "id">) })));
-    });
+    return onSnapshot(
+      calendarQuery,
+      (snapshot) => {
+        setAdminEvents(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<CalendarItem, "id">) })));
+      },
+      () => setAdminEvents([])
+    );
   }, []);
 
   const calendarEvents = adminEvents.length ? adminEvents : events;
   const days = useMemo(() => buildMonthDays(month), [month]);
-  const monthDayNumbers = useMemo(() => {
-    const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
-    return Array.from({ length: daysInMonth }, (_, index) => index + 1);
-  }, [month]);
-  const timelineMinWidth = useMemo(() => 190 + monthDayNumbers.length * 42, [monthDayNumbers.length]);
   const monthEventRanges = useMemo(
     () =>
       calendarEvents
@@ -231,12 +258,25 @@ export function ActionCalendar({ events }: ActionCalendarProps) {
         .filter((range): range is EventRange => Boolean(range)),
     [calendarEvents, month]
   );
+  const timelineDayNumbers = useMemo(() => {
+    const keyDays = new Set<number>();
+
+    for (const range of monthEventRanges) {
+      for (const marker of getRangeMarkers(range)) {
+        keyDays.add(marker.day);
+      }
+    }
+
+    return Array.from(keyDays).sort((first, second) => first - second);
+  }, [monthEventRanges]);
+  const timelineMinWidth = useMemo(() => 190 + Math.max(timelineDayNumbers.length, 1) * 104, [timelineDayNumbers.length]);
+  const selectedTimelineColumn = selectedDay ? timelineDayNumbers.indexOf(selectedDay) + 1 : 0;
   const eventByDay = useMemo(() => {
     const map = new Map<number, EventRange[]>();
 
     for (const range of monthEventRanges) {
-      for (let day = range.startDay; day <= range.endDay; day += 1) {
-        map.set(day, [...(map.get(day) ?? []), range]);
+      for (const marker of getRangeMarkers(range)) {
+        map.set(marker.day, [...(map.get(marker.day) ?? []), range]);
       }
     }
 
@@ -356,8 +396,8 @@ export function ActionCalendar({ events }: ActionCalendarProps) {
                 >
                   <div className="grid grid-cols-[190px_1fr] border-b border-relic/18 bg-relic/[0.08]">
                     <div className="border-r border-relic/18 p-3 text-xs font-black uppercase tracking-[0.18em] text-relic">{copy[language].eventColumn}</div>
-                    <div className="grid" style={{ gridTemplateColumns: `repeat(${monthDayNumbers.length}, minmax(42px, 1fr))` }}>
-                      {monthDayNumbers.map((day) => (
+                    <div className="grid" style={{ gridTemplateColumns: `repeat(${Math.max(timelineDayNumbers.length, 1)}, minmax(104px, 1fr))` }}>
+                      {timelineDayNumbers.length ? timelineDayNumbers.map((day) => (
                         <button
                           key={day}
                           type="button"
@@ -369,7 +409,7 @@ export function ActionCalendar({ events }: ActionCalendarProps) {
                           <span className="block">{formatWeekday(new Date(month.getFullYear(), month.getMonth(), day), language)}</span>
                           <span className="block text-relic">{day}</span>
                         </button>
-                      ))}
+                      )) : <div className="px-3 py-2 text-xs text-zinc-500">{copy[language].empty}</div>}
                     </div>
                   </div>
 
@@ -383,20 +423,36 @@ export function ActionCalendar({ events }: ActionCalendarProps) {
                         </div>
                         <div
                           className="relative grid bg-[linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)]"
-                          style={{ gridTemplateColumns: `repeat(${monthDayNumbers.length}, minmax(42px, 1fr))` }}
+                          style={{ gridTemplateColumns: `repeat(${Math.max(timelineDayNumbers.length, 1)}, minmax(104px, 1fr))` }}
                         >
-                          {selectedDay ? (
+                          {selectedTimelineColumn > 0 ? (
                             <span
                               className="pointer-events-none row-start-1 h-full bg-relic/[0.08]"
-                              style={{ gridColumn: `${selectedDay} / ${selectedDay + 1}` }}
+                              style={{ gridColumn: `${selectedTimelineColumn} / ${selectedTimelineColumn + 1}` }}
                             />
                           ) : null}
-                          <span
-                            className="my-auto flex h-9 items-center rounded-r-[12px] rounded-l-[6px] border border-relic/35 bg-[#173222]/95 px-3 text-xs font-bold text-white shadow-[0_0_22px_rgba(200,154,61,0.14)]"
-                            style={{ gridColumn: `${range.startDay} / ${range.endDay + 1}` }}
-                          >
-                            <span className="line-clamp-1">{range.event.description || range.event.title}</span>
-                          </span>
+                          {getRangeMarkers(range).map((marker) => {
+                            const markerColumn = timelineDayNumbers.indexOf(marker.day) + 1;
+
+                            if (markerColumn <= 0) {
+                              return null;
+                            }
+
+                            return (
+                              <button
+                                key={`${range.event.id ?? range.event.title}-${marker.day}-${marker.label}`}
+                                type="button"
+                                onClick={() => setSelectedDay(marker.day)}
+                                className="z-10 my-auto ml-2 flex min-h-10 items-center rounded-[12px] border border-relic/35 bg-[#173222]/95 px-3 text-left text-xs font-bold text-white shadow-[0_0_22px_rgba(200,154,61,0.14)] transition hover:border-relic"
+                                style={{ gridColumn: `${markerColumn} / ${markerColumn + 1}` }}
+                              >
+                                <span className="min-w-0">
+                                  <span className="block text-[10px] uppercase tracking-[0.14em] text-relic">{getMarkerLabel(marker.label, language)}</span>
+                                  <span className="line-clamp-1">{range.event.description || range.event.title}</span>
+                                </span>
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     ))

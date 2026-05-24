@@ -149,6 +149,10 @@ export function HomeSearch() {
   const [dynamicItems, setDynamicItems] = useState<SearchItem[]>([]);
 
   useEffect(() => {
+    const removeDynamicItems = (prefix: string) => {
+      setDynamicItems((current) => current.filter((item) => !item.id.startsWith(prefix)));
+    };
+
     const unsubscribers = [
       onSnapshot(query(collection(db, collections.news), where("status", "==", "published"), limit(20)), (snapshot) => {
         const newsItems = snapshot.docs.map((item) => {
@@ -165,7 +169,7 @@ export function HomeSearch() {
         });
 
         setDynamicItems((current) => [...current.filter((item) => !item.id.startsWith("news-")), ...newsItems]);
-      }),
+      }, () => removeDynamicItems("news-")),
       onSnapshot(query(collection(db, collections.heroes), where("isPublished", "==", true), limit(40)), (snapshot) => {
         const heroItems = snapshot.docs.map((item) => {
           const data = item.data() as FirestoreHero;
@@ -179,7 +183,7 @@ export function HomeSearch() {
         });
 
         setDynamicItems((current) => [...current.filter((item) => !item.id.startsWith("hero-")), ...heroItems]);
-      }),
+      }, () => removeDynamicItems("hero-")),
       onSnapshot(query(collection(db, collections.marketplaceAccounts), where("status", "in", ["available", "reserved"]), limit(30)), (snapshot) => {
         const marketItems = snapshot.docs.map((item) => {
           const data = item.data() as FirestoreMarketLot;
@@ -193,7 +197,7 @@ export function HomeSearch() {
         });
 
         setDynamicItems((current) => [...current.filter((item) => !item.id.startsWith("market-")), ...marketItems]);
-      })
+      }, () => removeDynamicItems("market-"))
     ];
 
     return () => {

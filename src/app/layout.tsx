@@ -16,6 +16,10 @@ const cinzel = Cinzel({
 
 export const metadata: Metadata = {
   title: "Raid Portal MVP",
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg"
+  },
   description: "Dark fantasy портал Raid: Shadow Legends с маркетплейсом, базой героев, чатами и кабинетами."
 };
 

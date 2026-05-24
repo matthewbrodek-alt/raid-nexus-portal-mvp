@@ -55,6 +55,7 @@ export function HomeEventWidgets() {
   const [expandedId, setExpandedId] = useState("");
   const [confirmedIds, setConfirmedIds] = useState<string[]>([]);
   const [leavingIds, setLeavingIds] = useState<string[]>([]);
+  const [failedIds, setFailedIds] = useState<string[]>([]);
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -102,12 +103,18 @@ export function HomeEventWidgets() {
       return;
     }
 
-    await updateDoc(doc(db, collections.eventWidgets, widget.id), {
-      participants: arrayUnion(user.uid),
-      participantCount: increment(1),
-      updatedAt: serverTimestamp()
-    });
+    try {
+      await updateDoc(doc(db, collections.eventWidgets, widget.id), {
+        participants: arrayUnion(user.uid),
+        participantCount: increment(1),
+        updatedAt: serverTimestamp()
+      });
+    } catch {
+      setFailedIds((current) => (current.includes(widget.id) ? current : [...current, widget.id]));
+      return;
+    }
 
+    setFailedIds((current) => current.filter((id) => id !== widget.id));
     setConfirmedIds((current) => (current.includes(widget.id) ? current : [...current, widget.id]));
     window.setTimeout(() => {
       setLeavingIds((current) => (current.includes(widget.id) ? current : [...current, widget.id]));
@@ -128,6 +135,7 @@ export function HomeEventWidgets() {
       {visibleWidgets.map((widget) => {
         const imageUrl = getImageUrl(widget);
         const joined = Boolean(user && (widget.participants?.includes(user.uid) || confirmedIds.includes(widget.id)));
+        const failed = failedIds.includes(widget.id);
         const expanded = expandedId === widget.id;
         const leaving = leavingIds.includes(widget.id);
 
@@ -135,7 +143,7 @@ export function HomeEventWidgets() {
           <div
             key={widget.id}
             className={`relative overflow-hidden rounded-[18px] border border-relic/35 bg-[#071019]/96 p-3 text-white shadow-[0_18px_70px_rgba(0,0,0,0.62),0_0_34px_rgba(200,154,61,0.16)] backdrop-blur-md transition-all duration-500 ${
-              leaving ? "translate-y-4 scale-[0.98] opacity-0" : "translate-y-0 scale-100 opacity-100"
+              leaving ? "translate-y-4 scale-[0.98] opacity-0" : failed ? "translate-y-0 scale-100 border-blood/50 opacity-100" : "translate-y-0 scale-100 opacity-100"
             }`}
           >
             {imageUrl ? <img src={imageUrl} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-28" /> : null}

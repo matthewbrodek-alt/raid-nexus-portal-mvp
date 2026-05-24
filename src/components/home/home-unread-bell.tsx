@@ -57,10 +57,14 @@ export function HomeUnreadBell({ label }: { label: string }) {
     setSeenState(readSeenState(user.uid));
 
     const threadsQuery = query(collection(db, "directThreads"), where("participants", "array-contains", user.uid));
-    return onSnapshot(threadsQuery, (snapshot) => {
-      setThreads(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<DirectThread, "id">) })));
-      setSeenState(readSeenState(user.uid));
-    });
+    return onSnapshot(
+      threadsQuery,
+      (snapshot) => {
+        setThreads(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<DirectThread, "id">) })));
+        setSeenState(readSeenState(user.uid));
+      },
+      () => setThreads([])
+    );
   }, [user?.uid]);
 
   const unreadCount = useMemo(() => {
