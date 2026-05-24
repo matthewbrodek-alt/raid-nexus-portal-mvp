@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Clock3, Gift, Trophy, X } from "lucide-react";
+import { CheckCircle2, Clock3, Gift, Trophy, X } from "lucide-react";
 import { arrayUnion, collection, doc, increment, limit, onSnapshot, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -53,6 +53,8 @@ export function HomeEventWidgets() {
   const [widgets, setWidgets] = useState<PortalEventWidget[]>([]);
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [expandedId, setExpandedId] = useState("");
+  const [confirmedIds, setConfirmedIds] = useState<string[]>([]);
+  const [leavingIds, setLeavingIds] = useState<string[]>([]);
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -80,7 +82,14 @@ export function HomeEventWidgets() {
     );
   }, []);
 
-  const visibleWidgets = useMemo(() => widgets.filter((widget) => !dismissed.includes(widget.id)).slice(0, 3), [dismissed, widgets]);
+  const visibleWidgets = useMemo(
+    () =>
+      widgets
+        .filter((widget) => !dismissed.includes(widget.id))
+        .filter((widget) => !user?.uid || !widget.participants?.includes(user.uid) || confirmedIds.includes(widget.id))
+        .slice(0, 3),
+    [confirmedIds, dismissed, user?.uid, widgets]
+  );
 
   function closeWidget(widgetId: string) {
     const next = [...dismissed, widgetId];
@@ -98,6 +107,16 @@ export function HomeEventWidgets() {
       participantCount: increment(1),
       updatedAt: serverTimestamp()
     });
+
+    setConfirmedIds((current) => (current.includes(widget.id) ? current : [...current, widget.id]));
+    window.setTimeout(() => {
+      setLeavingIds((current) => (current.includes(widget.id) ? current : [...current, widget.id]));
+    }, 3200);
+    window.setTimeout(() => {
+      closeWidget(widget.id);
+      setConfirmedIds((current) => current.filter((id) => id !== widget.id));
+      setLeavingIds((current) => current.filter((id) => id !== widget.id));
+    }, 3800);
   }
 
   if (!visibleWidgets.length) {
@@ -108,21 +127,29 @@ export function HomeEventWidgets() {
     <div className="fixed bottom-4 left-3 z-[60] w-[min(360px,calc(100vw-24px))] space-y-2 sm:bottom-6 sm:left-6">
       {visibleWidgets.map((widget) => {
         const imageUrl = getImageUrl(widget);
-        const joined = Boolean(user && widget.participants?.includes(user.uid));
+        const joined = Boolean(user && (widget.participants?.includes(user.uid) || confirmedIds.includes(widget.id)));
         const expanded = expandedId === widget.id;
+        const leaving = leavingIds.includes(widget.id);
 
         return (
-          <div key={widget.id} className="relative overflow-hidden rounded-[18px] border border-relic/35 bg-[#071019]/96 p-3 text-white shadow-[0_18px_70px_rgba(0,0,0,0.62),0_0_34px_rgba(200,154,61,0.16)] backdrop-blur-md">
+          <div
+            key={widget.id}
+            className={`relative overflow-hidden rounded-[18px] border border-relic/35 bg-[#071019]/96 p-3 text-white shadow-[0_18px_70px_rgba(0,0,0,0.62),0_0_34px_rgba(200,154,61,0.16)] backdrop-blur-md transition-all duration-500 ${
+              leaving ? "translate-y-4 scale-[0.98] opacity-0" : "translate-y-0 scale-100 opacity-100"
+            }`}
+          >
             {imageUrl ? <img src={imageUrl} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-28" /> : null}
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#05070b]/95 via-[#05070b]/78 to-[#05070b]/52" />
             <div className="relative">
               <div className="flex items-start gap-3">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-relic/35 bg-relic/15 text-relic">
-                  <Gift size={18} />
+                  {joined ? <CheckCircle2 size={18} /> : <Gift size={18} />}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-black text-white">{widget.title || "Событие портала"}</p>
-                  <p className="mt-1 line-clamp-2 text-xs leading-5 text-zinc-300">{widget.comment}</p>
+                  <p className="truncate text-sm font-black text-white">{joined ? "Вы участвуете в событии" : widget.title || "Событие портала"}</p>
+                  <p className="mt-1 line-clamp-2 text-xs leading-5 text-zinc-300">
+                    {joined ? "Заявка на участие принята. Виджет исчезнет автоматически." : widget.comment}
+                  </p>
                 </div>
                 <button type="button" onClick={() => closeWidget(widget.id)} className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-white/10 bg-black/30 text-zinc-400 hover:text-white">
                   <X size={14} />

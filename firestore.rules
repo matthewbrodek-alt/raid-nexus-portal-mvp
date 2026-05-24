@@ -16,6 +16,7 @@ service cloud.firestore {
 
     function activeUser() {
       return signedIn()
+        && request.auth.token.email_verified == true
         && profile().status == "active"
         && (
           !exists(/databases/$(database)/documents/globalUserBlocks/$(request.auth.uid))

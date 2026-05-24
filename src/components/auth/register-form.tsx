@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification, signOut, updateProfile } from "firebase/auth";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useState } from "react";
 import { auth, db } from "@/lib/firebase/client";
@@ -18,7 +17,6 @@ type GameAccountDraft = {
 };
 
 export function RegisterForm() {
-  const router = useRouter();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,6 +27,7 @@ export function RegisterForm() {
     serverRegion: ""
   });
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
 
   function updateGameAccount(field: keyof GameAccountDraft, value: string) {
@@ -76,13 +75,25 @@ export function RegisterForm() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    setNotice("");
     setLoading(true);
 
     try {
       const credential = await createUserWithEmailAndPassword(auth, normalizeEmail(email), password);
       await updateProfile(credential.user, { displayName });
       await saveEncryptedGameData(credential.user.uid);
-      router.push("/dashboard");
+      await sendEmailVerification(credential.user);
+      await signOut(auth);
+      setNotice("Аккаунт создан. Мы отправили письмо для подтверждения email. Подтвердите почту и затем войдите.");
+      setDisplayName("");
+      setEmail("");
+      setPassword("");
+      setGameAccount({
+        gameNickname: "",
+        notes: "",
+        plariumId: "",
+        serverRegion: ""
+      });
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Не удалось зарегистрироваться.");
     } finally {
@@ -163,6 +174,7 @@ export function RegisterForm() {
           </div>
         </div>
 
+        {notice ? <p className="rounded-md border border-relic/30 bg-relic/10 p-3 text-sm text-relic">{notice}</p> : null}
         {error ? <p className="rounded-md border border-ember/30 bg-ember/10 p-3 text-sm text-ember">{error}</p> : null}
         <button
           type="submit"

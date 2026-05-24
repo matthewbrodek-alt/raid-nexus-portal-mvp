@@ -50,6 +50,34 @@ function leadTime(lead: TopupLead) {
   }).format(new Date(lead.createdAt.seconds * 1000));
 }
 
+const completedLeadStatuses = new Set(["done", "paid", "completed", "closed", "processed"]);
+
+function formatLeadStatus(status?: string) {
+  const normalized = (status ?? "new").toLowerCase();
+
+  if (normalized === "processed") {
+    return "Обработано администратором";
+  }
+
+  if (normalized === "done" || normalized === "paid" || normalized === "completed" || normalized === "closed") {
+    return "Выполнено";
+  }
+
+  if (normalized === "pending" || normalized === "waitingpayment" || normalized === "waiting_payment") {
+    return "В процессе";
+  }
+
+  if (normalized === "new") {
+    return "Новая заявка";
+  }
+
+  if (normalized === "cancelled" || normalized === "canceled") {
+    return "Отменено";
+  }
+
+  return status ?? "Новая заявка";
+}
+
 async function uploadAvatar(file: File) {
   const formData = new FormData();
   formData.append("file", file);
@@ -116,7 +144,7 @@ export function UserDashboardContent() {
       {
         label: "Заявки",
         value: String(topupLeads.length),
-        detail: topupLeads[0]?.status ? `последняя: ${topupLeads[0].status}` : "пока нет заявок"
+        detail: topupLeads[0]?.status ? `последняя: ${formatLeadStatus(topupLeads[0].status)}` : "пока нет заявок"
       },
       {
         label: "Форум",
@@ -125,7 +153,7 @@ export function UserDashboardContent() {
       },
       {
         label: "История заявок",
-        value: String(topupLeads.filter((lead) => lead.status === "done" || lead.status === "paid").length),
+        value: String(topupLeads.filter((lead) => completedLeadStatuses.has((lead.status ?? "").toLowerCase())).length),
         detail: `${topupLeads.length} всего`
       }
     ],
@@ -221,7 +249,7 @@ export function UserDashboardContent() {
                 </div>
                 <div className="text-left sm:text-right">
                   <p className="font-bold text-relic">{formatLeadAmount(lead)}</p>
-                  <p className="mt-1 text-xs text-zinc-400">{lead.status ?? "new"}</p>
+                  <p className="mt-1 text-xs text-zinc-400">{formatLeadStatus(lead.status)}</p>
                   {lead.managerUid ? (
                     <Link className="mt-2 inline-flex text-xs font-semibold text-relic hover:text-white" href={`/chat?user=${lead.managerUid}`}>
                       Открыть чат

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { sendEmailVerification } from "firebase/auth";
+import { useEffect, useState } from "react";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { useAuth } from "@/components/auth/auth-provider";
 import type { UserRole } from "@/lib/auth/types";
@@ -13,8 +14,9 @@ type ProtectedRouteProps = {
 };
 
 export function ProtectedRoute({ allowedRoles, children }: ProtectedRouteProps) {
-  const { loading, profile, user } = useAuth();
+  const { loading, profile, signOut, user } = useAuth();
   const router = useRouter();
+  const [verificationStatus, setVerificationStatus] = useState("");
 
   useEffect(() => {
     if (!loading && !user) {
@@ -35,6 +37,51 @@ export function ProtectedRoute({ allowedRoles, children }: ProtectedRouteProps) 
 
   if (!user || !profile) {
     return null;
+  }
+
+  if (!user.emailVerified) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-raid-radial px-4 text-pale">
+        <GlassPanel className="w-full max-w-lg p-6">
+          <p className="text-xs uppercase tracking-[0.24em] text-relic">Email verification</p>
+          <h1 className="mt-3 text-3xl font-black text-white">Подтвердите email</h1>
+          <p className="mt-3 text-sm leading-6 text-zinc-400">
+            Для доступа к личному кабинету нужно подтвердить почту. Откройте письмо от Firebase и нажмите ссылку подтверждения.
+          </p>
+          {verificationStatus ? <p className="mt-4 rounded-md border border-relic/25 bg-relic/10 p-3 text-sm text-relic">{verificationStatus}</p> : null}
+          <div className="mt-5 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={async () => {
+                await sendEmailVerification(user);
+                setVerificationStatus("Письмо подтверждения отправлено повторно.");
+              }}
+              className="rounded-md bg-relic px-4 py-2 text-sm font-black text-black"
+            >
+              Отправить письмо еще раз
+            </button>
+            <button
+              type="button"
+              onClick={async () => {
+                await user.reload();
+                await user.getIdToken(true);
+                window.location.reload();
+              }}
+              className="rounded-md border border-relic/30 bg-relic/10 px-4 py-2 text-sm font-semibold text-relic"
+            >
+              Я подтвердил
+            </button>
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              className="rounded-md border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-zinc-300"
+            >
+              Выйти
+            </button>
+          </div>
+        </GlassPanel>
+      </main>
+    );
   }
 
   if (allowedRoles && !allowedRoles.includes(profile.role)) {

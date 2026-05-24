@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import {
+  browserLocalPersistence,
+  browserSessionPersistence,
+  sendEmailVerification,
+  setPersistence,
+  signInWithEmailAndPassword,
+  signOut
+} from "firebase/auth";
 import { useState } from "react";
 import { auth } from "@/lib/firebase/client";
 import { normalizeEmail } from "@/lib/auth/role-utils";
@@ -12,16 +19,28 @@ export function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    setNotice("");
     setLoading(true);
 
     try {
-      await signInWithEmailAndPassword(auth, normalizeEmail(email), password);
+      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+      const credential = await signInWithEmailAndPassword(auth, normalizeEmail(email), password);
+
+      if (!rememberMe && !credential.user.emailVerified) {
+        await sendEmailVerification(credential.user);
+        await signOut(auth);
+        setNotice("Мы отправили письмо для подтверждения email. Подтвердите почту и войдите снова.");
+        return;
+      }
+
       router.push("/dashboard");
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Не удалось войти.");
@@ -55,6 +74,16 @@ export function LoginForm() {
             required
           />
         </label>
+        <label className="flex items-center gap-3 rounded-md border border-white/10 bg-black/20 p-3 text-sm text-zinc-300">
+          <input
+            type="checkbox"
+            checked={rememberMe}
+            onChange={(event) => setRememberMe(event.target.checked)}
+            className="rounded border-white/20 bg-black/30 text-relic focus:ring-relic"
+          />
+          Запомнить меня на этом устройстве
+        </label>
+        {notice ? <p className="rounded-md border border-relic/30 bg-relic/10 p-3 text-sm text-relic">{notice}</p> : null}
         {error ? <p className="rounded-md border border-ember/30 bg-ember/10 p-3 text-sm text-ember">{error}</p> : null}
         <button
           type="submit"
