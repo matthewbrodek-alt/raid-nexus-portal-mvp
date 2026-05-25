@@ -72,7 +72,7 @@ export default function Home() {
     <main className="relative min-h-screen overflow-hidden bg-transparent text-pale">
       <HomeBackgroundVideo />
       <HomeSocialLinks />
-      <div className="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(circle_at_50%_0%,rgba(231,193,106,0.11),transparent_26%),linear-gradient(90deg,rgba(3,7,12,0.92),rgba(3,7,12,0.34)_48%,rgba(3,7,12,0.84))]" />
+      <div className="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(circle_at_50%_0%,rgba(231,193,106,0.16),transparent_26%),linear-gradient(90deg,rgba(3,7,12,0.46),rgba(3,7,12,0.17)_48%,rgba(3,7,12,0.42))]" />
 
       <div className="raid-dashboard-shell relative z-10 min-h-screen lg:grid lg:grid-cols-[300px_1fr]">
         <aside className="hidden min-h-screen flex-col border-r border-relic/18 bg-[#02070c]/72 backdrop-blur-md lg:flex">

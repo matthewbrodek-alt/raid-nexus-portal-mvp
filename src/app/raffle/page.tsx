@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { CheckCircle2, ChevronLeft, ShieldCheck, Sparkles } from "lucide-react";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { RaidLogo } from "@/components/brand/raid-logo";
 import { useAuth } from "@/components/auth/auth-provider";
 import { db } from "@/lib/firebase/client";
@@ -12,6 +12,8 @@ import { getNextRaffleInfo, getRaffleTimeLeft, RAFFLE_PRIZE } from "@/lib/raffle
 
 const CRY_LINES = ["Ай-ай-ай!", "Хнык...", "Не по пузику!", "Еще чуть-чуть...", "Мачеха терпит ради рубинов", "Уже почти участник!"];
 const REQUIRED_CLICKS = 100;
+const MACHEHA_GIF_SRC = "/images/raffle/macheha.gif";
+const MACHEHA_CRY_SOUND_SRC = "/sounds/macheha-cry.mp3";
 
 export default function RafflePage() {
   const { loading, profile, user } = useAuth();
@@ -22,6 +24,7 @@ export default function RafflePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [cryIndex, setCryIndex] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const timeLeft = getRaffleTimeLeft(raffle.date, now);
   const progress = Math.min(100, Math.round((clicks / REQUIRED_CLICKS) * 100));
   const entryId = user ? `${user.uid}_${raffle.drawKey}` : "";
@@ -86,6 +89,11 @@ export default function RafflePage() {
       return;
     }
 
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      void audioRef.current.play().catch(() => undefined);
+    }
+
     setCryIndex((current) => (current + 1) % CRY_LINES.length);
     setClicks((current) => {
       const next = Math.min(REQUIRED_CLICKS, current + 1);
@@ -130,33 +138,45 @@ export default function RafflePage() {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={tapMacheha}
-              disabled={!user || entryExists || saving}
-              className="group relative mt-7 min-h-[500px] w-full overflow-hidden rounded-[28px] border border-relic/30 bg-[#120906] text-left shadow-[0_28px_90px_rgba(0,0,0,0.55)] transition hover:border-relic/60 disabled:cursor-default"
-            >
-              <span className="absolute inset-0 bg-[url('/images/raid-castle-bg.png')] bg-cover bg-center opacity-60 transition group-hover:scale-[1.02]" />
-              <span className="absolute inset-0 bg-[radial-gradient(circle_at_53%_58%,rgba(216,75,53,0.3),transparent_18%),linear-gradient(90deg,rgba(6,8,11,0.92),rgba(6,8,11,0.28),rgba(6,8,11,0.86))]" />
-              <span className="absolute left-1/2 top-[54%] h-72 w-56 -translate-x-1/2 -translate-y-1/2 rounded-[45%] border border-relic/20 bg-gradient-to-b from-[#8a3f2a] via-[#d77c52] to-[#8a3f2a] shadow-[inset_0_0_42px_rgba(0,0,0,0.45),0_0_60px_rgba(216,75,53,0.28)]" />
-              <span className="absolute left-1/2 top-[37%] h-24 w-28 -translate-x-1/2 rounded-[42%] bg-[#ce7650] shadow-[inset_0_-18px_28px_rgba(0,0,0,0.28)]" />
-              <span className="absolute left-1/2 top-[56%] grid h-28 w-28 -translate-x-1/2 place-items-center rounded-full border-2 border-relic/45 bg-black/20 font-[var(--font-cinzel)] text-5xl font-black text-relic shadow-[0_0_38px_rgba(200,154,61,0.28)]">
-                {clicks}
-              </span>
-              <span className="absolute left-5 top-5 rounded-[16px] border border-relic/30 bg-black/50 px-4 py-3">
-                <span className="block text-xs uppercase tracking-[0.22em] text-relic">Мачеха ур. 60</span>
-                <span className="mt-1 block text-sm font-bold text-white">Легендарный герой розыгрыша</span>
-              </span>
-              <span className="absolute bottom-5 left-5 right-5 rounded-[20px] border border-relic/24 bg-black/62 p-4 backdrop-blur-sm">
-                <span className="flex items-center justify-between gap-3">
-                  <span className="font-black text-white">{entryExists ? "Спасибо за участие в розыгрыше" : CRY_LINES[cryIndex]}</span>
-                  <span className="text-sm font-bold text-relic">{progress}%</span>
+            <div className="relative mt-7 overflow-hidden rounded-[28px] border border-relic/30 bg-[#120906] shadow-[0_28px_90px_rgba(0,0,0,0.55)]">
+              <div className="absolute inset-0 bg-[url('/images/raid-castle-bg.png')] bg-cover bg-center opacity-45" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_52%_54%,rgba(216,75,53,0.22),transparent_24%),linear-gradient(90deg,rgba(6,8,11,0.9),rgba(6,8,11,0.24),rgba(6,8,11,0.9))]" />
+
+              <button
+                type="button"
+                onClick={tapMacheha}
+                disabled={!user || entryExists || saving}
+                className="group relative block min-h-[520px] w-full overflow-hidden text-left transition hover:scale-[1.005] disabled:cursor-default disabled:hover:scale-100"
+                aria-label="Потыкай мачеху в пузико"
+              >
+                <img
+                  src={MACHEHA_GIF_SRC}
+                  alt="Мачеха"
+                  className="absolute inset-0 h-full w-full object-contain object-center drop-shadow-[0_28px_55px_rgba(0,0,0,0.72)] transition duration-200 group-active:scale-[0.992]"
+                />
+
+                <span className="pointer-events-none absolute left-5 top-5 rounded-[16px] border border-relic/30 bg-black/58 px-4 py-3 backdrop-blur-sm">
+                  <span className="block text-xs uppercase tracking-[0.22em] text-relic">Мачеха ур. 60</span>
+                  <span className="mt-1 block text-sm font-bold text-white">Легендарный герой розыгрыша</span>
                 </span>
-                <span className="mt-3 block h-2 overflow-hidden rounded-full bg-white/10">
-                  <span className="block h-full rounded-full bg-relic transition-all" style={{ width: `${progress}%` }} />
+
+                <span className="pointer-events-none absolute left-1/2 top-[54%] grid h-24 w-24 -translate-x-1/2 place-items-center rounded-full border-2 border-relic/45 bg-black/42 font-[var(--font-cinzel)] text-4xl font-black text-relic opacity-90 shadow-[0_0_38px_rgba(200,154,61,0.28)] backdrop-blur-sm">
+                  {clicks}
                 </span>
-              </span>
-            </button>
+
+                <span className="pointer-events-none absolute bottom-5 left-5 right-5 rounded-[20px] border border-relic/24 bg-black/68 p-4 backdrop-blur-sm">
+                  <span className="flex items-center justify-between gap-3">
+                    <span className="font-black text-white">{entryExists ? "Спасибо за участие в розыгрыше" : CRY_LINES[cryIndex]}</span>
+                    <span className="text-sm font-bold text-relic">{progress}%</span>
+                  </span>
+                  <span className="mt-3 block h-2 overflow-hidden rounded-full bg-white/10">
+                    <span className="block h-full rounded-full bg-relic transition-all" style={{ width: `${progress}%` }} />
+                  </span>
+                </span>
+              </button>
+            </div>
+
+            <audio ref={audioRef} src={MACHEHA_CRY_SOUND_SRC} preload="auto" />
           </div>
 
           <aside className="space-y-5">

@@ -26,7 +26,7 @@ body {
   min-height: 100vh;
   margin: 0;
   background:
-    linear-gradient(180deg, rgba(2, 5, 9, 0.26), rgba(2, 5, 9, 0.76)),
+    linear-gradient(180deg, rgba(2, 5, 9, 0.13), rgba(2, 5, 9, 0.38)),
     url("/images/raid-castle-bg.png"),
     linear-gradient(180deg, #05070b 0%, #09111e 100%);
   background-attachment: fixed;
@@ -42,9 +42,9 @@ body::before {
   inset: 0;
   z-index: -2;
   background:
-    radial-gradient(circle at 50% 0%, rgba(242, 214, 154, 0.22), transparent 26%),
-    radial-gradient(circle at 84% 52%, rgba(216, 75, 53, 0.2), transparent 28%),
-    linear-gradient(90deg, rgba(2, 6, 10, 0.78), rgba(3, 8, 13, 0.38) 48%, rgba(2, 6, 10, 0.82));
+    radial-gradient(circle at 50% 0%, rgba(242, 214, 154, 0.3), transparent 26%),
+    radial-gradient(circle at 84% 52%, rgba(216, 75, 53, 0.28), transparent 28%),
+    linear-gradient(90deg, rgba(2, 6, 10, 0.39), rgba(3, 8, 13, 0.19) 48%, rgba(2, 6, 10, 0.41));
   pointer-events: none;
 }
 
@@ -73,8 +73,8 @@ body::before {
 
 .raid-static-background {
   background:
-    linear-gradient(180deg, rgba(3, 7, 10, 0.12), rgba(3, 7, 10, 0.66)),
-    radial-gradient(circle at 50% 0%, rgba(231, 193, 106, 0.2), transparent 30%),
+    linear-gradient(180deg, rgba(3, 7, 10, 0.06), rgba(3, 7, 10, 0.33)),
+    radial-gradient(circle at 50% 0%, rgba(231, 193, 106, 0.28), transparent 30%),
     var(--raid-bg-image, url("/images/raid-castle-bg.png")),
     linear-gradient(180deg, #05070b 0%, #09111e 100%);
   background-size: cover, cover, cover, cover;
@@ -86,10 +86,10 @@ body::before {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 50% 0%, rgba(231, 193, 106, 0.18), transparent 24%),
-    radial-gradient(circle at 78% 64%, rgba(216, 75, 53, 0.18), transparent 28%),
-    linear-gradient(90deg, rgba(2, 6, 10, 0.94), rgba(3, 8, 13, 0.56) 48%, rgba(2, 6, 10, 0.92));
-  opacity: 0.88;
+    radial-gradient(circle at 50% 0%, rgba(231, 193, 106, 0.26), transparent 24%),
+    radial-gradient(circle at 78% 64%, rgba(216, 75, 53, 0.25), transparent 28%),
+    linear-gradient(90deg, rgba(2, 6, 10, 0.47), rgba(3, 8, 13, 0.28) 48%, rgba(2, 6, 10, 0.46));
+  opacity: 0.56;
 }
 
 .raid-static-background::after {
@@ -100,7 +100,7 @@ body::before {
     radial-gradient(circle at 18% 28%, rgba(200, 154, 61, 0.18) 0 1px, transparent 2px),
     radial-gradient(circle at 72% 62%, rgba(231, 193, 106, 0.16) 0 1px, transparent 2px),
     radial-gradient(circle at 42% 86%, rgba(216, 75, 53, 0.16) 0 1px, transparent 2px),
-    linear-gradient(180deg, rgba(5, 7, 11, 0.16), rgba(5, 7, 11, 0.66));
+    linear-gradient(180deg, rgba(5, 7, 11, 0.08), rgba(5, 7, 11, 0.33));
   background-size: 180px 180px, 220px 220px, 260px 260px, cover;
 }
 
