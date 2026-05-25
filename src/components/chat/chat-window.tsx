@@ -137,6 +137,10 @@ function extractMentions(text: string, users: UserProfile[], currentUid?: string
     .filter((item) => haystack.includes(`@${item.displayName}`.toLowerCase()));
 }
 
+function shouldShowAvatar(ownerUid: string, currentUid?: string, hiddenByAdmin?: boolean) {
+  return ownerUid === currentUid || !hiddenByAdmin;
+}
+
 export function ChatWindow() {
   const { profile, user } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -226,9 +230,13 @@ export function ChatWindow() {
     }
 
     const usersQuery = query(collection(db, collections.users), orderBy("displayName"));
-    return onSnapshot(usersQuery, (snapshot) => {
-      setUsers(snapshot.docs.map((item) => item.data() as UserProfile));
-    });
+    return onSnapshot(
+      usersQuery,
+      (snapshot) => {
+        setUsers(snapshot.docs.map((item) => item.data() as UserProfile));
+      },
+      () => setUsers([])
+    );
   }, [user]);
 
   useEffect(() => {
@@ -246,16 +254,55 @@ export function ChatWindow() {
   }, [selectedUser?.uid, users]);
 
   useEffect(() => {
-    const messagesRef =
-      selectedUser && user
-        ? collection(db, "directThreads", directThreadId(user.uid, selectedUser.uid), "messages")
-        : collection(db, collections.chatRooms, "global", "messages");
-    const messagesQuery = query(messagesRef, orderBy("createdAt", "asc"), limit(80));
+    let unsubscribe: (() => void) | undefined;
+    let cancelled = false;
 
-    return onSnapshot(messagesQuery, (snapshot) => {
-      setMessages(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<ChatMessage, "id">) })));
-    });
-  }, [selectedUser, user]);
+    async function subscribe() {
+      if (selectedUser && user) {
+        const threadId = directThreadId(user.uid, selectedUser.uid);
+
+        try {
+          await setDoc(
+            doc(db, "directThreads", threadId),
+            {
+              participants: [user.uid, selectedUser.uid],
+              participantEmails: [profile?.email ?? user.email ?? "", selectedUser.email],
+              updatedAt: serverTimestamp()
+            },
+            { merge: true }
+          );
+        } catch {
+          setMessages([]);
+          return;
+        }
+      }
+
+      if (cancelled) {
+        return;
+      }
+
+      const messagesRef =
+        selectedUser && user
+          ? collection(db, "directThreads", directThreadId(user.uid, selectedUser.uid), "messages")
+          : collection(db, collections.chatRooms, "global", "messages");
+      const messagesQuery = query(messagesRef, orderBy("createdAt", "asc"), limit(80));
+
+      unsubscribe = onSnapshot(
+        messagesQuery,
+        (snapshot) => {
+          setMessages(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<ChatMessage, "id">) })));
+        },
+        () => setMessages([])
+      );
+    }
+
+    void subscribe();
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [profile?.email, selectedUser, user]);
 
   useEffect(() => {
     scrollToBottom();
@@ -270,10 +317,12 @@ export function ChatWindow() {
       return;
     }
 
+    const author = users.find((item) => item.uid === messageItem.uid);
+
     setMemberMenu({
       uid: messageItem.uid,
       displayName: messageItem.displayName,
-      avatarUrl: messageItem.avatarUrl
+      avatarUrl: shouldShowAvatar(messageItem.uid, user?.uid, author?.avatarHiddenByAdmin) ? author?.avatarUrl || messageItem.avatarUrl : ""
     });
   }
 
@@ -351,7 +400,7 @@ export function ChatWindow() {
       const baseMessage = {
         uid: user.uid,
         displayName: profile.displayName,
-        avatarUrl: profile.avatarUrl ?? "",
+        avatarUrl: profile.avatarHiddenByAdmin ? "" : profile.avatarUrl ?? "",
         text,
         attachment: uploadedAttachment
           ? {
@@ -431,6 +480,7 @@ export function ChatWindow() {
 
   function renderUserButton(item: UserProfile, compact = false) {
     const label = getUserLabel(item);
+    const visibleAvatarUrl = shouldShowAvatar(item.uid, user?.uid, item.avatarHiddenByAdmin) ? item.avatarUrl : "";
 
     return (
       <button
@@ -445,7 +495,7 @@ export function ChatWindow() {
         }`}
       >
         <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-violet-500 to-cyan-600 text-xs font-black text-white">
-          {item.avatarUrl ? <img src={item.avatarUrl} alt={label} className="h-full w-full rounded-full object-cover" /> : label.slice(0, 2).toUpperCase()}
+          {visibleAvatarUrl ? <img src={visibleAvatarUrl} alt={label} className="h-full w-full rounded-full object-cover" /> : label.slice(0, 2).toUpperCase()}
         </span>
         <span className="min-w-0">
           <span className="block truncate font-semibold">{label}</span>
@@ -544,6 +594,10 @@ export function ChatWindow() {
               const attachmentUrl = item.attachment?.secureUrl ?? item.attachment?.url;
               const attachmentAlt = item.attachment?.alt ?? "Image";
               const initials = (item.displayName || "U").slice(0, 2).toUpperCase();
+              const authorProfile = users.find((userItem) => userItem.uid === item.uid);
+              const messageAvatarUrl = shouldShowAvatar(item.uid, user?.uid, authorProfile?.avatarHiddenByAdmin)
+                ? authorProfile?.avatarUrl || item.avatarUrl
+                : "";
 
               return (
                 <div key={item.id} className={`mb-2 flex items-end gap-2 ${own ? "justify-end" : "justify-start"}`}>
@@ -554,7 +608,7 @@ export function ChatWindow() {
                       className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full border border-relic/25 bg-gradient-to-br from-violet-500 to-cyan-600 text-[11px] font-black text-white"
                       title={item.displayName}
                     >
-                      {item.avatarUrl ? <img src={item.avatarUrl} alt={item.displayName} className="h-full w-full object-cover" /> : initials}
+                      {messageAvatarUrl ? <img src={messageAvatarUrl} alt={item.displayName} className="h-full w-full object-cover" /> : initials}
                     </button>
                   ) : null}
                   <article
@@ -694,7 +748,11 @@ export function ChatWindow() {
                           className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm text-zinc-200 transition hover:bg-relic/15 hover:text-white"
                         >
                           <span className="grid h-7 w-7 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-violet-500 to-cyan-600 text-[10px] font-black text-white">
-                            {item.avatarUrl ? <img src={item.avatarUrl} alt={getUserLabel(item)} className="h-full w-full object-cover" /> : getUserLabel(item).slice(0, 2).toUpperCase()}
+                            {shouldShowAvatar(item.uid, user?.uid, item.avatarHiddenByAdmin) && item.avatarUrl ? (
+                              <img src={item.avatarUrl} alt={getUserLabel(item)} className="h-full w-full object-cover" />
+                            ) : (
+                              getUserLabel(item).slice(0, 2).toUpperCase()
+                            )}
                           </span>
                           @{getUserLabel(item)}
                         </button>

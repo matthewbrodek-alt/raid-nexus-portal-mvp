@@ -1,7 +1,7 @@
 "use client";
 
-import { MailPlus, ShieldCheck } from "lucide-react";
-import { collection, doc, getDocs, serverTimestamp, setDoc } from "firebase/firestore";
+import { Eye, EyeOff, MailPlus, ShieldCheck } from "lucide-react";
+import { collection, doc, getDocs, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { GlassPanel } from "@/components/ui/glass-panel";
@@ -15,24 +15,29 @@ type AdminInvite = {
   status: string;
 };
 
+function userLabel(user: UserProfile) {
+  return user.displayName || user.email || user.uid;
+}
+
 export function AdminUserManagement() {
   const { profile, refreshProfile } = useAuth();
   const [email, setEmail] = useState("");
+  const [users, setUsers] = useState<UserProfile[]>([]);
   const [admins, setAdmins] = useState<UserProfile[]>([]);
   const [invites, setInvites] = useState<AdminInvite[]>([]);
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
   const isOwner = profile?.role === "owner";
+  const isAdmin = profile?.role === "admin" || profile?.role === "owner";
 
   const loadUsersAndInvites = useCallback(async () => {
     const usersSnapshot = await getDocs(collection(db, collections.users));
+    const nextUsers = usersSnapshot.docs
+      .map((item) => item.data() as UserProfile)
+      .sort((a, b) => userLabel(a).localeCompare(userLabel(b)));
 
-    setAdmins(
-      usersSnapshot.docs
-        .map((item) => item.data() as UserProfile)
-        .filter((item) => item.role === "admin" || item.role === "owner")
-        .sort((a, b) => a.email.localeCompare(b.email))
-    );
+    setUsers(nextUsers);
+    setAdmins(nextUsers.filter((item) => item.role === "admin" || item.role === "owner").sort((a, b) => a.email.localeCompare(b.email)));
 
     if (isOwner) {
       const invitesSnapshot = await getDocs(collection(db, collections.adminInvites));
@@ -43,10 +48,10 @@ export function AdminUserManagement() {
   }, [isOwner]);
 
   useEffect(() => {
-    if (profile?.role === "admin" || profile?.role === "owner") {
+    if (isAdmin) {
       void loadUsersAndInvites();
     }
-  }, [loadUsersAndInvites, profile?.role]);
+  }, [isAdmin, loadUsersAndInvites]);
 
   async function handleInvite(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -83,13 +88,33 @@ export function AdminUserManagement() {
     }
   }
 
+  async function toggleAvatarVisibility(target: UserProfile) {
+    if (!isAdmin) {
+      return;
+    }
+
+    const nextHidden = !target.avatarHiddenByAdmin;
+    setStatus("");
+
+    try {
+      await updateDoc(doc(db, collections.users, target.uid), {
+        avatarHiddenByAdmin: nextHidden,
+        updatedAt: serverTimestamp()
+      });
+      setStatus(nextHidden ? `Аватар пользователя ${userLabel(target)} скрыт от остальных.` : `Аватар пользователя ${userLabel(target)} снова отображается.`);
+      await loadUsersAndInvites();
+    } catch (caughtError) {
+      setStatus(caughtError instanceof Error ? caughtError.message : "Не удалось изменить видимость аватара.");
+    }
+  }
+
   return (
     <GlassPanel className="p-6">
       <div className="mb-5 flex items-center gap-3">
         <ShieldCheck className="text-relic" />
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-relic">Access control</p>
-          <h2 className="text-2xl font-bold text-white">Администраторы портала</h2>
+          <h2 className="text-2xl font-bold text-white">Администраторы и пользователи</h2>
         </div>
       </div>
 
@@ -147,6 +172,40 @@ export function AdminUserManagement() {
             ))}
             {invites.length === 0 ? <p className="text-sm text-zinc-500">Приглашений пока нет.</p> : null}
           </div>
+        </div>
+      </div>
+
+      <div className="mt-8">
+        <h3 className="font-semibold text-white">Аватары пользователей</h3>
+        <p className="mt-1 text-sm text-zinc-500">Админ может скрыть аватар пользователя от остальных участников. Сам пользователь увидит статус в личном кабинете.</p>
+        <div className="mt-4 max-h-[420px] space-y-2 overflow-y-auto pr-1">
+          {users.map((item) => {
+            const hidden = Boolean(item.avatarHiddenByAdmin);
+
+            return (
+              <div key={item.uid} className="flex flex-col gap-3 rounded-lg border border-white/10 bg-black/25 p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl border border-relic/20 bg-relic/10 text-xs font-black text-relic">
+                    {!hidden && item.avatarUrl ? <img src={item.avatarUrl} alt={userLabel(item)} className="h-full w-full object-cover" /> : userLabel(item).slice(0, 2).toUpperCase()}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold text-white">{userLabel(item)}</span>
+                    <span className="block truncate text-xs text-zinc-500">{item.email}</span>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void toggleAvatarVisibility(item)}
+                  className={`inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition ${
+                    hidden ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200" : "border-blood/35 bg-blood/10 text-red-200"
+                  }`}
+                >
+                  {hidden ? <Eye size={16} /> : <EyeOff size={16} />}
+                  {hidden ? "Показать аватар" : "Скрыть аватар"}
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
     </GlassPanel>

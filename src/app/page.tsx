@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import {
-  CalendarDays,
   ChevronRight,
   Crown,
   Download,
@@ -14,19 +13,16 @@ import {
   Swords,
   Users
 } from "lucide-react";
-import { ActionCalendar } from "@/components/calendar/action-calendar";
 import { RaidLogo } from "@/components/brand/raid-logo";
 import { HomeBackgroundVideo } from "@/components/home/home-background-video";
 import { HomeBroadcast } from "@/components/home/home-broadcast";
-import { HomeEventWidgets } from "@/components/home/home-event-widgets";
 import { HomeMobileHeader } from "@/components/home/home-mobile-header";
 import { HomeSearch } from "@/components/home/home-search";
 import { HomeUnreadBell } from "@/components/home/home-unread-bell";
 import { HomeUserCard } from "@/components/home/home-user-card";
 import { LatestNewsRail } from "@/components/home/latest-news-rail";
-import { PortalOffers } from "@/components/home/portal-offers";
+import { RafflePanel } from "@/components/home/raffle-panel";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
-import { raidEvents } from "@/lib/data/mock";
 import { useLanguage, type Language } from "@/lib/i18n/use-language";
 
 const sidebarLinks = [
@@ -34,7 +30,6 @@ const sidebarLinks = [
   { label: { ru: "Новости", en: "News" }, href: "#news", icon: Newspaper },
   { label: { ru: "Герои", en: "Heroes" }, href: "/heroes", icon: Swords },
   { label: { ru: "Маркет", en: "Market" }, href: "/marketplace", icon: ShoppingBag },
-  { label: { ru: "Календарь", en: "Calendar" }, href: "#calendar", icon: CalendarDays },
   { label: { ru: "Кланы", en: "Clans" }, href: "/clans", icon: Shield },
   { label: { ru: "Чат", en: "Chat" }, href: "/chat", icon: MessageCircle },
   { label: { ru: "Донат", en: "Donate" }, href: "/topup", icon: Crown },
@@ -53,7 +48,7 @@ const pageCopy: Record<
 > = {
   ru: {
     downloadTitle: "Скачать RAID",
-    downloadText: "Начни своё приключение",
+    downloadText: "Начни свое приключение",
     communityTitle: "Присоединяйся к сообществу",
     notifications: "Уведомления",
     footerAccount: "Личный кабинет"
@@ -149,19 +144,13 @@ export default function Home() {
             </div>
           </header>
 
-          <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.48fr)_460px]">
-            <div className="min-w-0 space-y-5">
-              <section id="news">
-                <LatestNewsRail />
-              </section>
-
-              <PortalOffers />
-            </div>
+          <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_430px]">
+            <section id="news" className="min-w-0">
+              <LatestNewsRail />
+            </section>
 
             <aside className="space-y-5">
-              <section id="calendar">
-                <ActionCalendar events={raidEvents} />
-              </section>
+              <RafflePanel />
               <HomeBroadcast />
             </aside>
           </div>
@@ -175,7 +164,6 @@ export default function Home() {
           </footer>
         </section>
       </div>
-      <HomeEventWidgets />
     </main>
   );
 }

@@ -113,9 +113,13 @@ export function SiteNotificationToast() {
     }
 
     const threadsQuery = query(collection(db, "directThreads"), where("participants", "array-contains", user.uid));
-    return onSnapshot(threadsQuery, (snapshot) => {
-      setThreads(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<DirectThread, "id">) })));
-    });
+    return onSnapshot(
+      threadsQuery,
+      (snapshot) => {
+        setThreads(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<DirectThread, "id">) })));
+      },
+      () => setThreads([])
+    );
   }, [user?.uid]);
 
   useEffect(() => {
@@ -127,9 +131,13 @@ export function SiteNotificationToast() {
       ? query(collection(db, collections.topupLeads), orderBy("createdAt", "desc"), limit(20))
       : query(collection(db, collections.topupLeads), where("uid", "==", user.uid));
 
-    return onSnapshot(topupQuery, (snapshot) => {
-      setTopupLeads(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<TopupLead, "id">) })));
-    });
+    return onSnapshot(
+      topupQuery,
+      (snapshot) => {
+        setTopupLeads(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<TopupLead, "id">) })));
+      },
+      () => setTopupLeads([])
+    );
   }, [isAdmin, user?.uid]);
 
   useEffect(() => {

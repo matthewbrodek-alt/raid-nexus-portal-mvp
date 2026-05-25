@@ -7,6 +7,7 @@ export type UserProfile = {
   avatarUrl?: string;
   avatarPreset?: string;
   avatarFrame?: string;
+  avatarHiddenByAdmin?: boolean;
   bpStatus?: "bronze" | "silver" | "gold" | "platinum";
   totalSpentRub?: number;
   role: UserRole;

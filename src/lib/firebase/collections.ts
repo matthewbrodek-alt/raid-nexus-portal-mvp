@@ -8,6 +8,7 @@ export const collections = {
   eventWidgets: "eventWidgets",
   donationOffers: "donationOffers",
   news: "news",
+  raffleEntries: "raffleEntries",
   marketplaceAccounts: "marketplaceAccounts",
   topupLeads: "topupLeads",
   chatRooms: "chatRooms",

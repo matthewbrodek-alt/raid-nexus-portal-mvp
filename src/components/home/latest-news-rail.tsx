@@ -26,21 +26,21 @@ type NewsItem = {
 const fallbackNews: NewsItem[] = [
   {
     id: "fallback-1",
-    title: "Выпил колу",
-    titleEn: "Drank Cola",
-    summary: "Банка колы",
-    summaryEn: "A can of cola",
-    markdownBody: "Первая новость портала. Добавьте реальные новости через админ-панель Content Forge.",
-    markdownBodyEn: "The first portal news item. Add real news through the admin Content Forge."
-  },
-  {
-    id: "fallback-2",
     title: "Новый портал открыт",
     titleEn: "New Portal Is Live",
     summary: "Новости, герои, заявки и чат собраны в одном игровом центре.",
     summaryEn: "News, heroes, requests and chat are gathered in one game hub.",
-    markdownBody: "Опубликуйте новость через админ-панель, и она появится в этом блоке.",
-    markdownBodyEn: "Publish a news item through the admin panel and it will appear in this block."
+    markdownBody: "Опубликуйте новость через админ-панель Content Forge, и она появится в этой колонке.",
+    markdownBodyEn: "Publish a news item through the admin Content Forge and it will appear in this column."
+  },
+  {
+    id: "fallback-2",
+    title: "Готовится следующий розыгрыш",
+    titleEn: "Next Giveaway Is Preparing",
+    summary: "Четыре розыгрыша в месяц по 5 рубиновых подписок.",
+    summaryEn: "Four monthly giveaways with 5 ruby subscriptions each.",
+    markdownBody: "Зарегистрированные игроки смогут участвовать в розыгрыше через отдельную страницу события.",
+    markdownBodyEn: "Registered players can join the giveaway through the event page."
   }
 ];
 
@@ -50,7 +50,7 @@ const copy: Record<
     eyebrow: string;
     title: string;
     allNews: string;
-    latestNews: string;
+    editorLabel: string;
     details: string;
     emptyDescription: string;
     closeList: string;
@@ -63,7 +63,7 @@ const copy: Record<
     eyebrow: "Будь в курсе",
     title: "Последние новости",
     allNews: "Все новости",
-    latestNews: "Последние новости",
+    editorLabel: "Колонка SMM-редактора",
     details: "Подробности",
     emptyDescription: "Описание новости пока не заполнено.",
     closeList: "Закрыть список новостей",
@@ -75,7 +75,7 @@ const copy: Record<
     eyebrow: "Stay Updated",
     title: "Latest News",
     allNews: "All News",
-    latestNews: "Latest News",
+    editorLabel: "SMM editor column",
     details: "Details",
     emptyDescription: "News description has not been filled in yet.",
     closeList: "Close news list",
@@ -86,7 +86,7 @@ const copy: Record<
 };
 
 function getNewsImage(item: NewsItem) {
-  return item.coverImage?.secureUrl ?? item.coverImage?.url ?? "";
+  return item.coverImage?.secureUrl ?? item.coverImage?.url ?? "/images/raid-castle-bg.png";
 }
 
 function getNewsTitle(item: NewsItem, language: Language) {
@@ -109,7 +109,7 @@ function formatNewsDate(item: NewsItem, language: Language) {
   }
 
   return new Intl.RelativeTimeFormat(language === "ru" ? "ru-RU" : "en-US", { numeric: "auto" }).format(
-    Math.max(-24, Math.round((seconds * 1000 - Date.now()) / 3600000)),
+    Math.max(-24 * 30, Math.round((seconds * 1000 - Date.now()) / 3_600_000)),
     "hour"
   );
 }
@@ -118,12 +118,9 @@ export function LatestNewsRail() {
   const { language } = useLanguage();
   const labels = copy[language];
   const [news, setNews] = useState<NewsItem[]>(fallbackNews);
-  const [activeIndex, setActiveIndex] = useState(0);
   const [allNewsOpen, setAllNewsOpen] = useState(false);
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
-  const cycleNews = news.slice(0, 5);
-  const featured = cycleNews[activeIndex % Math.max(cycleNews.length, 1)] ?? fallbackNews[0];
-  const featuredImage = getNewsImage(featured);
+  const visibleNews = news.slice(0, 10);
 
   useEffect(() => {
     const newsQuery = query(collection(db, collections.news), where("status", "==", "published"));
@@ -134,89 +131,69 @@ export function LatestNewsRail() {
         const items = snapshot.docs
           .map((item) => ({ id: item.id, ...(item.data() as Omit<NewsItem, "id">) }))
           .sort((a, b) => (b.publishedAt?.seconds ?? b.createdAt?.seconds ?? 0) - (a.publishedAt?.seconds ?? a.createdAt?.seconds ?? 0))
-          .slice(0, 10);
+          .slice(0, 12);
         setNews(items.length ? items : fallbackNews);
       },
       () => setNews(fallbackNews)
     );
   }, []);
 
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [news.length]);
-
-  useEffect(() => {
-    if (cycleNews.length <= 1) {
-      return;
-    }
-
-    const timer = window.setInterval(() => {
-      setActiveIndex((current) => (current + 1) % cycleNews.length);
-    }, 5200);
-
-    return () => window.clearInterval(timer);
-  }, [cycleNews.length]);
+  function renderNewsList(items: NewsItem[], compact = false, afterSelect?: () => void) {
+    return (
+      <div className={compact ? "space-y-3" : "divide-y divide-relic/12"}>
+        {items.map((item, index) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => {
+              setSelectedNews(item);
+              afterSelect?.();
+            }}
+            className={`group grid w-full grid-cols-[46px_1fr_auto] items-center gap-4 text-left transition hover:bg-relic/[0.07] ${
+              compact ? "rounded-[18px] border border-relic/18 bg-black/28 p-4" : "px-1 py-5 sm:px-3"
+            }`}
+            aria-label={`${labels.openNewsLabel}: ${getNewsTitle(item, language)}`}
+          >
+            <span className="grid h-11 w-11 place-items-center rounded-[14px] border border-relic/30 bg-black/40 font-[var(--font-cinzel)] text-sm font-black text-relic">
+              {String(index + 1).padStart(2, "0")}
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate font-[var(--font-cinzel)] text-lg font-black uppercase tracking-[0.04em] text-white transition group-hover:text-[#ffe1a0] sm:text-xl">
+                {getNewsTitle(item, language)}
+              </span>
+              <span className="mt-1 block truncate text-sm text-zinc-400">{getNewsSummary(item, language)}</span>
+            </span>
+            <span className="hidden items-center gap-2 text-xs text-zinc-500 sm:inline-flex">
+              <Clock3 size={15} />
+              {formatNewsDate(item, language)}
+            </span>
+          </button>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <>
-      <div className="raid-ornate-panel raid-news-hero min-h-[430px] overflow-hidden p-5 sm:p-7">
-        <div className="flex items-start justify-between gap-4">
+      <div className="raid-ornate-panel min-h-[650px] overflow-hidden p-5 sm:p-7">
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-relic/18 pb-5">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.28em] text-relic">{labels.eyebrow}</p>
-            <h2
-              className={`raid-title-metal mt-4 max-w-lg text-4xl uppercase max-sm:[word-spacing:0.18em] sm:text-5xl ${
-                language === "ru" ? "!leading-[1.32] sm:!leading-[1.26]" : "leading-none"
-              }`}
-            >
+            <p className="text-xs font-bold uppercase tracking-[0.32em] text-relic">{labels.eyebrow}</p>
+            <h2 className={`raid-title-metal mt-4 text-4xl uppercase sm:text-6xl ${language === "ru" ? "!leading-[1.24]" : "leading-none"}`}>
               {labels.title}
             </h2>
+            <p className="mt-3 text-sm uppercase tracking-[0.18em] text-zinc-500">{labels.editorLabel}</p>
           </div>
           <button
             type="button"
             onClick={() => setAllNewsOpen(true)}
-            className="raid-glow-button hidden shrink-0 border border-relic/35 bg-black/28 px-5 py-3 text-xs font-black uppercase tracking-[0.16em] text-relic sm:block"
+            className="raid-glow-button border border-relic/35 bg-black/28 px-5 py-3 text-xs font-black uppercase tracking-[0.16em] text-relic"
           >
             <span>{labels.allNews}</span>
           </button>
         </div>
 
-        <button
-          key={featured.id}
-          type="button"
-          onClick={() => setSelectedNews(featured)}
-          className="raid-glow-button raid-news-cycle mt-7 grid min-h-[170px] w-full overflow-hidden border border-relic/35 bg-black/42 text-left sm:grid-cols-[250px_1fr]"
-        >
-          <span
-            className="min-h-[170px] bg-gradient-to-br from-[#16090c] via-[#111827] to-[#51301a] bg-cover bg-center"
-            style={
-              featuredImage
-                ? { backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.04), rgba(0,0,0,0.42)), url(${featuredImage})` }
-                : { backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.46)), url("/images/raid-castle-bg.png")` }
-            }
-          />
-          <span className="flex min-w-0 flex-col justify-center p-5 sm:p-7">
-            <span className="font-[var(--font-cinzel)] text-2xl font-black uppercase leading-tight text-white sm:text-3xl">
-              {getNewsTitle(featured, language)}
-            </span>
-            <span className="mt-3 line-clamp-2 text-base leading-7 text-zinc-300">{getNewsSummary(featured, language)}</span>
-            <span className="mt-4 inline-flex items-center gap-2 text-sm text-zinc-500">
-              <Clock3 size={16} />
-              {formatNewsDate(featured, language)}
-            </span>
-          </span>
-        </button>
-
-        <div className="mt-7 flex justify-center gap-3">
-          {cycleNews.map((item, index) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setActiveIndex(index)}
-              className={`h-2.5 w-2.5 rounded-full transition ${index === activeIndex ? "bg-[#ffe1a0]" : "bg-zinc-500/45 hover:bg-relic"}`}
-              aria-label={`${labels.openNewsLabel} ${index + 1}`}
-            />
-          ))}
-        </div>
+        <div className="mt-2">{renderNewsList(visibleNews)}</div>
       </div>
 
       {allNewsOpen ? (
@@ -225,7 +202,7 @@ export function LatestNewsRail() {
             <div className="raid-ornate-panel mx-auto w-full max-w-4xl overflow-hidden bg-[#071019]">
               <div className="flex items-start justify-between gap-4 border-b border-relic/20 p-4 sm:p-6">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.34em] text-relic">{labels.latestNews}</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.34em] text-relic">{labels.title}</p>
                   <h2 className="raid-title-metal mt-2 text-3xl font-black">{labels.allNews}</h2>
                 </div>
                 <button
@@ -237,32 +214,7 @@ export function LatestNewsRail() {
                   <X size={18} />
                 </button>
               </div>
-              <div className="max-h-[72dvh] overflow-y-auto p-3 sm:p-5">
-                <div className="space-y-3">
-                  {news.map((item) => {
-                    const image = getNewsImage(item) || "/images/raid-castle-bg.png";
-
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedNews(item);
-                          setAllNewsOpen(false);
-                        }}
-                        className="grid w-full gap-3 rounded-[18px] border border-relic/18 bg-black/28 p-3 text-left transition hover:border-relic/50 hover:bg-relic/[0.08] sm:grid-cols-[150px_1fr]"
-                      >
-                        <span className="min-h-[96px] rounded-[14px] bg-cover bg-center" style={{ backgroundImage: `url("${image}")` }} />
-                        <span className="min-w-0 py-1">
-                          <span className="block text-xs font-bold uppercase tracking-[0.2em] text-relic">{formatNewsDate(item, language)}</span>
-                          <span className="mt-2 block text-xl font-black text-white">{getNewsTitle(item, language)}</span>
-                          <span className="mt-1 block max-h-12 overflow-hidden text-sm leading-6 text-zinc-400">{getNewsSummary(item, language)}</span>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <div className="max-h-[72dvh] overflow-y-auto p-3 sm:p-5">{renderNewsList(news, true, () => setAllNewsOpen(false))}</div>
             </div>
           </div>
         </div>
@@ -271,12 +223,17 @@ export function LatestNewsRail() {
       {selectedNews ? (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 px-3 py-5 backdrop-blur-sm sm:px-4 sm:py-8" role="dialog" aria-modal="true">
           <div className="flex min-h-full items-center justify-center">
-            <div className="raid-ornate-panel mx-auto grid max-h-[calc(100dvh-40px)] w-full max-w-5xl overflow-y-auto bg-[#071019]">
-              <div className="bg-gradient-to-br from-[#16090c] via-[#111827] to-[#352012]">
+            <div className="raid-ornate-panel mx-auto max-h-[calc(100dvh-40px)] w-full max-w-5xl overflow-y-auto bg-[#071019]">
+              <div
+                className="min-h-[320px] bg-cover bg-center"
+                style={{
+                  backgroundImage: `linear-gradient(180deg, rgba(5,7,11,0.2), rgba(5,7,11,0.96)), url("${getNewsImage(selectedNews)}")`
+                }}
+              >
                 <div className="flex items-start justify-between gap-4 p-4 sm:p-6">
                   <div className="min-w-0">
                     <p className="text-xs font-bold uppercase tracking-[0.34em] text-relic">{formatNewsDate(selectedNews, language)}</p>
-                    <h2 className="raid-title-metal mt-2 text-2xl font-black leading-tight sm:text-4xl">{getNewsTitle(selectedNews, language)}</h2>
+                    <h2 className="raid-title-metal mt-2 text-2xl font-black leading-tight sm:text-5xl">{getNewsTitle(selectedNews, language)}</h2>
                   </div>
                   <button
                     type="button"
@@ -286,13 +243,6 @@ export function LatestNewsRail() {
                   >
                     <X size={18} />
                   </button>
-                </div>
-                <div className="border-y border-relic/20 bg-black/35">
-                  <img
-                    src={getNewsImage(selectedNews) || "/images/raid-castle-bg.png"}
-                    alt={getNewsTitle(selectedNews, language) || "News image"}
-                    className="mx-auto max-h-[56dvh] w-full object-contain"
-                  />
                 </div>
               </div>
               <div className="p-5 sm:p-8">

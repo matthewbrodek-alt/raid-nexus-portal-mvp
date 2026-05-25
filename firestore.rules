@@ -54,12 +54,13 @@ service cloud.firestore {
         isOwner()
         || (
           isAdmin()
-          && request.resource.data.diff(resource.data).changedKeys().hasOnly(["status"])
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly(["status", "avatarHiddenByAdmin", "updatedAt"])
         )
         || (
           request.auth.uid == uid
           && request.resource.data.role == resource.data.role
           && request.resource.data.status == resource.data.status
+          && !request.resource.data.diff(resource.data).changedKeys().hasAny(["avatarHiddenByAdmin"])
         )
         || (
           request.auth.uid == uid
@@ -127,6 +128,15 @@ service cloud.firestore {
     match /news/{newsId} {
       allow read: if resource.data.status == "published" || isAdmin();
       allow write: if isAdmin();
+    }
+
+    match /raffleEntries/{entryId} {
+      allow get: if signedIn();
+      allow list: if isAdmin();
+      allow create: if activeUser()
+        && request.resource.data.uid == request.auth.uid
+        && entryId == request.auth.uid + "_" + request.resource.data.drawKey;
+      allow update, delete: if isAdmin();
     }
 
     match /marketplaceAccounts/{accountId} {

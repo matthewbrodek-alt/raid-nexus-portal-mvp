@@ -72,6 +72,7 @@ async function loadOrCreateProfile(user: User): Promise<UserProfile> {
     displayName,
     avatarPreset: "raid-logo",
     avatarFrame: "bronze",
+    avatarHiddenByAdmin: false,
     bpStatus: "bronze",
     totalSpentRub: 0,
     role,

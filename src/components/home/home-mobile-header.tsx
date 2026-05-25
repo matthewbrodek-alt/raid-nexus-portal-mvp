@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDays, Crown, Home, Menu, MessageCircle, Newspaper, Shield, ShoppingBag, Swords, UserRound, X } from "lucide-react";
+import { Crown, Home, Menu, MessageCircle, Newspaper, Shield, ShoppingBag, Swords, UserRound, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { RaidLogo } from "@/components/brand/raid-logo";
@@ -13,7 +13,6 @@ const mobileLinks = [
   { label: { ru: "Новости", en: "News" }, href: "#news", icon: Newspaper },
   { label: { ru: "Герои", en: "Heroes" }, href: "/heroes", icon: Swords },
   { label: { ru: "Маркет", en: "Market" }, href: "/marketplace", icon: ShoppingBag },
-  { label: { ru: "Календарь", en: "Calendar" }, href: "#calendar", icon: CalendarDays },
   { label: { ru: "Кланы", en: "Clans" }, href: "/clans", icon: Shield },
   { label: { ru: "Чат", en: "Chat" }, href: "/chat", icon: MessageCircle },
   { label: { ru: "Донат", en: "Donate" }, href: "/topup", icon: Crown },
@@ -34,15 +33,10 @@ export function HomeMobileHeader() {
   }, []);
 
   const mobileMenu = open ? (
-    <div
-      className="fixed inset-0 bg-black/92 backdrop-blur-2xl lg:hidden"
-      role="dialog"
-      aria-modal="true"
-      style={{ zIndex: 2147483647 }}
-    >
+    <div className="fixed inset-0 bg-black/92 backdrop-blur-2xl lg:hidden" role="dialog" aria-modal="true" style={{ zIndex: 2147483647 }}>
       <div className="min-h-dvh w-[84vw] max-w-sm overflow-y-auto border-r border-relic/30 bg-[#02060b]/96 p-4 shadow-2xl backdrop-blur-2xl">
         <div className="mb-5 flex items-center justify-between gap-3">
-          <RaidLogo className="scale-[0.78] origin-left" />
+          <RaidLogo className="origin-left scale-[0.78]" />
           <button
             type="button"
             onClick={() => setOpen(false)}
@@ -82,7 +76,7 @@ export function HomeMobileHeader() {
     <>
       <header className="flex items-center gap-3 lg:hidden">
         <Link href="/" className="flex min-w-0 flex-1 items-center">
-          <RaidLogo className="scale-[0.82] origin-left" />
+          <RaidLogo className="origin-left scale-[0.82]" />
         </Link>
         <button
           type="button"

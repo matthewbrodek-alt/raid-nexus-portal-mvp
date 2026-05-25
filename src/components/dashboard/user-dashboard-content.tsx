@@ -79,6 +79,7 @@ export function UserDashboardContent() {
   const [forumThreads, setForumThreads] = useState<ForumThread[]>([]);
   const [directThreads, setDirectThreads] = useState<DirectThread[]>([]);
   const [avatarStatus, setAvatarStatus] = useState("");
+  const [avatarUploading, setAvatarUploading] = useState(false);
 
   useEffect(() => {
     if (!user?.uid) {
@@ -182,6 +183,58 @@ export function UserDashboardContent() {
     setAvatarStatus("Аватар обновлен.");
   }
 
+  async function uploadCustomAvatar(file?: File | null) {
+    if (!user?.uid || !file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setAvatarStatus("Выберите изображение для аватара.");
+      return;
+    }
+
+    setAvatarUploading(true);
+    setAvatarStatus("Загружаем аватар...");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "users");
+      formData.append("publicId", `avatars/${user.uid}-${Date.now()}-${file.name.replace(/[^a-z0-9.]+/gi, "-")}`);
+
+      const response = await fetch("/api/cloudinary/upload", {
+        method: "POST",
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error("Не удалось загрузить изображение.");
+      }
+
+      const asset = (await response.json()) as { secureUrl?: string; url?: string };
+      const nextAvatarUrl = asset.secureUrl || asset.url || "";
+
+      if (!nextAvatarUrl) {
+        throw new Error("Сервис не вернул ссылку на изображение.");
+      }
+
+      await updateDoc(doc(db, collections.users, user.uid), {
+        avatarPreset: "custom",
+        avatarUrl: nextAvatarUrl,
+        avatarFrame: bpProgress.status.id,
+        bpStatus: bpProgress.status.id,
+        totalSpentRub,
+        updatedAt: new Date()
+      });
+      await refreshProfile();
+      setAvatarStatus("Аватар обновлен.");
+    } catch (caughtError) {
+      setAvatarStatus(caughtError instanceof Error ? caughtError.message : "Не удалось обновить аватар.");
+    } finally {
+      setAvatarUploading(false);
+    }
+  }
+
   return (
     <>
       <GlassPanel className="mb-6 overflow-hidden p-5 sm:p-6">
@@ -196,6 +249,11 @@ export function UserDashboardContent() {
                 {bpProgress.status.label}
               </p>
               <h2 className="mt-3 truncate text-2xl font-black text-white">{profile?.displayName ?? profile?.email}</h2>
+              {profile?.avatarHiddenByAdmin ? (
+                <p className="mt-3 rounded-lg border border-blood/35 bg-blood/10 px-3 py-2 text-sm font-semibold text-red-200">
+                  Ваш аватар скрыт администратором и не отображается другим пользователям.
+                </p>
+              ) : null}
               <p className="mt-1 text-sm text-zinc-400">BP - уровень аккаунта. Сумма выполненных заявок повышает статус.</p>
             </div>
           </div>
@@ -231,6 +289,14 @@ export function UserDashboardContent() {
             <p className="text-sm text-zinc-400">Аватар можно выбрать только из списка. Рамка зависит от BP-статуса.</p>
           </div>
         </div>
+        <label className="mb-5 flex cursor-pointer flex-col gap-2 rounded-xl border border-relic/18 bg-black/24 p-4 text-sm text-zinc-300 transition hover:border-relic/45 sm:flex-row sm:items-center sm:justify-between">
+          <span>
+            <span className="block font-semibold text-white">Загрузить свой аватар</span>
+            <span className="mt-1 block text-xs text-zinc-500">PNG/JPG/WebP до 6 MB</span>
+          </span>
+          <span className="rounded-lg bg-relic px-4 py-2 text-center font-black text-black">{avatarUploading ? "Загрузка..." : "Выбрать файл"}</span>
+          <input type="file" accept="image/*" className="hidden" disabled={avatarUploading} onChange={(event) => void uploadCustomAvatar(event.target.files?.[0])} />
+        </label>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {avatarPresets.map((preset) => {
             const active = preset.id === selectedAvatar.id;
@@ -348,4 +414,3 @@ export function UserDashboardContent() {
     </>
   );
 }
-
