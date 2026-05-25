@@ -107,7 +107,7 @@ type TopupLeadFormProps = {
 
 export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
   const { language, isRu } = useLanguage();
-  const { user } = useAuth();
+  const { profile, user } = useAuth();
   const donationOffers = useDonationOffers();
   const t = copy[language];
   const [telegram, setTelegram] = useState("");
@@ -227,7 +227,6 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
           doc(db, "directThreads", threadId),
           {
             participants: [user.uid, manager.uid],
-            participantEmails: [user.email ?? "", manager.email],
             topupLeadIds: [topupRef.id],
             lastMessageText: `Donation request: ${payload.packageName}`,
             lastMessageUid: user.uid,
@@ -239,7 +238,7 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
 
         await addDoc(collection(db, "directThreads", threadId, "messages"), {
           uid: user.uid,
-          displayName: user.email ?? telegram,
+          displayName: profile?.displayName || telegram || "Raid Player",
           text: `Donation request sent.\nPack: ${payload.packageName}\nPayment: ${paymentMethod}\nComment: ${comment || "-"}\nScreenshot: ${payload.screenshotUrl || "-"}`,
           topupLeadId: topupRef.id,
           attachment: screenshot

@@ -15,7 +15,6 @@ type FirestoreTime = {
 type DirectThread = {
   id: string;
   participants?: string[];
-  participantEmails?: string[];
   lastMessageText?: string;
   lastMessageUid?: string;
   lastMessageAt?: FirestoreTime;

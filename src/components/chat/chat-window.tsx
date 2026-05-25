@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, CornerDownRight, ImagePlus, Menu, MessageSquare, Search, Send, Smile, Users, X } from "lucide-react";
+import { ChevronDown, CornerDownRight, ImagePlus, Menu, MessageSquare, Search, Send, Smile, Trash2, Users, X } from "lucide-react";
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   limit,
   onSnapshot,
@@ -85,6 +86,10 @@ function directThreadId(firstUid: string, secondUid: string) {
 
 function getUserLabel(userProfile: Pick<UserProfile, "displayName" | "email">) {
   return userProfile.displayName || userProfile.email || "User";
+}
+
+function getPublicUserMeta(userProfile: UserProfile, canViewEmail: boolean) {
+  return canViewEmail ? `${userProfile.role} · ${userProfile.email}` : userProfile.role;
 }
 
 function formatTime(message: ChatMessage) {
@@ -168,10 +173,10 @@ export function ChatWindow() {
   const filteredUsers = useMemo(
     () =>
       users.filter((item) => {
-        const haystack = `${item.displayName} ${item.email}`.toLowerCase();
+        const haystack = `${item.displayName} ${canModerate ? item.email : ""}`.toLowerCase();
         return item.uid !== user?.uid && haystack.includes(search.trim().toLowerCase());
       }),
-    [search, user?.uid, users]
+    [canModerate, search, user?.uid, users]
   );
   const visibleMessages = useMemo(
     () => messages.filter((item) => item.uid === user?.uid || !personalBlockedUids.includes(item.uid)),
@@ -265,12 +270,11 @@ export function ChatWindow() {
 
         try {
           await setDoc(
-            doc(db, "directThreads", threadId),
-            {
-              participants: [user.uid, selectedUser.uid],
-              participantEmails: [profile?.email ?? user.email ?? "", selectedUser.email],
-              updatedAt: serverTimestamp()
-            },
+          doc(db, "directThreads", threadId),
+          {
+            participants: [user.uid, selectedUser.uid],
+            updatedAt: serverTimestamp()
+          },
             { merge: true }
           );
         } catch {
@@ -304,7 +308,7 @@ export function ChatWindow() {
       cancelled = true;
       unsubscribe?.();
     };
-  }, [profile?.email, selectedUser, user]);
+  }, [selectedUser, user]);
 
   useEffect(() => {
     scrollToBottom();
@@ -390,6 +394,25 @@ export function ChatWindow() {
     setMemberMenu(null);
   }
 
+  async function deleteMessage(messageItem: ChatMessage) {
+    if (!user) {
+      return;
+    }
+
+    const canDelete = messageItem.uid === user.uid || (canModerate && !selectedUser);
+
+    if (!canDelete || !window.confirm("Удалить сообщение?")) {
+      return;
+    }
+
+    const messageRef =
+      selectedUser && user
+        ? doc(db, "directThreads", directThreadId(user.uid, selectedUser.uid), "messages", messageItem.id)
+        : doc(db, collections.chatRooms, "global", "messages", messageItem.id);
+
+    await deleteDoc(messageRef);
+  }
+
   function applySelectedFile(file?: File | null) {
     if (!file) {
       return;
@@ -449,7 +472,6 @@ export function ChatWindow() {
           doc(db, "directThreads", threadId),
           {
             participants: [user.uid, selectedUser.uid],
-            participantEmails: [profile.email, selectedUser.email],
             lastMessageText,
             lastMessageUid: user.uid,
             lastMessageAt: serverTimestamp(),
@@ -523,7 +545,7 @@ export function ChatWindow() {
         <span className="min-w-0">
           <span className="block truncate font-semibold">{label}</span>
           <span className="block truncate text-xs text-zinc-500">
-            {item.role} · {item.email}
+            {getPublicUserMeta(item, canModerate)}
           </span>
         </span>
       </button>
@@ -599,7 +621,7 @@ export function ChatWindow() {
             </span>
             <div className="hidden min-w-0 lg:block">
               <h2 className="truncate text-lg font-bold text-white">{selectedUser ? getUserLabel(selectedUser) : "Общий чат"}</h2>
-              <p className="truncate text-sm text-zinc-500">{selectedUser ? selectedUser.email : "Открытая комната портала"}</p>
+              <p className="truncate text-sm text-zinc-500">{selectedUser ? (canModerate ? selectedUser.email : "Личный диалог") : "Открытая комната портала"}</p>
             </div>
           </header>
 
@@ -663,13 +685,34 @@ export function ChatWindow() {
                     ) : null}
                     {item.text ? <p className="break-words text-[13px] leading-5">{renderMessageText(item.text, item.mentions)}</p> : null}
                     {!selectedUser ? (
+                      <div className="mt-1 flex items-center gap-2 opacity-0 transition focus-within:opacity-100 group-hover:opacity-100">
+                        <button
+                          type="button"
+                          onClick={() => setReplyTo(item)}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-relic hover:text-white"
+                        >
+                          <CornerDownRight size={13} />
+                          Ответить
+                        </button>
+                        {own || canModerate ? (
+                          <button
+                            type="button"
+                            onClick={() => void deleteMessage(item)}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-300 hover:text-red-100"
+                          >
+                            <Trash2 size={12} />
+                            Удалить
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : own ? (
                       <button
                         type="button"
-                        onClick={() => setReplyTo(item)}
-                        className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-relic opacity-0 transition hover:text-white focus-visible:opacity-100 group-hover:opacity-100"
+                        onClick={() => void deleteMessage(item)}
+                        className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-red-200 opacity-0 transition hover:text-red-100 focus-visible:opacity-100 group-hover:opacity-100"
                       >
-                        <CornerDownRight size={13} />
-                        Ответить
+                        <Trash2 size={12} />
+                        Удалить
                       </button>
                     ) : null}
                     <p className={`mt-0.5 text-right text-[10px] ${own ? "text-white/65" : "text-zinc-500"}`}>{formatTime(item)}</p>

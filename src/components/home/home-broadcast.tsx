@@ -52,7 +52,7 @@ export function HomeBroadcast() {
   const playbackUrl = useMemo(() => normalizeYoutubeUrl(settings.videoUrl || defaultSettings.videoUrl), [settings.videoUrl]);
 
   return (
-    <div className="raid-ornate-panel overflow-hidden p-5">
+    <div className="raid-ornate-panel relative z-0 overflow-hidden p-5">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-bold uppercase tracking-[0.36em] text-relic">Raid Broadcast</p>
@@ -64,10 +64,10 @@ export function HomeBroadcast() {
       </div>
 
       {isVideoFile(playbackUrl) ? (
-        <video className="aspect-video w-full border border-relic/25 bg-black object-cover" src={playbackUrl} controls playsInline />
+        <video className="relative z-0 aspect-video w-full border border-relic/25 bg-black object-cover" src={playbackUrl} controls playsInline />
       ) : (
         <iframe
-          className="aspect-video w-full border border-relic/25 bg-black"
+          className="relative z-0 aspect-video w-full border border-relic/25 bg-black"
           src={playbackUrl}
           title={settings.title && settings.title !== defaultSettings.title ? settings.title : defaultTitle}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

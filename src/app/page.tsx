@@ -7,29 +7,30 @@ import {
   Download,
   Home as HomeIcon,
   MessageCircle,
-  Newspaper,
   Shield,
   ShoppingBag,
   Swords,
   Users
 } from "lucide-react";
 import { RaidLogo } from "@/components/brand/raid-logo";
+import { ActionCalendar } from "@/components/calendar/action-calendar";
 import { HomeBackgroundVideo } from "@/components/home/home-background-video";
 import { HomeBroadcast } from "@/components/home/home-broadcast";
 import { HomeMobileHeader } from "@/components/home/home-mobile-header";
 import { HomeSearch } from "@/components/home/home-search";
+import { HomeSocialLinks } from "@/components/home/home-social-links";
 import { HomeUnreadBell } from "@/components/home/home-unread-bell";
 import { HomeUserCard } from "@/components/home/home-user-card";
 import { LatestNewsRail } from "@/components/home/latest-news-rail";
 import { RafflePanel } from "@/components/home/raffle-panel";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { useLanguage, type Language } from "@/lib/i18n/use-language";
+import { raidEvents } from "@/lib/data/mock";
 
 const sidebarLinks = [
   { label: { ru: "Главная", en: "Home" }, href: "/", icon: HomeIcon, active: true },
-  { label: { ru: "Новости", en: "News" }, href: "#news", icon: Newspaper },
   { label: { ru: "Герои", en: "Heroes" }, href: "/heroes", icon: Swords },
-  { label: { ru: "Маркет", en: "Market" }, href: "/marketplace", icon: ShoppingBag },
+  { label: { ru: "Покупка аккаунта", en: "Account Purchase" }, href: "/marketplace", icon: ShoppingBag },
   { label: { ru: "Кланы", en: "Clans" }, href: "/clans", icon: Shield },
   { label: { ru: "Чат", en: "Chat" }, href: "/chat", icon: MessageCircle },
   { label: { ru: "Донат", en: "Donate" }, href: "/topup", icon: Crown },
@@ -73,6 +74,7 @@ export default function Home() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-transparent text-pale">
       <HomeBackgroundVideo />
+      <HomeSocialLinks />
       <div className="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(circle_at_50%_0%,rgba(231,193,106,0.11),transparent_26%),linear-gradient(90deg,rgba(3,7,12,0.92),rgba(3,7,12,0.34)_48%,rgba(3,7,12,0.84))]" />
 
       <div className="raid-dashboard-shell relative z-10 min-h-screen lg:grid lg:grid-cols-[300px_1fr]">
@@ -151,6 +153,7 @@ export default function Home() {
 
             <aside className="space-y-5">
               <RafflePanel />
+              <ActionCalendar events={raidEvents} />
               <HomeBroadcast />
             </aside>
           </div>

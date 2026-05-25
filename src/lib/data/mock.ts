@@ -48,6 +48,7 @@ export const marketplaceHighlights: MarketplaceAccount[] = [
     mythicCount: 0,
     legendaryCount: 8,
     voidCount: 2,
+    category: "starter",
     price: 149,
     tags: ["Arbiter", "Void x2", "Arena"]
   },
@@ -58,6 +59,7 @@ export const marketplaceHighlights: MarketplaceAccount[] = [
     mythicCount: 2,
     legendaryCount: 42,
     voidCount: 9,
+    category: "shards",
     price: 690,
     tags: ["Hydra", "Mythical", "Gear"]
   },
@@ -68,6 +70,7 @@ export const marketplaceHighlights: MarketplaceAccount[] = [
     mythicCount: 0,
     legendaryCount: 5,
     voidCount: 1,
+    category: "starter",
     price: 89,
     tags: ["Clan Boss", "Budget", "Books"]
   }

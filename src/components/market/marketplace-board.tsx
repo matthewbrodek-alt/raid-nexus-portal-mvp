@@ -38,6 +38,8 @@ const copy = {
     reserved: "Резерв",
     sold: "Продан",
     noItems: "Лотов по этим фильтрам пока нет.",
+    starter: "Стартовый аккаунт",
+    shards: "Аккаунт с осколками",
     source: "По логике витрины ориентировано на каталог raid-store.ru: фильтры, скриншот, характеристики, описание и быстрый контакт."
   },
   en: {
@@ -61,6 +63,8 @@ const copy = {
     reserved: "Reserved",
     sold: "Sold",
     noItems: "No lots match these filters yet.",
+    starter: "Starter Account",
+    shards: "Shard Account",
     source: "Storefront logic follows the raid-store.ru catalog pattern: filters, screenshot, stats, description and quick contact."
   }
 };
@@ -151,6 +155,11 @@ export function MarketplaceBoard() {
     setMaxPrice("");
   }
 
+  const groupedAccounts = [
+    { id: "starter", title: t.starter, items: filteredAccounts.filter((account) => (account.category ?? "starter") === "starter") },
+    { id: "shards", title: t.shards, items: filteredAccounts.filter((account) => account.category === "shards") }
+  ];
+
   return (
     <>
       <div className="mb-6 grid gap-4 lg:grid-cols-[1fr_360px]">
@@ -183,8 +192,15 @@ export function MarketplaceBoard() {
         </GlassPanel>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {filteredAccounts.map((account) => (
+      <div className="space-y-8">
+        {groupedAccounts.map((group) => (
+          <section key={group.id}>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="raid-title-metal text-2xl font-black">{group.title}</h2>
+              <span className="text-xs uppercase tracking-[0.18em] text-zinc-500">{group.items.length}</span>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {group.items.map((account) => (
           <GlassPanel key={account.id} className="overflow-hidden">
             <div
               className="aspect-[16/10] bg-gradient-to-br from-[#111827] via-[#24111b] to-[#3b1c0f] bg-cover bg-center"
@@ -240,6 +256,9 @@ export function MarketplaceBoard() {
               </div>
             </div>
           </GlassPanel>
+        ))}
+            </div>
+          </section>
         ))}
       </div>
 

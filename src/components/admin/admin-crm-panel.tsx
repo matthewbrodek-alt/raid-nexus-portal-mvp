@@ -164,6 +164,23 @@ export function AdminCrmPanel() {
     }));
   }
 
+  function updateStage(leadId: string, status: OrderStageId) {
+    const currentDraft = drafts[leadId] ?? { amountRub: "", status: "new", paymentDetails: "", managerNote: "" };
+    let nextAmount = currentDraft.amountRub;
+
+    if (status === "completed" && currentDraft.status !== "completed") {
+      const enteredAmount = window.prompt("Введите сумму бонуса, которая пойдет в BP-статус клиента", currentDraft.amountRub);
+
+      if (enteredAmount === null) {
+        return;
+      }
+
+      nextAmount = enteredAmount;
+    }
+
+    updateDraft(leadId, { status, amountRub: nextAmount });
+  }
+
   async function saveLead(lead: TopupLead) {
     const draft = drafts[lead.id] ?? draftFromLead(lead);
     const amountRub = Number(draft.amountRub.replace(/[^\d.]/g, ""));
@@ -351,12 +368,12 @@ export function AdminCrmPanel() {
                   <td className="border-b border-r border-white/10 p-3 align-top">
                     <select
                       value={draft.status}
-                      onChange={(event) => updateDraft(lead.id, { status: event.target.value as OrderStageId })}
+                      onChange={(event) => updateStage(lead.id, event.target.value as OrderStageId)}
                       className="w-44 rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic"
                     >
                       {orderStages.map((stage) => (
                         <option key={stage.id} value={stage.id}>
-                          {stage.label}
+                          {stage.id === "completed" ? "Заявка выполнена" : stage.label}
                         </option>
                       ))}
                     </select>

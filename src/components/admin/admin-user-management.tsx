@@ -1,7 +1,7 @@
 "use client";
 
-import { Eye, EyeOff, MailPlus, ShieldCheck } from "lucide-react";
-import { collection, doc, getDocs, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import { MailPlus, ShieldCheck } from "lucide-react";
+import { collection, doc, getDocs, serverTimestamp, setDoc } from "firebase/firestore";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { GlassPanel } from "@/components/ui/glass-panel";
@@ -22,7 +22,6 @@ function userLabel(user: UserProfile) {
 export function AdminUserManagement() {
   const { profile, refreshProfile } = useAuth();
   const [email, setEmail] = useState("");
-  const [users, setUsers] = useState<UserProfile[]>([]);
   const [admins, setAdmins] = useState<UserProfile[]>([]);
   const [invites, setInvites] = useState<AdminInvite[]>([]);
   const [status, setStatus] = useState("");
@@ -36,7 +35,6 @@ export function AdminUserManagement() {
       .map((item) => item.data() as UserProfile)
       .sort((a, b) => userLabel(a).localeCompare(userLabel(b)));
 
-    setUsers(nextUsers);
     setAdmins(nextUsers.filter((item) => item.role === "admin" || item.role === "owner").sort((a, b) => a.email.localeCompare(b.email)));
 
     if (isOwner) {
@@ -85,26 +83,6 @@ export function AdminUserManagement() {
       setStatus(caughtError instanceof Error ? caughtError.message : "Не удалось создать приглашение.");
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function toggleAvatarVisibility(target: UserProfile) {
-    if (!isAdmin) {
-      return;
-    }
-
-    const nextHidden = !target.avatarHiddenByAdmin;
-    setStatus("");
-
-    try {
-      await updateDoc(doc(db, collections.users, target.uid), {
-        avatarHiddenByAdmin: nextHidden,
-        updatedAt: serverTimestamp()
-      });
-      setStatus(nextHidden ? `Аватар пользователя ${userLabel(target)} скрыт от остальных.` : `Аватар пользователя ${userLabel(target)} снова отображается.`);
-      await loadUsersAndInvites();
-    } catch (caughtError) {
-      setStatus(caughtError instanceof Error ? caughtError.message : "Не удалось изменить видимость аватара.");
     }
   }
 
@@ -172,40 +150,6 @@ export function AdminUserManagement() {
             ))}
             {invites.length === 0 ? <p className="text-sm text-zinc-500">Приглашений пока нет.</p> : null}
           </div>
-        </div>
-      </div>
-
-      <div className="mt-8">
-        <h3 className="font-semibold text-white">Аватары пользователей</h3>
-        <p className="mt-1 text-sm text-zinc-500">Админ может скрыть аватар пользователя от остальных участников. Сам пользователь увидит статус в личном кабинете.</p>
-        <div className="mt-4 max-h-[420px] space-y-2 overflow-y-auto pr-1">
-          {users.map((item) => {
-            const hidden = Boolean(item.avatarHiddenByAdmin);
-
-            return (
-              <div key={item.uid} className="flex flex-col gap-3 rounded-lg border border-white/10 bg-black/25 p-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex min-w-0 items-center gap-3">
-                  <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl border border-relic/20 bg-relic/10 text-xs font-black text-relic">
-                    {!hidden && item.avatarUrl ? <img src={item.avatarUrl} alt={userLabel(item)} className="h-full w-full object-cover" /> : userLabel(item).slice(0, 2).toUpperCase()}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold text-white">{userLabel(item)}</span>
-                    <span className="block truncate text-xs text-zinc-500">{item.email}</span>
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => void toggleAvatarVisibility(item)}
-                  className={`inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold transition ${
-                    hidden ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200" : "border-blood/35 bg-blood/10 text-red-200"
-                  }`}
-                >
-                  {hidden ? <Eye size={16} /> : <EyeOff size={16} />}
-                  {hidden ? "Показать аватар" : "Скрыть аватар"}
-                </button>
-              </div>
-            );
-          })}
         </div>
       </div>
     </GlassPanel>

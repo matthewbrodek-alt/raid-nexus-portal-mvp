@@ -6,7 +6,7 @@ import { useLanguage, type Language } from "@/lib/i18n/use-language";
 const sections = [
   { label: "Donate", icon: "coins" as const, href: "/donate" },
   { label: "Useful", icon: "zap" as const, href: "/useful" },
-  { label: "Marketplace", icon: "shoppingBag" as const, href: "/marketplace" },
+  { label: "Account Purchase", icon: "shoppingBag" as const, href: "/marketplace" },
   { label: "Hero DB", icon: "database" as const, href: "/heroes" },
   { label: "Clans", icon: "shield" as const, href: "/clans" },
   { label: "Chat", icon: "messageSquare" as const, href: "/chat" }

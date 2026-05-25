@@ -115,6 +115,11 @@ export function AdminContentForge() {
   const [broadcastTitle, setBroadcastTitle] = useState("");
   const [broadcastVideoUrl, setBroadcastVideoUrl] = useState("");
   const [broadcastBackgroundImageUrl, setBroadcastBackgroundImageUrl] = useState("");
+  const [socialTelegram, setSocialTelegram] = useState("");
+  const [socialVkVideo, setSocialVkVideo] = useState("");
+  const [socialVkCommunity, setSocialVkCommunity] = useState("");
+  const [socialYoutube, setSocialYoutube] = useState("");
+  const [socialTwitch, setSocialTwitch] = useState("");
   const [offerTitle, setOfferTitle] = useState("");
   const [offerComment, setOfferComment] = useState("");
   const [offerImage, setOfferImage] = useState<File | null>(null);
@@ -149,6 +154,20 @@ export function AdminContentForge() {
     });
   }, []);
 
+  useEffect(() => {
+    void getDoc(doc(db, collections.siteSettings, "socialLinks")).then((snapshot) => {
+      const data = snapshot.data() as
+        | { telegram?: string; vkVideo?: string; vkCommunity?: string; youtube?: string; twitch?: string }
+        | undefined;
+
+      setSocialTelegram(data?.telegram ?? "");
+      setSocialVkVideo(data?.vkVideo ?? "");
+      setSocialVkCommunity(data?.vkCommunity ?? "");
+      setSocialYoutube(data?.youtube ?? "");
+      setSocialTwitch(data?.twitch ?? "");
+    });
+  }, []);
+
   async function saveBroadcast(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -174,6 +193,38 @@ export function AdminContentForge() {
       setStatus("Настройки Raid Broadcast сохранены.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Не удалось сохранить Raid Broadcast.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveSocialLinks(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!profile) {
+      return;
+    }
+
+    setSaving(true);
+    setStatus("");
+
+    try {
+      await setDoc(
+        doc(db, collections.siteSettings, "socialLinks"),
+        {
+          telegram: socialTelegram.trim(),
+          vkVideo: socialVkVideo.trim(),
+          vkCommunity: socialVkCommunity.trim(),
+          youtube: socialYoutube.trim(),
+          twitch: socialTwitch.trim(),
+          updatedBy: profile.uid,
+          updatedAt: serverTimestamp()
+        },
+        { merge: true }
+      );
+      setStatus("Ссылки соцсетей сохранены.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Не удалось сохранить ссылки соцсетей.");
     } finally {
       setSaving(false);
     }
@@ -476,6 +527,24 @@ export function AdminContentForge() {
         <button disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
           <Save size={16} />
           Сохранить Broadcast
+        </button>
+      </form>
+
+      <form onSubmit={saveSocialLinks} className="mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
+        <div className="flex items-center gap-2 text-white">
+          <ExternalLink size={18} className="text-relic" />
+          <h3 className="font-semibold">Соцсети на главной</h3>
+        </div>
+        <div className="grid gap-3 lg:grid-cols-5">
+          <input value={socialTelegram} onChange={(event) => setSocialTelegram(event.target.value)} placeholder="Telegram URL" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+          <input value={socialVkVideo} onChange={(event) => setSocialVkVideo(event.target.value)} placeholder="VK Видео URL" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+          <input value={socialVkCommunity} onChange={(event) => setSocialVkCommunity(event.target.value)} placeholder="VK Сообщество URL" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+          <input value={socialYoutube} onChange={(event) => setSocialYoutube(event.target.value)} placeholder="YouTube URL" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+          <input value={socialTwitch} onChange={(event) => setSocialTwitch(event.target.value)} placeholder="Twitch URL" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+        </div>
+        <button disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
+          <Save size={16} />
+          Сохранить соцсети
         </button>
       </form>
 

@@ -105,10 +105,28 @@ function formatNewsDate(item: NewsItem, language: Language) {
     return copy[language].fallbackDate;
   }
 
-  return new Intl.RelativeTimeFormat(language === "ru" ? "ru-RU" : "en-US", { numeric: "auto" }).format(
-    Math.max(-24 * 30, Math.round((seconds * 1000 - Date.now()) / 3_600_000)),
-    "hour"
-  );
+  const locale = language === "ru" ? "ru-RU" : "en-US";
+  const date = new Date(seconds * 1000);
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const dayDiff = Math.round((startOfDate - startOfToday) / 86_400_000);
+
+  if (dayDiff === 0) {
+    const hoursAgo = Math.floor((Date.now() - date.getTime()) / 3_600_000);
+
+    if (hoursAgo >= 1 && hoursAgo < 12) {
+      return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(-hoursAgo, "hour");
+    }
+
+    return new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(date);
+  }
+
+  if (dayDiff === -1) {
+    return language === "ru" ? "вчера" : "yesterday";
+  }
+
+  return new Intl.DateTimeFormat(locale, { day: "2-digit", month: "short", year: "numeric" }).format(date);
 }
 
 export function LatestNewsRail() {
@@ -138,7 +156,7 @@ export function LatestNewsRail() {
   function renderNewsList(items: NewsItem[], compact = false, afterSelect?: () => void) {
     return (
       <div className={compact ? "space-y-3" : "divide-y divide-relic/12"}>
-        {items.map((item, index) => (
+        {items.map((item) => (
           <button
             key={item.id}
             type="button"
@@ -146,13 +164,13 @@ export function LatestNewsRail() {
               setSelectedNews(item);
               afterSelect?.();
             }}
-            className={`group grid w-full grid-cols-[46px_1fr_auto] items-center gap-4 text-left transition hover:bg-relic/[0.07] ${
+            className={`group grid w-full grid-cols-[86px_1fr_auto] items-center gap-4 text-left transition hover:bg-relic/[0.07] ${
               compact ? "rounded-[18px] border border-relic/18 bg-black/28 p-4" : "px-1 py-5 sm:px-3"
             }`}
             aria-label={`${labels.openNewsLabel}: ${getNewsTitle(item, language)}`}
           >
-            <span className="grid h-11 w-11 place-items-center rounded-[14px] border border-relic/30 bg-black/40 font-[var(--font-cinzel)] text-sm font-black text-relic">
-              {String(index + 1).padStart(2, "0")}
+            <span className="block h-16 overflow-hidden rounded-[14px] border border-relic/22 bg-black/40">
+              <img src={getNewsImage(item)} alt="" className="h-full w-full object-contain" />
             </span>
             <span className="min-w-0">
               <span className="block truncate font-[var(--font-cinzel)] text-lg font-black uppercase tracking-[0.04em] text-white transition group-hover:text-[#ffe1a0] sm:text-xl">
@@ -220,13 +238,10 @@ export function LatestNewsRail() {
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 px-3 py-5 backdrop-blur-sm sm:px-4 sm:py-8" role="dialog" aria-modal="true">
           <div className="flex min-h-full items-center justify-center">
             <div className="raid-ornate-panel mx-auto max-h-[calc(100dvh-40px)] w-full max-w-5xl overflow-y-auto bg-[#071019]">
-              <div
-                className="min-h-[320px] bg-cover bg-center"
-                style={{
-                  backgroundImage: `linear-gradient(180deg, rgba(5,7,11,0.2), rgba(5,7,11,0.96)), url("${getNewsImage(selectedNews)}")`
-                }}
-              >
-                <div className="flex items-start justify-between gap-4 p-4 sm:p-6">
+              <div className="relative bg-black">
+                <img src={getNewsImage(selectedNews)} alt="" className="max-h-[58vh] w-full object-contain" />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#071019] via-transparent to-black/35" />
+                <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-4 p-4 sm:p-6">
                   <div className="min-w-0">
                     <p className="text-xs font-bold uppercase tracking-[0.34em] text-relic">{formatNewsDate(selectedNews, language)}</p>
                     <h2 className="raid-title-metal mt-2 text-2xl font-black leading-tight sm:text-5xl">{getNewsTitle(selectedNews, language)}</h2>

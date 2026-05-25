@@ -37,6 +37,7 @@ function listFromText(value: string) {
 export function AdminMarketplaceManager() {
   const [lots, setLots] = useState<MarketplaceAccount[]>([]);
   const [title, setTitle] = useState("");
+  const [category, setCategory] = useState<MarketplaceAccount["category"]>("starter");
   const [price, setPrice] = useState("");
   const [level, setLevel] = useState("");
   const [mythicCount, setMythicCount] = useState("");
@@ -71,6 +72,7 @@ export function AdminMarketplaceManager() {
 
       await addDoc(collection(db, collections.marketplaceAccounts), {
         title: title.trim(),
+        category,
         price: Number(price) || 0,
         level: Number(level) || 1,
         mythicCount: Number(mythicCount) || 0,
@@ -101,6 +103,7 @@ export function AdminMarketplaceManager() {
       });
 
       setTitle("");
+      setCategory("starter");
       setPrice("");
       setLevel("");
       setMythicCount("");
@@ -134,9 +137,9 @@ export function AdminMarketplaceManager() {
       <div className="mb-5 flex items-center gap-3">
         <ShoppingBag className="text-relic" />
         <div>
-          <p className="text-xs uppercase tracking-[0.22em] text-relic">Marketplace Forge</p>
-          <h2 className="text-2xl font-bold text-white">Account lots</h2>
-          <p className="mt-1 text-sm text-zinc-500">Admins can publish sale lots with screenshots, filters and descriptions.</p>
+          <p className="text-xs uppercase tracking-[0.22em] text-relic">Account Purchase Forge</p>
+          <h2 className="text-2xl font-bold text-white">Покупка аккаунта</h2>
+          <p className="mt-1 text-sm text-zinc-500">Админы публикуют лоты со скриншотами, фильтрами и описанием.</p>
         </div>
       </div>
 
@@ -144,6 +147,10 @@ export function AdminMarketplaceManager() {
         <form onSubmit={createLot} className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <input value={title} onChange={(event) => setTitle(event.target.value)} required placeholder="Lot title" className="rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+            <select value={category} onChange={(event) => setCategory(event.target.value as MarketplaceAccount["category"])} className="rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
+              <option value="starter">Стартовый аккаунт</option>
+              <option value="shards">Аккаунт с осколками</option>
+            </select>
             <input type="number" value={price} onChange={(event) => setPrice(event.target.value)} required placeholder="Price, RUB" className="rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
             <input type="number" value={level} onChange={(event) => setLevel(event.target.value)} placeholder="Account level" className="rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
             <input type="number" value={power} onChange={(event) => setPower(event.target.value)} placeholder="Power" className="rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />

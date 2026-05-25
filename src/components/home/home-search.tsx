@@ -72,7 +72,7 @@ const copy: Record<
     section: "Раздел",
     news: "Новости",
     heroes: "Герои",
-    market: "Маркет",
+    market: "Покупка аккаунта",
     clans: "Кланы",
     donate: "Донат",
     useful: "Полезное",
@@ -86,10 +86,10 @@ const copy: Record<
     chatDescription: "Общий чат и личные сообщения",
     newsType: "Новость",
     heroType: "Герой",
-    marketType: "Маркет",
+    marketType: "Аккаунт",
     defaultNews: "Новость",
     defaultHero: "Герой",
-    defaultMarket: "Лот маркета",
+    defaultMarket: "Лот аккаунта",
     noResults: "Ничего не найдено."
   },
   en: {
@@ -97,7 +97,7 @@ const copy: Record<
     section: "Section",
     news: "News",
     heroes: "Heroes",
-    market: "Market",
+    market: "Account Purchase",
     clans: "Clans",
     donate: "Donate",
     useful: "Useful",
@@ -111,10 +111,10 @@ const copy: Record<
     chatDescription: "Global chat and direct messages",
     newsType: "News",
     heroType: "Hero",
-    marketType: "Market",
+    marketType: "Account",
     defaultNews: "News item",
     defaultHero: "Hero",
-    defaultMarket: "Market lot",
+    defaultMarket: "Account lot",
     noResults: "Nothing found."
   }
 };
