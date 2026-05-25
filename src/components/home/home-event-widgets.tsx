@@ -56,10 +56,11 @@ export function HomeEventWidgets() {
   const [confirmedIds, setConfirmedIds] = useState<string[]>([]);
   const [leavingIds, setLeavingIds] = useState<string[]>([]);
   const [failedIds, setFailedIds] = useState<string[]>([]);
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(0);
 
   useEffect(() => {
     setDismissed(readDismissed());
+    setNow(Date.now());
   }, []);
 
   useEffect(() => {

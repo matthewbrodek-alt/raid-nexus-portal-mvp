@@ -224,9 +224,11 @@ export function ActionCalendar({ events }: ActionCalendarProps) {
   const [adminEvents, setAdminEvents] = useState<CalendarItem[]>([]);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [timelineOpen, setTimelineOpen] = useState(false);
-  const baseMonth = useMemo(() => {
+  const [baseMonth, setBaseMonth] = useState(() => new Date(2026, 4, 1));
+
+  useEffect(() => {
     const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), 1);
+    setBaseMonth(new Date(now.getFullYear(), now.getMonth(), 1));
   }, []);
   const month = useMemo(() => new Date(baseMonth.getFullYear(), baseMonth.getMonth() + monthOffset, 1), [baseMonth, monthOffset]);
   const monthOptions = useMemo(

@@ -8,7 +8,7 @@ import { RaidLogo } from "@/components/brand/raid-logo";
 import { useAuth } from "@/components/auth/auth-provider";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
-import { getNextRaffleInfo, getRaffleTimeLeft, RAFFLE_PRIZE } from "@/lib/raffle";
+import { getNextRaffleInfo, getRaffleTimeLeft, RAFFLE_PRIZE, type RaffleInfo } from "@/lib/raffle";
 
 const CRY_LINES = ["Ай-ай-ай!", "Хнык...", "Не по пузику!", "Еще чуть-чуть...", "Мачеха терпит ради рубинов", "Уже почти участник!"];
 const REQUIRED_CLICKS = 100;
@@ -17,19 +17,21 @@ const MACHEHA_CRY_SOUND_SRC = "/sounds/macheha-cry.mp3";
 
 export default function RafflePage() {
   const { loading, profile, user } = useAuth();
-  const raffle = useMemo(() => getNextRaffleInfo(), []);
-  const [now, setNow] = useState(() => new Date());
+  const [raffle, setRaffle] = useState<RaffleInfo | null>(null);
+  const [now, setNow] = useState<Date | null>(null);
   const [clicks, setClicks] = useState(0);
   const [entryExists, setEntryExists] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [cryIndex, setCryIndex] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const timeLeft = getRaffleTimeLeft(raffle.date, now);
+  const timeLeft = useMemo(() => (raffle && now ? getRaffleTimeLeft(raffle.date, now) : { days: 0, hours: 0, minutes: 0, seconds: 0 }), [now, raffle]);
   const progress = Math.min(100, Math.round((clicks / REQUIRED_CLICKS) * 100));
-  const entryId = user ? `${user.uid}_${raffle.drawKey}` : "";
+  const entryId = user && raffle ? `${user.uid}_${raffle.drawKey}` : "";
 
   useEffect(() => {
+    setRaffle(getNextRaffleInfo());
+    setNow(new Date());
     const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timer);
   }, []);
@@ -55,7 +57,7 @@ export default function RafflePage() {
   }, [entryId, user]);
 
   async function completeEntry(nextClicks: number) {
-    if (!user || saving || entryExists) {
+    if (!user || !raffle || saving || entryExists) {
       return;
     }
 

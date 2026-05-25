@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Clock3, Gem, Gift, Trophy } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { getNextRaffleInfo, getRaffleTimeLeft, RAFFLE_PRIZE } from "@/lib/raffle";
+import { getNextRaffleInfo, getRaffleTimeLeft, RAFFLE_PRIZE, type RaffleInfo } from "@/lib/raffle";
 import { useLanguage, type Language } from "@/lib/i18n/use-language";
 
 const copy: Record<
@@ -38,11 +38,13 @@ const copy: Record<
 export function RafflePanel() {
   const { language } = useLanguage();
   const labels = copy[language];
-  const raffle = useMemo(() => getNextRaffleInfo(), []);
-  const [now, setNow] = useState(() => new Date());
-  const timeLeft = getRaffleTimeLeft(raffle.date, now);
+  const [raffle, setRaffle] = useState<RaffleInfo | null>(null);
+  const [now, setNow] = useState<Date | null>(null);
+  const timeLeft = useMemo(() => (raffle && now ? getRaffleTimeLeft(raffle.date, now) : { days: 0, hours: 0, minutes: 0, seconds: 0 }), [now, raffle]);
 
   useEffect(() => {
+    setRaffle(getNextRaffleInfo());
+    setNow(new Date());
     const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timer);
   }, []);
@@ -68,8 +70,8 @@ export function RafflePanel() {
               <Clock3 size={16} />
               {labels.nextIn}
             </span>
-            <span className="text-xs text-zinc-500">
-              {raffle.date.toLocaleDateString(language === "ru" ? "ru-RU" : "en-US", { day: "2-digit", month: "long" })}
+            <span className="min-w-20 text-right text-xs text-zinc-500">
+              {raffle ? raffle.date.toLocaleDateString(language === "ru" ? "ru-RU" : "en-US", { day: "2-digit", month: "long" }) : "..."}
             </span>
           </div>
 
