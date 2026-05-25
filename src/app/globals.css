@@ -39,8 +39,6 @@ body::before {
   inset: 0;
   z-index: -2;
   background: url("/images/raid-castle-bg.png") center top / cover fixed no-repeat;
-  filter: brightness(1.24) saturate(1.42) contrast(1.08);
-  transform: translateZ(0);
   pointer-events: none;
 }
 
@@ -50,9 +48,9 @@ body::after {
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(circle at 50% 0%, rgba(242, 214, 154, 0.26), transparent 26%),
-    radial-gradient(circle at 84% 52%, rgba(216, 75, 53, 0.24), transparent 28%),
-    linear-gradient(90deg, rgba(2, 6, 10, 0.26), rgba(3, 8, 13, 0.12) 48%, rgba(2, 6, 10, 0.29));
+    radial-gradient(circle at 50% 0%, rgba(242, 214, 154, 0.18), transparent 26%),
+    radial-gradient(circle at 84% 52%, rgba(216, 75, 53, 0.16), transparent 28%),
+    linear-gradient(90deg, rgba(2, 6, 10, 0.18), rgba(3, 8, 13, 0.08) 48%, rgba(2, 6, 10, 0.22));
   pointer-events: none;
 }
 
@@ -93,8 +91,6 @@ body::after {
   position: absolute;
   inset: 0;
   background: var(--raid-bg-image, url("/images/raid-castle-bg.png")) center top / cover no-repeat;
-  filter: brightness(1.26) saturate(1.46) contrast(1.1);
-  transform: translateZ(0);
 }
 
 .raid-static-background::after {
@@ -102,14 +98,10 @@ body::after {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 50% 0%, rgba(231, 193, 106, 0.26), transparent 24%),
-    radial-gradient(circle at 78% 64%, rgba(216, 75, 53, 0.25), transparent 28%),
-    linear-gradient(90deg, rgba(2, 6, 10, 0.32), rgba(3, 8, 13, 0.18) 48%, rgba(2, 6, 10, 0.34)),
-    radial-gradient(circle at 18% 28%, rgba(200, 154, 61, 0.18) 0 1px, transparent 2px),
-    radial-gradient(circle at 72% 62%, rgba(231, 193, 106, 0.16) 0 1px, transparent 2px),
-    radial-gradient(circle at 42% 86%, rgba(216, 75, 53, 0.16) 0 1px, transparent 2px),
-    linear-gradient(180deg, rgba(5, 7, 11, 0.05), rgba(5, 7, 11, 0.24));
-  background-size: 180px 180px, 220px 220px, 260px 260px, cover;
+    radial-gradient(circle at 50% 0%, rgba(231, 193, 106, 0.18), transparent 24%),
+    radial-gradient(circle at 78% 64%, rgba(216, 75, 53, 0.16), transparent 28%),
+    linear-gradient(90deg, rgba(2, 6, 10, 0.22), rgba(3, 8, 13, 0.1) 48%, rgba(2, 6, 10, 0.26)),
+    linear-gradient(180deg, rgba(5, 7, 11, 0.03), rgba(5, 7, 11, 0.18));
 }
 
 .blood-ring {
