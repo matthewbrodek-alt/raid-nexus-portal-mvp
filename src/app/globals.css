@@ -25,10 +25,7 @@ html {
 body {
   min-height: 100vh;
   margin: 0;
-  background:
-    linear-gradient(180deg, rgba(2, 5, 9, 0.13), rgba(2, 5, 9, 0.38)),
-    url("/images/raid-castle-bg.png"),
-    linear-gradient(180deg, #05070b 0%, #09111e 100%);
+  background: linear-gradient(180deg, #05070b 0%, #09111e 100%);
   background-attachment: fixed;
   background-position: center top;
   background-repeat: no-repeat;
@@ -41,10 +38,21 @@ body::before {
   position: fixed;
   inset: 0;
   z-index: -2;
+  background: url("/images/raid-castle-bg.png") center top / cover fixed no-repeat;
+  filter: brightness(1.24) saturate(1.42) contrast(1.08);
+  transform: translateZ(0);
+  pointer-events: none;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
   background:
-    radial-gradient(circle at 50% 0%, rgba(242, 214, 154, 0.3), transparent 26%),
-    radial-gradient(circle at 84% 52%, rgba(216, 75, 53, 0.28), transparent 28%),
-    linear-gradient(90deg, rgba(2, 6, 10, 0.39), rgba(3, 8, 13, 0.19) 48%, rgba(2, 6, 10, 0.41));
+    radial-gradient(circle at 50% 0%, rgba(242, 214, 154, 0.26), transparent 26%),
+    radial-gradient(circle at 84% 52%, rgba(216, 75, 53, 0.24), transparent 28%),
+    linear-gradient(90deg, rgba(2, 6, 10, 0.26), rgba(3, 8, 13, 0.12) 48%, rgba(2, 6, 10, 0.29));
   pointer-events: none;
 }
 
@@ -73,11 +81,10 @@ body::before {
 
 .raid-static-background {
   background:
-    linear-gradient(180deg, rgba(3, 7, 10, 0.06), rgba(3, 7, 10, 0.33)),
-    radial-gradient(circle at 50% 0%, rgba(231, 193, 106, 0.28), transparent 30%),
-    var(--raid-bg-image, url("/images/raid-castle-bg.png")),
+    linear-gradient(180deg, rgba(3, 7, 10, 0.03), rgba(3, 7, 10, 0.2)),
+    radial-gradient(circle at 50% 0%, rgba(231, 193, 106, 0.34), transparent 30%),
     linear-gradient(180deg, #05070b 0%, #09111e 100%);
-  background-size: cover, cover, cover, cover;
+  background-size: cover, cover, cover;
   background-position: center top;
 }
 
@@ -85,11 +92,9 @@ body::before {
   content: "";
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at 50% 0%, rgba(231, 193, 106, 0.26), transparent 24%),
-    radial-gradient(circle at 78% 64%, rgba(216, 75, 53, 0.25), transparent 28%),
-    linear-gradient(90deg, rgba(2, 6, 10, 0.47), rgba(3, 8, 13, 0.28) 48%, rgba(2, 6, 10, 0.46));
-  opacity: 0.56;
+  background: var(--raid-bg-image, url("/images/raid-castle-bg.png")) center top / cover no-repeat;
+  filter: brightness(1.26) saturate(1.46) contrast(1.1);
+  transform: translateZ(0);
 }
 
 .raid-static-background::after {
@@ -97,10 +102,13 @@ body::before {
   position: absolute;
   inset: 0;
   background:
+    radial-gradient(circle at 50% 0%, rgba(231, 193, 106, 0.26), transparent 24%),
+    radial-gradient(circle at 78% 64%, rgba(216, 75, 53, 0.25), transparent 28%),
+    linear-gradient(90deg, rgba(2, 6, 10, 0.32), rgba(3, 8, 13, 0.18) 48%, rgba(2, 6, 10, 0.34)),
     radial-gradient(circle at 18% 28%, rgba(200, 154, 61, 0.18) 0 1px, transparent 2px),
     radial-gradient(circle at 72% 62%, rgba(231, 193, 106, 0.16) 0 1px, transparent 2px),
     radial-gradient(circle at 42% 86%, rgba(216, 75, 53, 0.16) 0 1px, transparent 2px),
-    linear-gradient(180deg, rgba(5, 7, 11, 0.08), rgba(5, 7, 11, 0.33));
+    linear-gradient(180deg, rgba(5, 7, 11, 0.05), rgba(5, 7, 11, 0.24));
   background-size: 180px 180px, 220px 220px, 260px 260px, cover;
 }
 
@@ -208,8 +216,10 @@ body::before {
 
 .bg-raid-radial {
   background:
-    linear-gradient(180deg, rgba(2, 5, 9, 0.18), rgba(2, 5, 9, 0.72)),
+    linear-gradient(180deg, rgba(2, 5, 9, 0.08), rgba(2, 5, 9, 0.42)),
+    radial-gradient(circle at 50% 0%, rgba(231, 193, 106, 0.2), transparent 28%),
     url("/images/raid-castle-bg.png") center top / cover fixed no-repeat !important;
+  background-blend-mode: normal, screen, normal;
 }
 
 .raid-dashboard-shell {
