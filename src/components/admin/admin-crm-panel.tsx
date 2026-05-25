@@ -297,19 +297,30 @@ export function AdminCrmPanel() {
 
       {statusText ? <p className="mb-4 rounded-lg border border-relic/20 bg-relic/[0.08] p-3 text-sm text-zinc-300">{statusText}</p> : null}
 
-      <div className="max-h-[620px] overflow-auto rounded-xl border border-white/10">
-        <table className="min-w-[1160px] w-full border-collapse text-left text-sm">
-          <thead className="sticky top-0 z-10 bg-[#071019]/95 text-xs uppercase tracking-[0.16em] text-relic backdrop-blur">
+      <div className="max-h-[620px] overflow-auto rounded-xl border border-white/10 bg-[#071019]/70">
+        <table className="w-[1360px] min-w-[1360px] border-separate border-spacing-0 text-left text-[13px]">
+          <colgroup>
+            <col className="w-[120px]" />
+            <col className="w-[135px]" />
+            <col className="w-[190px]" />
+            <col className="w-[220px]" />
+            <col className="w-[125px]" />
+            <col className="w-[180px]" />
+            <col className="w-[230px]" />
+            <col className="w-[230px]" />
+            <col className="w-[150px]" />
+          </colgroup>
+          <thead className="sticky top-0 z-10 bg-[#0b1320]/98 text-[11px] uppercase tracking-[0.1em] text-relic backdrop-blur">
             <tr>
-              <th className="p-3">Дата</th>
-              <th className="p-3">Услуга</th>
-              <th className="p-3">Клиент</th>
-              <th className="p-3">Заявка</th>
-              <th className="p-3">Сумма</th>
-              <th className="p-3">Этап</th>
-              <th className="p-3">Оплата / реквизиты</th>
-              <th className="p-3">Заметка</th>
-              <th className="p-3">Действия</th>
+              <th className="whitespace-nowrap border-b border-r border-white/10 p-3">Дата</th>
+              <th className="whitespace-nowrap border-b border-r border-white/10 p-3">Услуга</th>
+              <th className="whitespace-nowrap border-b border-r border-white/10 p-3">Клиент</th>
+              <th className="whitespace-nowrap border-b border-r border-white/10 p-3">Заявка</th>
+              <th className="whitespace-nowrap border-b border-r border-white/10 p-3">Сумма</th>
+              <th className="whitespace-nowrap border-b border-r border-white/10 p-3">Этап</th>
+              <th className="whitespace-nowrap border-b border-r border-white/10 p-3">Оплата</th>
+              <th className="whitespace-nowrap border-b border-r border-white/10 p-3">Заметка</th>
+              <th className="whitespace-nowrap border-b border-white/10 p-3">Действия</th>
             </tr>
           </thead>
           <tbody>
@@ -318,18 +329,18 @@ export function AdminCrmPanel() {
               const completed = isCompletedOrder(draft.status);
 
               return (
-                <tr key={lead.id} className={`border-t border-white/10 ${completed ? "bg-emerald-400/[0.04]" : "bg-black/18"}`}>
-                  <td className="p-3 text-zinc-400">{formatDate(lead.createdAt?.seconds)}</td>
-                  <td className="p-3 font-semibold text-white">{serviceLabel(lead.serviceType)}</td>
-                  <td className="p-3">
+                <tr key={lead.id} className={`${completed ? "bg-emerald-400/[0.04]" : "bg-black/18"} transition hover:bg-relic/[0.06]`}>
+                  <td className="whitespace-nowrap border-b border-r border-white/10 p-3 align-top text-zinc-400">{formatDate(lead.createdAt?.seconds)}</td>
+                  <td className="whitespace-nowrap border-b border-r border-white/10 p-3 align-top font-semibold text-white">{serviceLabel(lead.serviceType)}</td>
+                  <td className="border-b border-r border-white/10 p-3 align-top">
                     <p className="font-semibold text-white">{lead.clientName || lead.email || lead.uid || "Клиент"}</p>
                     <p className="text-xs text-zinc-500">{lead.telegram || "telegram не указан"}</p>
                   </td>
-                  <td className="p-3">
+                  <td className="border-b border-r border-white/10 p-3 align-top">
                     <p className="line-clamp-2 font-semibold text-white">{lead.packageName || lead.packageId || "Заявка"}</p>
                     {lead.comment ? <p className="mt-1 line-clamp-2 text-xs text-zinc-500">{lead.comment}</p> : null}
                   </td>
-                  <td className="p-3">
+                  <td className="border-b border-r border-white/10 p-3 align-top">
                     <input
                       value={draft.amountRub}
                       onChange={(event) => updateDraft(lead.id, { amountRub: event.target.value })}
@@ -337,7 +348,7 @@ export function AdminCrmPanel() {
                       placeholder="0"
                     />
                   </td>
-                  <td className="p-3">
+                  <td className="border-b border-r border-white/10 p-3 align-top">
                     <select
                       value={draft.status}
                       onChange={(event) => updateDraft(lead.id, { status: event.target.value as OrderStageId })}
@@ -350,7 +361,7 @@ export function AdminCrmPanel() {
                       ))}
                     </select>
                   </td>
-                  <td className="p-3">
+                  <td className="border-b border-r border-white/10 p-3 align-top">
                     <textarea
                       value={draft.paymentDetails}
                       onChange={(event) => updateDraft(lead.id, { paymentDetails: event.target.value })}
@@ -359,7 +370,7 @@ export function AdminCrmPanel() {
                       placeholder="Ссылка на оплату или реквизиты"
                     />
                   </td>
-                  <td className="p-3">
+                  <td className="border-b border-r border-white/10 p-3 align-top">
                     <textarea
                       value={draft.managerNote}
                       onChange={(event) => updateDraft(lead.id, { managerNote: event.target.value })}
@@ -368,7 +379,7 @@ export function AdminCrmPanel() {
                       placeholder="Внутренняя заметка"
                     />
                   </td>
-                  <td className="p-3">
+                  <td className="border-b border-white/10 p-3 align-top">
                     <div className="flex flex-col gap-2">
                       <button type="button" onClick={() => void saveLead(lead)} className="inline-flex items-center justify-center gap-2 rounded-md bg-relic px-3 py-2 font-bold text-black">
                         <CheckCircle2 size={15} />

@@ -12,7 +12,8 @@ import {
   query,
   serverTimestamp,
   setDoc,
-  Timestamp
+  Timestamp,
+  updateDoc
 } from "firebase/firestore";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -55,6 +56,7 @@ type MemberMenu = {
   uid: string;
   displayName: string;
   avatarUrl?: string;
+  avatarHiddenByAdmin?: boolean;
 };
 
 const basicEmojis = ["\u{1F600}", "\u{1F602}", "\u{1F60D}", "\u{1F44D}", "\u{1F525}", "\u2764\uFE0F", "\u{1F64F}", "\u{1F389}", "\u{1F60E}", "\u{1F914}"];
@@ -322,7 +324,28 @@ export function ChatWindow() {
     setMemberMenu({
       uid: messageItem.uid,
       displayName: messageItem.displayName,
+      avatarHiddenByAdmin: Boolean(author?.avatarHiddenByAdmin),
       avatarUrl: shouldShowAvatar(messageItem.uid, user?.uid, author?.avatarHiddenByAdmin) ? author?.avatarUrl || messageItem.avatarUrl : ""
+    });
+  }
+
+  async function toggleMemberAvatarVisibility(member: MemberMenu) {
+    if (!canModerate) {
+      return;
+    }
+
+    const nextHidden = !member.avatarHiddenByAdmin;
+
+    await updateDoc(doc(db, collections.users, member.uid), {
+      avatarHiddenByAdmin: nextHidden,
+      updatedAt: serverTimestamp()
+    });
+
+    setUsers((current) => current.map((item) => (item.uid === member.uid ? { ...item, avatarHiddenByAdmin: nextHidden } : item)));
+    setMemberMenu({
+      ...member,
+      avatarHiddenByAdmin: nextHidden,
+      avatarUrl: nextHidden ? "" : users.find((item) => item.uid === member.uid)?.avatarUrl || member.avatarUrl
     });
   }
 
@@ -865,6 +888,20 @@ export function ChatWindow() {
               <button type="button" onClick={() => blockForMe(memberMenu)} className="rounded-md border border-white/10 bg-white/[0.04] px-4 py-3 text-left font-semibold text-zinc-200 hover:bg-white/[0.08]">
                 Не показывать мне сообщения участника
               </button>
+
+              {canModerate ? (
+                <button
+                  type="button"
+                  onClick={() => void toggleMemberAvatarVisibility(memberMenu)}
+                  className={`w-full rounded-md border px-4 py-3 text-left font-semibold transition ${
+                    memberMenu.avatarHiddenByAdmin
+                      ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/15"
+                      : "border-ember/35 bg-ember/10 text-ember hover:bg-ember/15"
+                  }`}
+                >
+                  {memberMenu.avatarHiddenByAdmin ? "Показать аватар пользователя" : "Скрыть аватар пользователя"}
+                </button>
+              ) : null}
 
               {canModerate ? (
                 <div className="mt-2 rounded-md border border-blood/30 bg-blood/10 p-3">

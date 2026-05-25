@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { GlassPanel } from "@/components/ui/glass-panel";
-import { avatarPresets, getBpProgress, getOrderStage, isCompletedOrder, normalizeOrderStage, orderStages } from "@/lib/bp-status";
+import { getBpProgress, getOrderStage, isCompletedOrder, normalizeOrderStage, orderStages } from "@/lib/bp-status";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 
@@ -128,8 +128,7 @@ export function UserDashboardContent() {
     [topupLeads]
   );
   const bpProgress = useMemo(() => getBpProgress(totalSpentRub), [totalSpentRub]);
-  const selectedAvatar = avatarPresets.find((item) => item.id === profile?.avatarPreset) ?? avatarPresets[0];
-  const avatarUrl = profile?.avatarUrl || selectedAvatar.url;
+  const avatarUrl = profile?.avatarUrl || "";
   const activityCount = profile?.activityStats?.messagesCount ?? directThreads.length;
   const completedCount = topupLeads.filter((lead) => isCompletedOrder(lead.status)).length;
 
@@ -158,30 +157,6 @@ export function UserDashboardContent() {
     ],
     [activityCount, bpProgress.status.shortLabel, completedCount, directThreads.length, topupLeads, totalSpentRub]
   );
-
-  async function selectAvatar(presetId: string) {
-    if (!user?.uid) {
-      return;
-    }
-
-    const preset = avatarPresets.find((item) => item.id === presetId);
-
-    if (!preset) {
-      return;
-    }
-
-    setAvatarStatus("Сохраняем аватар...");
-    await updateDoc(doc(db, collections.users, user.uid), {
-      avatarPreset: preset.id,
-      avatarUrl: preset.url,
-      avatarFrame: bpProgress.status.id,
-      bpStatus: bpProgress.status.id,
-      totalSpentRub,
-      updatedAt: new Date()
-    });
-    await refreshProfile();
-    setAvatarStatus("Аватар обновлен.");
-  }
 
   async function uploadCustomAvatar(file?: File | null) {
     if (!user?.uid || !file) {
@@ -286,7 +261,7 @@ export function UserDashboardContent() {
           <Palette className="text-relic" />
           <div>
             <h2 className="text-xl font-bold text-white">Аватар и рамка</h2>
-            <p className="text-sm text-zinc-400">Аватар можно выбрать только из списка. Рамка зависит от BP-статуса.</p>
+            <p className="text-sm text-zinc-400">Загрузите свой аватар. Рамка зависит от BP-статуса.</p>
           </div>
         </div>
         <label className="mb-5 flex cursor-pointer flex-col gap-2 rounded-xl border border-relic/18 bg-black/24 p-4 text-sm text-zinc-300 transition hover:border-relic/45 sm:flex-row sm:items-center sm:justify-between">
@@ -297,25 +272,6 @@ export function UserDashboardContent() {
           <span className="rounded-lg bg-relic px-4 py-2 text-center font-black text-black">{avatarUploading ? "Загрузка..." : "Выбрать файл"}</span>
           <input type="file" accept="image/*" className="hidden" disabled={avatarUploading} onChange={(event) => void uploadCustomAvatar(event.target.files?.[0])} />
         </label>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {avatarPresets.map((preset) => {
-            const active = preset.id === selectedAvatar.id;
-
-            return (
-              <button
-                key={preset.id}
-                type="button"
-                onClick={() => void selectAvatar(preset.id)}
-                className={`rounded-xl border p-3 text-left transition ${active ? "border-relic bg-relic/12" : "border-white/10 bg-black/24 hover:border-relic/45"}`}
-              >
-                <span className={`grid h-14 w-14 place-items-center overflow-hidden rounded-xl border-2 text-sm font-black text-relic ${bpProgress.status.frameClass}`}>
-                  {preset.url ? <img src={preset.url} alt={preset.label} className="h-full w-full object-cover" /> : preset.label.slice(0, 2).toUpperCase()}
-                </span>
-                <span className="mt-2 block text-sm font-semibold text-white">{preset.label}</span>
-              </button>
-            );
-          })}
-        </div>
         {avatarStatus ? <p className="mt-3 text-sm text-relic">{avatarStatus}</p> : null}
       </GlassPanel>
 

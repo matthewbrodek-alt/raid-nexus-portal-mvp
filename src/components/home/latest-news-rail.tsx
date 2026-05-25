@@ -50,7 +50,6 @@ const copy: Record<
     eyebrow: string;
     title: string;
     allNews: string;
-    editorLabel: string;
     details: string;
     emptyDescription: string;
     closeList: string;
@@ -63,7 +62,6 @@ const copy: Record<
     eyebrow: "Будь в курсе",
     title: "Последние новости",
     allNews: "Все новости",
-    editorLabel: "Колонка SMM-редактора",
     details: "Подробности",
     emptyDescription: "Описание новости пока не заполнено.",
     closeList: "Закрыть список новостей",
@@ -75,7 +73,6 @@ const copy: Record<
     eyebrow: "Stay Updated",
     title: "Latest News",
     allNews: "All News",
-    editorLabel: "SMM editor column",
     details: "Details",
     emptyDescription: "News description has not been filled in yet.",
     closeList: "Close news list",
@@ -182,7 +179,6 @@ export function LatestNewsRail() {
             <h2 className={`raid-title-metal mt-4 text-4xl uppercase sm:text-6xl ${language === "ru" ? "!leading-[1.24]" : "leading-none"}`}>
               {labels.title}
             </h2>
-            <p className="mt-3 text-sm uppercase tracking-[0.18em] text-zinc-500">{labels.editorLabel}</p>
           </div>
           <button
             type="button"
