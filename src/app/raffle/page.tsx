@@ -12,7 +12,7 @@ import { getNextRaffleInfo, getRaffleTimeLeft, RAFFLE_PRIZE } from "@/lib/raffle
 
 const CRY_LINES = ["Ай-ай-ай!", "Хнык...", "Не по пузику!", "Еще чуть-чуть...", "Мачеха терпит ради рубинов", "Уже почти участник!"];
 const REQUIRED_CLICKS = 100;
-const MACHEHA_GIF_SRC = "/images/raffle/macheha.gif";
+const MACHEHA_VIDEO_SRC = "/videos/raffle/macheha.mp4";
 const MACHEHA_CRY_SOUND_SRC = "/sounds/macheha-cry.mp3";
 
 export default function RafflePage() {
@@ -149,16 +149,15 @@ export default function RafflePage() {
                 className="group relative block min-h-[520px] w-full overflow-hidden text-left transition hover:scale-[1.005] disabled:cursor-default disabled:hover:scale-100"
                 aria-label="Потыкай мачеху в пузико"
               >
-                <img
-                  src={MACHEHA_GIF_SRC}
-                  alt="Мачеха"
+                <video
+                  src={MACHEHA_VIDEO_SRC}
                   className="absolute inset-0 h-full w-full object-contain object-center drop-shadow-[0_28px_55px_rgba(0,0,0,0.72)] transition duration-200 group-active:scale-[0.992]"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="auto"
                 />
-
-                <span className="pointer-events-none absolute left-5 top-5 rounded-[16px] border border-relic/30 bg-black/58 px-4 py-3 backdrop-blur-sm">
-                  <span className="block text-xs uppercase tracking-[0.22em] text-relic">Мачеха ур. 60</span>
-                  <span className="mt-1 block text-sm font-bold text-white">Легендарный герой розыгрыша</span>
-                </span>
 
                 <span className="pointer-events-none absolute left-1/2 top-[54%] grid h-24 w-24 -translate-x-1/2 place-items-center rounded-full border-2 border-relic/45 bg-black/42 font-[var(--font-cinzel)] text-4xl font-black text-relic opacity-90 shadow-[0_0_38px_rgba(200,154,61,0.28)] backdrop-blur-sm">
                   {clicks}
