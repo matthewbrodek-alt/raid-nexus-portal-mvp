@@ -56,9 +56,12 @@ export default function AdminDashboardPage() {
           <AdminChatModeration />
         </div>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-          <AdminCalendarEditor />
+        <div className="mt-6">
           <AdminCrmPanel />
+        </div>
+
+        <div className="mt-6">
+          <AdminCalendarEditor />
         </div>
       </DashboardShell>
     </ProtectedRoute>

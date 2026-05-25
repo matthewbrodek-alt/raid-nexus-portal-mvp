@@ -5,6 +5,10 @@ export type UserProfile = {
   email: string;
   displayName: string;
   avatarUrl?: string;
+  avatarPreset?: string;
+  avatarFrame?: string;
+  bpStatus?: "bronze" | "silver" | "gold" | "platinum";
+  totalSpentRub?: number;
   role: UserRole;
   status: "active" | "blocked" | "pending";
   activityStats?: {

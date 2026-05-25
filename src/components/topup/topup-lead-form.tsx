@@ -28,7 +28,7 @@ const MAX_SCREENSHOT_SIZE = 6 * 1024 * 1024;
 const copy = {
   ru: {
     title: "Заявка на донат",
-    subtitle: "Форма отправляет заявку менеджеру через подключенный webhook.",
+    subtitle: "Форма сохраняет заявку в панель менеджера и открывает личный диалог на сайте.",
     telegram: "Telegram",
     package: "Набор",
     payment: "Оплата",
@@ -42,13 +42,13 @@ const copy = {
     sending: "Отправка...",
     submit: "Отправить заявку",
     sent: "Заявка отправлена. Менеджер получит уведомление.",
-    error: "Не удалось отправить заявку. Проверь webhook URL и активность workflow.",
+    error: "Не удалось сохранить заявку. Проверь вход в аккаунт и доступ к базе.",
     from: "от",
     rub: "₽"
   },
   en: {
     title: "Donation request",
-    subtitle: "The form sends a request to the manager through your connected webhook.",
+    subtitle: "The form saves a request in the manager panel and opens a private site dialog.",
     telegram: "Telegram",
     package: "Pack",
     payment: "Payment",
@@ -62,7 +62,7 @@ const copy = {
     sending: "Sending...",
     submit: "Send request",
     sent: "Request sent. Manager will receive it.",
-    error: "Could not send request. Check webhook URL and workflow status.",
+    error: "Could not save request. Check your account session and database access.",
     from: "from",
     rub: "RUB"
   }
@@ -211,6 +211,7 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
         screenshotUrl: screenshot?.secureUrl ?? "",
         screenshotPublicId: screenshot?.publicId ?? "",
         screenshotName: screenshotFile?.name ?? "",
+        serviceType: "donation",
         status: "new",
         source: "portal"
       };
@@ -253,15 +254,11 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
         });
       }
 
-      const response = await fetch("/api/webhook/topup", {
+      await fetch("/api/webhook/topup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        throw new Error("webhook rejected request");
-      }
+      }).catch(() => undefined);
 
       setStatus("sent");
       setScreenshotFile(null);
@@ -415,6 +412,9 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
         {status === "sent" ? (
           <p className="rounded-md border border-relic/20 bg-relic/[0.08] px-3 py-2 text-sm text-relic">
             {t.sent}
+            <Link className="ml-2 font-bold underline underline-offset-4" href="/dashboard">
+              {isRu ? "РњРѕРё Р·Р°СЏРІРєРё" : "My requests"}
+            </Link>
             {activeManagerUid ? (
               <Link className="ml-2 font-bold underline underline-offset-4" href={`/chat?user=${activeManagerUid}`}>
                 {isRu ? "Открыть чат" : "Open chat"}
