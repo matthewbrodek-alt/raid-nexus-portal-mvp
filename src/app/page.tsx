@@ -13,11 +13,10 @@ import {
   Users
 } from "lucide-react";
 import { RaidLogo } from "@/components/brand/raid-logo";
-import { ActionCalendar } from "@/components/calendar/action-calendar";
 import { HomeBackgroundVideo } from "@/components/home/home-background-video";
 import { HomeBroadcast } from "@/components/home/home-broadcast";
+import { HomeEventCalendarCard } from "@/components/home/home-event-calendar-card";
 import { HomeMobileHeader } from "@/components/home/home-mobile-header";
-import { HomeSearch } from "@/components/home/home-search";
 import { HomeSocialLinks } from "@/components/home/home-social-links";
 import { HomeUnreadBell } from "@/components/home/home-unread-bell";
 import { HomeUserCard } from "@/components/home/home-user-card";
@@ -25,7 +24,6 @@ import { LatestNewsRail } from "@/components/home/latest-news-rail";
 import { RafflePanel } from "@/components/home/raffle-panel";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { useLanguage, type Language } from "@/lib/i18n/use-language";
-import { raidEvents } from "@/lib/data/mock";
 
 const sidebarLinks = [
   { label: { ru: "Главная", en: "Home" }, href: "/", icon: HomeIcon, active: true },
@@ -33,7 +31,6 @@ const sidebarLinks = [
   { label: { ru: "Покупка аккаунта", en: "Account Purchase" }, href: "/marketplace", icon: ShoppingBag },
   { label: { ru: "Кланы", en: "Clans" }, href: "/clans", icon: Shield },
   { label: { ru: "Чат", en: "Chat" }, href: "/chat", icon: MessageCircle },
-  { label: { ru: "Донат", en: "Donate" }, href: "/topup", icon: Crown },
   { label: { ru: "Личный кабинет", en: "Dashboard" }, href: "/dashboard", icon: Users }
 ];
 
@@ -134,8 +131,22 @@ export default function Home() {
         <section className="min-w-0 px-4 py-4 sm:px-6 lg:px-8">
           <HomeMobileHeader />
 
+          <Link
+            href="/topup"
+            className="raid-donate-pulse raid-glow-button mt-4 flex items-center justify-center gap-3 border border-relic/45 bg-black/55 px-4 py-4 text-center text-sm font-black uppercase tracking-[0.12em] text-relic shadow-[0_0_30px_rgba(216,168,71,0.16)] lg:hidden"
+          >
+            <Crown size={18} />
+            {language === "ru" ? "Купить игровой набор в RAID" : "Buy RAID Game Pack"}
+          </Link>
+
           <header className="hidden h-24 items-center gap-5 lg:flex">
-            <HomeSearch />
+            <Link
+              href="/topup"
+              className="raid-donate-pulse raid-glow-button flex min-h-[56px] min-w-[360px] items-center justify-center gap-3 border border-relic/45 bg-black/48 px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-relic shadow-[0_0_30px_rgba(216,168,71,0.16)]"
+            >
+              <Crown size={20} />
+              {language === "ru" ? "Купить игровой набор в RAID" : "Buy RAID Game Pack"}
+            </Link>
 
             <div className="ml-auto flex items-center gap-5">
               <LanguageSwitcher />
@@ -153,7 +164,7 @@ export default function Home() {
 
             <aside className="space-y-5">
               <RafflePanel />
-              <ActionCalendar events={raidEvents} />
+              <HomeEventCalendarCard />
               <HomeBroadcast />
             </aside>
           </div>

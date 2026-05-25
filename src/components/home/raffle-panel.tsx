@@ -9,7 +9,6 @@ import { useLanguage, type Language } from "@/lib/i18n/use-language";
 const copy: Record<
   Language,
   {
-    eyebrow: string;
     title: string;
     description: string;
     nextIn: string;
@@ -19,7 +18,6 @@ const copy: Record<
   }
 > = {
   ru: {
-    eyebrow: "Розыгрыш",
     title: "Следующий розыгрыш",
     description: "Не упусти возможность принять участие в розыгрыше. В месяц проходит 4 события по 5 рубиновых подписок.",
     nextIn: "До старта",
@@ -28,7 +26,6 @@ const copy: Record<
     cta: "Участвовать"
   },
   en: {
-    eyebrow: "Giveaway",
     title: "Next Giveaway",
     description: "Do not miss your chance to join. Every month has 4 events with 5 ruby subscriptions each.",
     nextIn: "Starts in",
@@ -56,8 +53,7 @@ export function RafflePanel() {
       <div className="relative">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.32em] text-relic">{labels.eyebrow}</p>
-            <h2 className="raid-title-metal mt-3 text-3xl font-black">{labels.title}</h2>
+            <h2 className="raid-title-metal text-3xl font-black">{labels.title}</h2>
           </div>
           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[16px] border border-relic/35 bg-black/35 text-relic shadow-[0_0_24px_rgba(200,154,61,0.18)]">
             <Trophy size={22} />

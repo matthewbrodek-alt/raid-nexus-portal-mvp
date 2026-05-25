@@ -120,6 +120,10 @@ export function AdminContentForge() {
   const [socialVkCommunity, setSocialVkCommunity] = useState("");
   const [socialYoutube, setSocialYoutube] = useState("");
   const [socialTwitch, setSocialTwitch] = useState("");
+  const [calendarTitle, setCalendarTitle] = useState("");
+  const [calendarDescription, setCalendarDescription] = useState("");
+  const [calendarImage, setCalendarImage] = useState<File | null>(null);
+  const [calendarImageUrl, setCalendarImageUrl] = useState("");
   const [offerTitle, setOfferTitle] = useState("");
   const [offerComment, setOfferComment] = useState("");
   const [offerImage, setOfferImage] = useState<File | null>(null);
@@ -165,6 +169,23 @@ export function AdminContentForge() {
       setSocialVkCommunity(data?.vkCommunity ?? "");
       setSocialYoutube(data?.youtube ?? "");
       setSocialTwitch(data?.twitch ?? "");
+    });
+  }, []);
+
+  useEffect(() => {
+    void getDoc(doc(db, collections.siteSettings, "homeEventCalendar")).then((snapshot) => {
+      const data = snapshot.data() as
+        | {
+            title?: string;
+            description?: string;
+            imageUrl?: string;
+            image?: { secureUrl?: string; url?: string };
+          }
+        | undefined;
+
+      setCalendarTitle(data?.title ?? "");
+      setCalendarDescription(data?.description ?? "");
+      setCalendarImageUrl(data?.image?.secureUrl ?? data?.image?.url ?? data?.imageUrl ?? "");
     });
   }, []);
 
@@ -225,6 +246,51 @@ export function AdminContentForge() {
       setStatus("Ссылки соцсетей сохранены.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Не удалось сохранить ссылки соцсетей.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveHomeEventCalendar(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!profile) {
+      return;
+    }
+
+    setSaving(true);
+    setStatus("");
+
+    try {
+      const slug = slugify(calendarTitle || "home-event-calendar");
+      const uploadedImage = calendarImage ? await uploadImage(calendarImage, `${slug}/cover`, "event-widgets") : null;
+      const existingImageUrl = calendarImageUrl.trim();
+
+      await setDoc(
+        doc(db, collections.siteSettings, "homeEventCalendar"),
+        {
+          title: calendarTitle.trim(),
+          description: calendarDescription.trim(),
+          image: uploadedImage
+            ? {
+                ...uploadedImage,
+                alt: calendarTitle.trim() || "Календарь событий"
+              }
+            : null,
+          imageUrl: uploadedImage ? "" : existingImageUrl,
+          updatedBy: profile.uid,
+          updatedAt: serverTimestamp()
+        },
+        { merge: true }
+      );
+
+      if (uploadedImage?.secureUrl) {
+        setCalendarImageUrl(uploadedImage.secureUrl);
+      }
+      setCalendarImage(null);
+      setStatus("Календарь событий на главной сохранен.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Не удалось сохранить календарь событий.");
     } finally {
       setSaving(false);
     }
@@ -527,6 +593,45 @@ export function AdminContentForge() {
         <button disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
           <Save size={16} />
           Сохранить Broadcast
+        </button>
+      </form>
+
+      <form onSubmit={saveHomeEventCalendar} className="mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
+        <div className="flex items-center gap-2 text-white">
+          <ImagePlus size={18} className="text-relic" />
+          <h3 className="font-semibold">Календарь событий на главной</h3>
+        </div>
+        <p className="text-xs leading-5 text-zinc-500">
+          На главной будет показана одна большая картинка. По клику открывается всплывающее окно с картинкой и описанием.
+        </p>
+        <div className="grid gap-3 lg:grid-cols-2">
+          <input
+            value={calendarTitle}
+            onChange={(event) => setCalendarTitle(event.target.value)}
+            placeholder="Название календаря / события"
+            className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+          />
+          <input
+            value={calendarImageUrl}
+            onChange={(event) => setCalendarImageUrl(event.target.value)}
+            placeholder="Ссылка на картинку, если не загружаешь файл"
+            className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+          />
+        </div>
+        <textarea
+          value={calendarDescription}
+          onChange={(event) => setCalendarDescription(event.target.value)}
+          rows={3}
+          placeholder="Описание для всплывающего окна"
+          className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+        />
+        <label className="block text-sm text-zinc-300">
+          Картинка календаря событий
+          <input type="file" accept="image/*" onChange={(event) => setCalendarImage(event.target.files?.[0] ?? null)} className="mt-2 block w-full text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-white/10 file:px-3 file:py-2 file:font-bold file:text-white" />
+        </label>
+        <button disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
+          <Save size={16} />
+          Сохранить календарь событий
         </button>
       </form>
 
