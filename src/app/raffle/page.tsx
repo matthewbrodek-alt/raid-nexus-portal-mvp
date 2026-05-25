@@ -12,7 +12,7 @@ import { getNextRaffleInfo, getRaffleTimeLeft, RAFFLE_PRIZE } from "@/lib/raffle
 
 const CRY_LINES = ["Ай-ай-ай!", "Хнык...", "Не по пузику!", "Еще чуть-чуть...", "Мачеха терпит ради рубинов", "Уже почти участник!"];
 const REQUIRED_CLICKS = 100;
-const MACHEHA_VIDEO_SRC = "/videos/raffle/macheha.mp4";
+const MACHEHA_VIDEO_SRC = "/videos/raffle/macheha.webm";
 const MACHEHA_CRY_SOUND_SRC = "/sounds/macheha-cry.mp3";
 
 export default function RafflePage() {

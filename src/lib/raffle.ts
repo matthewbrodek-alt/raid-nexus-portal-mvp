@@ -1,5 +1,5 @@
 export const RAFFLE_DAYS = [7, 14, 21, 28] as const;
-export const RAFFLE_PRIZE = "5 рубиновых подписок";
+export const RAFFLE_PRIZE = "5 паков рубинов";
 
 export type RaffleInfo = {
   date: Date;

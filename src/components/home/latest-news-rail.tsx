@@ -37,7 +37,7 @@ const fallbackNews: NewsItem[] = [
     id: "fallback-2",
     title: "Готовится следующий розыгрыш",
     titleEn: "Next Giveaway Is Preparing",
-    summary: "Четыре розыгрыша в месяц по 5 рубиновых подписок.",
+    summary: "Четыре розыгрыша в месяц по 5 паков рубинов.",
     summaryEn: "Four monthly giveaways with 5 ruby subscriptions each.",
     markdownBody: "Зарегистрированные игроки смогут участвовать в розыгрыше через отдельную страницу события.",
     markdownBodyEn: "Registered players can join the giveaway through the event page."
