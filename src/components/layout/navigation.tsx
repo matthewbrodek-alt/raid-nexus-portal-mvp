@@ -120,7 +120,7 @@ export function Navigation({ sections }: NavigationProps) {
           <p className="relative z-10 text-xs font-bold uppercase tracking-[0.2em] text-zinc-300">
             {language === "ru" ? "\u041f\u0440\u0438\u0441\u043e\u0435\u0434\u0438\u043d\u044f\u0439\u0441\u044f \u043a \u0441\u043e\u043e\u0431\u0449\u0435\u0441\u0442\u0432\u0443" : "Join the community"}
           </p>
-          <HomeCommunityLinks />
+          <HomeCommunityLinks variant="mobile" />
         </div>
       </div>
     </div>
