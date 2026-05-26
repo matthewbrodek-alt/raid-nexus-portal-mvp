@@ -16,6 +16,7 @@ import {
 import { RaidLogo } from "@/components/brand/raid-logo";
 import { HomeBackgroundVideo } from "@/components/home/home-background-video";
 import { HomeBroadcast } from "@/components/home/home-broadcast";
+import { HomeCommunityLinks } from "@/components/home/home-community-links";
 import { HomeEventCalendarCard } from "@/components/home/home-event-calendar-card";
 import { HomeMobileHeader } from "@/components/home/home-mobile-header";
 import { HomeSocialLinks } from "@/components/home/home-social-links";
@@ -119,13 +120,7 @@ export default function Home() {
 
             <div className="rounded-[18px] border border-relic/18 bg-black/28 p-5">
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">{labels.communityTitle}</p>
-              <div className="mt-4 flex gap-3">
-                {["D", "F", "X", "Y"].map((item) => (
-                  <span key={item} className="grid h-9 w-9 place-items-center rounded-full bg-[#112033] text-xs font-black text-white">
-                    {item}
-                  </span>
-                ))}
-              </div>
+              <HomeCommunityLinks />
             </div>
           </div>
         </aside>
