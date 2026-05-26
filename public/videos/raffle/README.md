@@ -1,11 +1,11 @@
-Put the giveaway character GIF here:
+Put the giveaway character video here:
 
 ```text
-macheha.gif
+macheha.webm
 ```
 
 The page `/raffle` uses it through:
 
 ```text
-/images/raffle/macheha.gif
+/videos/raffle/macheha.webm
 ```

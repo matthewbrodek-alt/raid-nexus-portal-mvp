@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { BadgeCheck, FileText, MessageSquare, Palette, ScrollText, Send, Swords } from "lucide-react";
-import { collection, doc, onSnapshot, query, updateDoc, where } from "firebase/firestore";
+import { BadgeCheck, ClipboardCopy, Coins, FileText, MessageSquare, Palette, ScrollText, Send, Swords, Users } from "lucide-react";
+import { collection, doc, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -10,6 +10,7 @@ import { GlassPanel } from "@/components/ui/glass-panel";
 import { getBpProgress, getOrderStage, isCompletedOrder, normalizeOrderStage, orderStages } from "@/lib/bp-status";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
+import { makeReferralCode, makeReferralLink, normalizeReferralCode, REFERRAL_REWARD_RATE } from "@/lib/referrals";
 
 type TopupLead = {
   id: string;
@@ -34,6 +35,14 @@ type ForumThread = {
 type DirectThread = {
   id: string;
   lastMessageText?: string;
+};
+
+type BonusTransaction = {
+  id: string;
+  amountCoins?: number;
+  createdAt?: { seconds?: number };
+  description?: string;
+  source?: string;
 };
 
 function formatRub(value: number) {
@@ -78,8 +87,15 @@ export function UserDashboardContent() {
   const [topupLeads, setTopupLeads] = useState<TopupLead[]>([]);
   const [forumThreads, setForumThreads] = useState<ForumThread[]>([]);
   const [directThreads, setDirectThreads] = useState<DirectThread[]>([]);
+  const [bonusTransactions, setBonusTransactions] = useState<BonusTransaction[]>([]);
+  const [origin, setOrigin] = useState("");
+  const [referralNotice, setReferralNotice] = useState("");
   const [avatarStatus, setAvatarStatus] = useState("");
   const [avatarUploading, setAvatarUploading] = useState(false);
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   useEffect(() => {
     if (!user?.uid) {
@@ -89,6 +105,7 @@ export function UserDashboardContent() {
     const topupQuery = query(collection(db, collections.topupLeads), where("uid", "==", user.uid));
     const forumQuery = query(collection(db, collections.forumThreads), where("authorId", "==", user.uid));
     const directQuery = query(collection(db, "directThreads"), where("participants", "array-contains", user.uid));
+    const bonusQuery = query(collection(db, collections.bonusTransactions), where("uid", "==", user.uid));
 
     const unsubTopups = onSnapshot(
       topupQuery,
@@ -115,11 +132,23 @@ export function UserDashboardContent() {
       },
       () => setDirectThreads([])
     );
+    const unsubBonus = onSnapshot(
+      bonusQuery,
+      (snapshot) => {
+        setBonusTransactions(
+          snapshot.docs
+            .map((item) => ({ id: item.id, ...(item.data() as Omit<BonusTransaction, "id">) }))
+            .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0))
+        );
+      },
+      () => setBonusTransactions([])
+    );
 
     return () => {
       unsubTopups();
       unsubForum();
       unsubDirect();
+      unsubBonus();
     };
   }, [user?.uid]);
 
@@ -131,6 +160,60 @@ export function UserDashboardContent() {
   const avatarUrl = profile?.avatarUrl || "";
   const activityCount = profile?.activityStats?.messagesCount ?? directThreads.length;
   const completedCount = topupLeads.filter((lead) => isCompletedOrder(lead.status)).length;
+  const referralCode = normalizeReferralCode(profile?.referralCode);
+  const referralLink = makeReferralLink(origin, referralCode);
+  const bumpyBalance = profile?.bumpyCoinsBalance ?? 0;
+  const bumpyEarnedTotal = profile?.bumpyCoinsEarnedTotal ?? 0;
+
+  useEffect(() => {
+    if (!user?.uid || !profile || referralCode) {
+      return;
+    }
+
+    const nextCode = makeReferralCode(profile.displayName || profile.email || "Raid Player", user.uid);
+
+    void Promise.all([
+      updateDoc(doc(db, collections.users, user.uid), {
+        referralCode: nextCode,
+        bumpyCoinsBalance: profile.bumpyCoinsBalance ?? 0,
+        bumpyCoinsEarnedTotal: profile.bumpyCoinsEarnedTotal ?? 0,
+        bumpyCoinsSpentTotal: profile.bumpyCoinsSpentTotal ?? 0,
+        updatedAt: serverTimestamp()
+      }),
+      setDoc(
+        doc(db, collections.referralCodes, nextCode),
+        {
+          code: nextCode,
+          ownerUid: user.uid,
+          ownerEmail: profile.email,
+          ownerDisplayName: profile.displayName,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        },
+        { merge: true }
+      )
+    ])
+      .then(() => refreshProfile())
+      .catch(() => undefined);
+  }, [profile, referralCode, refreshProfile, user?.uid]);
+
+  useEffect(() => {
+    if (!user?.uid || !profile || !referralCode) {
+      return;
+    }
+
+    void setDoc(
+      doc(db, collections.referralCodes, referralCode),
+      {
+        code: referralCode,
+        ownerUid: user.uid,
+        ownerEmail: profile.email,
+        ownerDisplayName: profile.displayName,
+        updatedAt: serverTimestamp()
+      },
+      { merge: true }
+    ).catch(() => undefined);
+  }, [profile, referralCode, user?.uid]);
 
   const stats = useMemo(
     () => [
@@ -210,6 +293,16 @@ export function UserDashboardContent() {
     }
   }
 
+  async function copyReferralLink() {
+    if (!referralLink) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(referralLink);
+    setReferralNotice("Реферальная ссылка скопирована.");
+    window.setTimeout(() => setReferralNotice(""), 2200);
+  }
+
   return (
     <>
       <GlassPanel className="mb-6 overflow-hidden p-5 sm:p-6">
@@ -274,6 +367,68 @@ export function UserDashboardContent() {
         </label>
         {avatarStatus ? <p className="mt-3 text-sm text-relic">{avatarStatus}</p> : null}
       </GlassPanel>
+
+      <div className="mb-6 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <GlassPanel className="p-5 sm:p-6">
+          <div className="mb-4 flex items-center gap-3">
+            <Users className="text-relic" />
+            <div>
+              <p className="text-xs uppercase tracking-[0.22em] text-relic">Referral Program</p>
+              <h2 className="text-xl font-bold text-white sm:text-2xl">Реферальная программа</h2>
+            </div>
+          </div>
+          <p className="text-sm leading-6 text-zinc-400">
+            Приглашай игроков на портал. Когда приглашенный игрок оплачивает и менеджер переводит заявку в статус выполнена, тебе начисляется {Math.round(REFERRAL_REWARD_RATE * 100)}% от суммы заказа в Bumpy Coins.
+          </p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]">
+            <div className="rounded-xl border border-relic/20 bg-black/25 p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Твой код</p>
+              <p className="mt-2 break-all font-mono text-lg font-black text-relic">{referralCode || "создается..."}</p>
+              <p className="mt-2 break-all text-xs text-zinc-500">{referralLink || "Ссылка появится после создания кода."}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void copyReferralLink()}
+              disabled={!referralLink}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-relic/35 bg-relic/12 px-5 py-4 font-bold text-relic transition hover:bg-relic hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <ClipboardCopy size={18} />
+              Скопировать
+            </button>
+          </div>
+          {referralNotice ? <p className="mt-3 text-sm font-semibold text-relic">{referralNotice}</p> : null}
+        </GlassPanel>
+
+        <GlassPanel className="p-5 sm:p-6">
+          <div className="mb-4 flex items-center gap-3">
+            <Coins className="text-relic" />
+            <div>
+              <p className="text-xs uppercase tracking-[0.22em] text-relic">Bumpy Coins</p>
+              <h2 className="text-xl font-bold text-white sm:text-2xl">Бонусный баланс</h2>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+            <div className="rounded-xl border border-relic/20 bg-relic/[0.08] p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Доступно</p>
+              <p className="mt-2 text-3xl font-black text-relic">{bumpyBalance.toLocaleString("ru-RU")}</p>
+              <p className="mt-1 text-xs text-zinc-500">1 Bumpy Coin = 1 рубль скидки</p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-black/22 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Начислено всего</p>
+              <p className="mt-2 text-2xl font-black text-white">{bumpyEarnedTotal.toLocaleString("ru-RU")}</p>
+            </div>
+          </div>
+          <div className="mt-4 max-h-32 space-y-2 overflow-y-auto pr-1">
+            {bonusTransactions.slice(0, 6).map((item) => (
+              <div key={item.id} className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm">
+                <span className="truncate text-zinc-400">{item.description ?? "Referral reward"}</span>
+                <span className="shrink-0 font-bold text-relic">+{item.amountCoins ?? 0}</span>
+              </div>
+            ))}
+            {bonusTransactions.length === 0 ? <p className="rounded-lg border border-white/10 bg-black/20 p-3 text-sm text-zinc-500">Бонусов пока нет.</p> : null}
+          </div>
+        </GlassPanel>
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => (

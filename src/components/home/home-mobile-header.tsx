@@ -34,7 +34,7 @@ export function HomeMobileHeader() {
     <div className="fixed inset-0 bg-black/92 backdrop-blur-2xl lg:hidden" role="dialog" aria-modal="true" style={{ zIndex: 2147483647 }}>
       <div className="min-h-dvh w-[84vw] max-w-sm overflow-y-auto border-r border-relic/30 bg-[#02060b]/96 p-4 shadow-2xl backdrop-blur-2xl">
         <div className="mb-5 flex items-center justify-between gap-3">
-          <RaidLogo className="origin-left scale-[0.78]" />
+          <RaidLogo compact withBumpyPay className="origin-left" />
           <button
             type="button"
             onClick={() => setOpen(false)}
@@ -74,7 +74,7 @@ export function HomeMobileHeader() {
     <>
       <header className="flex items-center gap-3 lg:hidden">
         <Link href="/" className="flex min-w-0 flex-1 items-center">
-          <RaidLogo className="origin-left scale-[0.82]" />
+          <RaidLogo compact withBumpyPay className="-ml-1 origin-left" />
         </Link>
         <button
           type="button"

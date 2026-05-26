@@ -76,8 +76,8 @@ export default function Home() {
 
       <div className="raid-dashboard-shell relative z-10 min-h-screen lg:grid lg:grid-cols-[300px_1fr]">
         <aside className="hidden min-h-screen flex-col border-r border-relic/18 bg-[#02070c]/72 backdrop-blur-md lg:flex">
-          <div className="flex h-28 items-center border-b border-relic/12 px-6">
-            <RaidLogo />
+          <div className="flex h-28 items-center border-b border-relic/12 px-4">
+            <RaidLogo withBumpyPay className="-ml-1" />
           </div>
 
           <nav className="px-5 py-7">

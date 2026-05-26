@@ -73,7 +73,7 @@ export function Navigation({ sections }: NavigationProps) {
     >
       <div className="min-h-dvh w-[84vw] max-w-sm overflow-y-auto border-r border-relic/30 bg-[#02060b]/96 p-4 shadow-2xl backdrop-blur-2xl">
         <div className="mb-5 flex items-center justify-between gap-3">
-          <RaidLogo className="scale-[0.78] origin-left" />
+          <RaidLogo compact withBumpyPay className="origin-left" />
           <button
             type="button"
             onClick={() => setOpen(false)}
@@ -121,7 +121,7 @@ export function Navigation({ sections }: NavigationProps) {
       <header className="sticky top-0 z-50 border-b border-relic/20 bg-[#030609]/92 backdrop-blur-xl">
         <div className="mx-auto flex h-[82px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-3">
-            <RaidLogo className="scale-[0.78] origin-left sm:scale-90" />
+            <RaidLogo compact withBumpyPay className="-ml-1 origin-left" />
           </Link>
 
           <nav className="hidden items-center gap-1 lg:flex">

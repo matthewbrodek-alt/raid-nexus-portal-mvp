@@ -8,6 +8,7 @@ import { auth, db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import { emailToDocId, normalizeEmail } from "@/lib/auth/role-utils";
 import type { UserProfile, UserRole } from "@/lib/auth/types";
+import { makeReferralCode } from "@/lib/referrals";
 
 type AuthContextValue = {
   loading: boolean;
@@ -30,6 +31,7 @@ async function loadOrCreateProfile(user: User): Promise<UserProfile> {
   if (existingProfile.exists()) {
     const profile = existingProfile.data() as UserProfile;
     let nextRole = profile.role;
+    const referralCode = profile.referralCode || makeReferralCode(displayName, user.uid);
 
     if (profile.role === "user" && invitedAdmin?.exists() && invitedAdmin.data().status === "pending") {
       nextRole = "admin";
@@ -42,10 +44,29 @@ async function loadOrCreateProfile(user: User): Promise<UserProfile> {
         displayName,
         role: nextRole,
         status: profile.status ?? "active",
+        referralCode,
+        bumpyCoinsBalance: profile.bumpyCoinsBalance ?? 0,
+        bumpyCoinsEarnedTotal: profile.bumpyCoinsEarnedTotal ?? 0,
+        bumpyCoinsSpentTotal: profile.bumpyCoinsSpentTotal ?? 0,
         updatedAt: serverTimestamp()
       },
       { merge: true }
     );
+
+    if (!profile.referralCode) {
+      await setDoc(
+        doc(db, collections.referralCodes, referralCode),
+        {
+          code: referralCode,
+          ownerUid: user.uid,
+          ownerEmail: email,
+          ownerDisplayName: displayName,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        },
+        { merge: true }
+      ).catch(() => undefined);
+    }
 
     if (nextRole === "admin" && invitedAdmin?.exists()) {
       await updateDoc(invitedAdminRef, {
@@ -61,11 +82,16 @@ async function loadOrCreateProfile(user: User): Promise<UserProfile> {
       email,
       displayName,
       role: nextRole,
-      status: profile.status ?? "active"
+      status: profile.status ?? "active",
+      referralCode,
+      bumpyCoinsBalance: profile.bumpyCoinsBalance ?? 0,
+      bumpyCoinsEarnedTotal: profile.bumpyCoinsEarnedTotal ?? 0,
+      bumpyCoinsSpentTotal: profile.bumpyCoinsSpentTotal ?? 0
     };
   }
 
   const role: UserRole = invitedAdmin?.exists() && invitedAdmin.data().status === "pending" ? "admin" : "user";
+  const referralCode = makeReferralCode(displayName, user.uid);
   const profile: UserProfile = {
     uid: user.uid,
     email,
@@ -75,6 +101,10 @@ async function loadOrCreateProfile(user: User): Promise<UserProfile> {
     avatarHiddenByAdmin: false,
     bpStatus: "bronze",
     totalSpentRub: 0,
+    referralCode,
+    bumpyCoinsBalance: 0,
+    bumpyCoinsEarnedTotal: 0,
+    bumpyCoinsSpentTotal: 0,
     role,
     status: "active"
   };
@@ -91,6 +121,19 @@ async function loadOrCreateProfile(user: User): Promise<UserProfile> {
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   });
+
+  await setDoc(
+    doc(db, collections.referralCodes, referralCode),
+    {
+      code: referralCode,
+      ownerUid: user.uid,
+      ownerEmail: email,
+      ownerDisplayName: displayName,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    },
+    { merge: true }
+  ).catch(() => undefined);
 
   if (role === "admin" && invitedAdmin?.exists()) {
     await updateDoc(invitedAdminRef, {

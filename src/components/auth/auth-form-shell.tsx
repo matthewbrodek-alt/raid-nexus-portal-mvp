@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RaidLogo } from "@/components/brand/raid-logo";
 
 type AuthFormShellProps = {
   children: React.ReactNode;
@@ -11,10 +12,7 @@ export function AuthFormShell({ children, mode }: AuthFormShellProps) {
       <div className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-6xl items-center gap-8 lg:grid-cols-[0.85fr_1fr]">
         <section>
           <Link href="/" className="inline-flex items-center gap-3">
-            <span className="grid h-11 w-11 place-items-center rounded-lg border border-relic/40 bg-relic/15 font-[var(--font-cinzel)] text-xl font-black text-relic shadow-glow">
-              R
-            </span>
-            <span className="font-[var(--font-cinzel)] text-xl font-black text-white">Raid Portal</span>
+            <RaidLogo compact withBumpyPay className="-ml-1" />
           </Link>
           <p className="mt-8 text-xs uppercase tracking-[0.28em] text-relic">
             {mode === "login" ? "Возвращение в цитадель" : "Регистрация игрока"}

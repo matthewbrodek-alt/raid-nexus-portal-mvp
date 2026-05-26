@@ -54,7 +54,16 @@ service cloud.firestore {
         isOwner()
         || (
           isAdmin()
-          && request.resource.data.diff(resource.data).changedKeys().hasOnly(["status", "avatarHiddenByAdmin", "updatedAt"])
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+            "status",
+            "avatarHiddenByAdmin",
+            "totalSpentRub",
+            "bpStatus",
+            "bumpyCoinsBalance",
+            "bumpyCoinsEarnedTotal",
+            "bumpyCoinsSpentTotal",
+            "updatedAt"
+          ])
         )
         || (
           request.auth.uid == uid
@@ -150,6 +159,27 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    match /referralCodes/{code} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.code == code
+        && request.resource.data.ownerUid == request.auth.uid;
+      allow update, delete: if signedIn()
+        && (isAdmin() || resource.data.ownerUid == request.auth.uid);
+    }
+
+    match /referralRewards/{rewardId} {
+      allow read: if signedIn()
+        && (isAdmin() || resource.data.ownerUid == request.auth.uid || resource.data.referralUid == request.auth.uid);
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /bonusTransactions/{transactionId} {
+      allow read: if signedIn()
+        && (isAdmin() || resource.data.uid == request.auth.uid);
+      allow create, update, delete: if isAdmin();
+    }
+
     match /chatRooms/{roomId} {
       allow read: if true;
       allow write: if activeUser();
@@ -157,7 +187,8 @@ service cloud.firestore {
       match /messages/{messageId} {
         allow read: if true;
         allow create: if activeUser();
-        allow update, delete: if isAdmin();
+        allow update: if isAdmin();
+        allow delete: if isAdmin() || resource.data.uid == request.auth.uid;
       }
     }
 
@@ -172,7 +203,8 @@ service cloud.firestore {
         allow create: if activeUser()
           && request.resource.data.uid == request.auth.uid
           && request.auth.uid in get(/databases/$(database)/documents/directThreads/$(threadId)).data.participants;
-        allow update, delete: if isAdmin();
+        allow update: if isAdmin();
+        allow delete: if isAdmin() || resource.data.uid == request.auth.uid;
       }
     }
 

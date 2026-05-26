@@ -10,6 +10,12 @@ export type UserProfile = {
   avatarHiddenByAdmin?: boolean;
   bpStatus?: "bronze" | "silver" | "gold" | "platinum";
   totalSpentRub?: number;
+  referralCode?: string;
+  referredByCode?: string;
+  referredByUid?: string;
+  bumpyCoinsBalance?: number;
+  bumpyCoinsEarnedTotal?: number;
+  bumpyCoinsSpentTotal?: number;
   role: UserRole;
   status: "active" | "blocked" | "pending";
   activityStats?: {

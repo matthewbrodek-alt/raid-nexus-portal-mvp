@@ -1,14 +1,16 @@
 "use client";
 
 import { BellRing, CheckCircle2, ClipboardCopy, Download, MessageSquare, Save, Table2 } from "lucide-react";
-import { addDoc, collection, doc, limit, onSnapshot, orderBy, query, serverTimestamp, updateDoc } from "firebase/firestore";
+import { addDoc, collection, doc, getDoc, increment, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { GlassPanel } from "@/components/ui/glass-panel";
-import { getOrderStage, isCompletedOrder, orderStages, type OrderStageId } from "@/lib/bp-status";
+import { getBpStatus, getOrderStage, isCompletedOrder, orderStages, type OrderStageId } from "@/lib/bp-status";
+import type { UserProfile } from "@/lib/auth/types";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
+import { calculateReferralReward } from "@/lib/referrals";
 
 type ServiceType = "donation" | "account_purchase" | "game_help";
 
@@ -114,6 +116,87 @@ function downloadFile(name: string, content: string, type: string) {
   URL.revokeObjectURL(url);
 }
 
+async function updateCustomerBpTotal(lead: TopupLead, amountRub: number, nextStatus: OrderStageId) {
+  if (!lead.uid) {
+    return;
+  }
+
+  const wasCompleted = isCompletedOrder(lead.status);
+  const willBeCompleted = isCompletedOrder(nextStatus);
+  const previousAmount = wasCompleted ? lead.amountRub ?? 0 : 0;
+  const nextAmount = willBeCompleted ? amountRub : 0;
+  const diff = nextAmount - previousAmount;
+
+  if (diff === 0) {
+    return;
+  }
+
+  const userRef = doc(db, collections.users, lead.uid);
+  const userSnapshot = await getDoc(userRef);
+  const userProfile = userSnapshot.exists() ? (userSnapshot.data() as UserProfile) : null;
+  const nextTotalRub = Math.max(0, (userProfile?.totalSpentRub ?? 0) + diff);
+
+  await updateDoc(userRef, {
+    bpStatus: getBpStatus(nextTotalRub).id,
+    totalSpentRub: nextTotalRub,
+    updatedAt: serverTimestamp()
+  });
+}
+
+async function creditReferralReward(lead: TopupLead, amountRub: number) {
+  if (!lead.uid || amountRub <= 0) {
+    return 0;
+  }
+
+  const rewardRef = doc(db, collections.referralRewards, lead.id);
+  const existingReward = await getDoc(rewardRef);
+
+  if (existingReward.exists()) {
+    return 0;
+  }
+
+  const referralUserSnapshot = await getDoc(doc(db, collections.users, lead.uid));
+  const referralUser = referralUserSnapshot.exists() ? (referralUserSnapshot.data() as UserProfile) : null;
+
+  if (!referralUser?.referredByUid) {
+    return 0;
+  }
+
+  const rewardCoins = calculateReferralReward(amountRub);
+
+  if (rewardCoins <= 0) {
+    return 0;
+  }
+
+  await setDoc(rewardRef, {
+    amountRub,
+    createdAt: serverTimestamp(),
+    leadId: lead.id,
+    ownerUid: referralUser.referredByUid,
+    packageName: lead.packageName ?? lead.packageId ?? "",
+    referralUid: lead.uid,
+    rewardCoins,
+    serviceType: lead.serviceType ?? "donation"
+  });
+
+  await setDoc(doc(db, collections.bonusTransactions, `ref-${lead.id}`), {
+    amountCoins: rewardCoins,
+    createdAt: serverTimestamp(),
+    description: `Referral reward: ${lead.packageName ?? lead.packageId ?? lead.id}`,
+    leadId: lead.id,
+    source: "referral",
+    uid: referralUser.referredByUid
+  });
+
+  await updateDoc(doc(db, collections.users, referralUser.referredByUid), {
+    bumpyCoinsBalance: increment(rewardCoins),
+    bumpyCoinsEarnedTotal: increment(rewardCoins),
+    updatedAt: serverTimestamp()
+  });
+
+  return rewardCoins;
+}
+
 export function AdminCrmPanel() {
   const { profile } = useAuth();
   const router = useRouter();
@@ -184,9 +267,10 @@ export function AdminCrmPanel() {
   async function saveLead(lead: TopupLead) {
     const draft = drafts[lead.id] ?? draftFromLead(lead);
     const amountRub = Number(draft.amountRub.replace(/[^\d.]/g, ""));
+    const safeAmountRub = Number.isFinite(amountRub) ? amountRub : 0;
 
     await updateDoc(doc(db, collections.topupLeads, lead.id), {
-      amountRub: Number.isFinite(amountRub) ? amountRub : 0,
+      amountRub: safeAmountRub,
       status: draft.status,
       paymentDetails: draft.paymentDetails.trim(),
       managerNote: draft.managerNote.trim(),
@@ -194,7 +278,10 @@ export function AdminCrmPanel() {
       updatedAt: serverTimestamp()
     });
 
-    setStatusText("Заявка обновлена.");
+    await updateCustomerBpTotal(lead, safeAmountRub, draft.status);
+    const rewardCoins = isCompletedOrder(draft.status) ? await creditReferralReward(lead, safeAmountRub) : 0;
+
+    setStatusText(rewardCoins > 0 ? `Заявка обновлена. Реферальный бонус: ${rewardCoins} Bumpy Coins.` : "Заявка обновлена.");
   }
 
   async function createManualLead(event: React.FormEvent<HTMLFormElement>) {
