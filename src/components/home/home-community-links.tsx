@@ -33,10 +33,10 @@ function CommunityIcon({ icon, title, variant }: { icon: string; title: string; 
     <img
       src={icon}
       alt={title}
-      className={`relative z-10 max-w-none object-cover brightness-125 contrast-110 saturate-125 transition duration-200 group-hover:scale-105 group-hover:brightness-150 ${
+      className={`absolute left-1/2 top-1/2 z-10 max-w-none -translate-x-1/2 -translate-y-1/2 object-cover brightness-125 contrast-110 saturate-125 transition duration-200 group-hover:scale-105 group-hover:brightness-150 ${
         variant === "mobile"
-          ? "h-[125%] w-[125%] drop-shadow-[0_0_8px_rgba(231,193,106,0.28)]"
-          : "h-[108%] w-[108%] drop-shadow-[0_0_6px_rgba(231,193,106,0.22)]"
+          ? "h-[112%] w-[112%] drop-shadow-[0_0_7px_rgba(231,193,106,0.24)]"
+          : "h-[104%] w-[104%] drop-shadow-[0_0_6px_rgba(231,193,106,0.2)]"
       }`}
     />
   );
@@ -72,7 +72,7 @@ export function HomeCommunityLinks({ variant = "desktop" }: HomeCommunityLinksPr
         const className =
           `group relative z-20 aspect-square min-h-0 overflow-hidden bg-transparent transition duration-200 hover:-translate-y-0.5 ${
             variant === "mobile"
-              ? "scale-[0.88] rounded-[12px] shadow-[0_0_14px_rgba(0,0,0,0.32)] hover:scale-95 hover:shadow-[0_0_18px_rgba(231,193,106,0.18)]"
+              ? "scale-[0.76] rounded-[11px] shadow-[0_0_12px_rgba(0,0,0,0.3)] hover:scale-[0.84] hover:shadow-[0_0_16px_rgba(231,193,106,0.16)]"
               : "scale-[0.72] rounded-[10px] shadow-[0_0_10px_rgba(0,0,0,0.25)] hover:scale-[0.8] hover:shadow-[0_0_12px_rgba(231,193,106,0.14)]"
           }`;
         const icon = <CommunityIcon icon={item.icon} title={item.title} variant={variant} />;
