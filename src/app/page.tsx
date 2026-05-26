@@ -10,7 +10,8 @@ import {
   Shield,
   ShoppingBag,
   Swords,
-  Users
+  Users,
+  Zap
 } from "lucide-react";
 import { RaidLogo } from "@/components/brand/raid-logo";
 import { HomeBackgroundVideo } from "@/components/home/home-background-video";
@@ -27,6 +28,7 @@ import { useLanguage, type Language } from "@/lib/i18n/use-language";
 
 const sidebarLinks = [
   { label: { ru: "Главная", en: "Home" }, href: "/", icon: HomeIcon, active: true },
+  { label: { ru: "Полезное", en: "Useful" }, href: "/useful", icon: Zap },
   { label: { ru: "Герои", en: "Heroes" }, href: "/heroes", icon: Swords },
   { label: { ru: "Покупка аккаунта", en: "Account Purchase" }, href: "/marketplace", icon: ShoppingBag },
   { label: { ru: "Кланы", en: "Clans" }, href: "/clans", icon: Shield },
