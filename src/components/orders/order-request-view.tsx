@@ -295,7 +295,7 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
         </div>
       </GlassPanel>
 
-      <GlassPanel className="flex min-h-[560px] flex-col p-5 sm:p-6">
+      <GlassPanel className="flex h-[640px] max-h-[calc(100vh-140px)] flex-col p-5 sm:h-[720px] sm:p-6 xl:sticky xl:top-6">
         <div className="mb-4 flex items-center gap-3">
           <span className="grid h-11 w-11 place-items-center rounded-xl border border-relic/35 bg-relic/10 text-relic">
             <MessageCircle size={19} />
@@ -315,7 +315,7 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
           </div>
         ) : (
           <>
-            <div ref={messagesRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-2xl border border-white/10 bg-black/25 p-4">
+            <div ref={messagesRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-black/25 p-4">
               {messages.map((item) => {
                 const own = item.uid === user?.uid;
 
