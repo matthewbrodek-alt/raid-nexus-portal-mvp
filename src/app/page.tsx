@@ -118,8 +118,11 @@ export default function Home() {
               <Download className="text-relic" size={22} />
             </Link>
 
-            <div className="rounded-[18px] border border-relic/18 bg-black/28 p-5">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">{labels.communityTitle}</p>
+            <div className="relative overflow-hidden rounded-[22px] border border-relic/28 bg-[#050b12]/82 p-5 shadow-[inset_0_0_28px_rgba(231,193,106,0.06),0_18px_55px_rgba(0,0,0,0.38)]">
+              <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_22%_0%,rgba(231,193,106,0.16),transparent_34%),radial-gradient(circle_at_86%_92%,rgba(39,76,145,0.2),transparent_38%),linear-gradient(135deg,rgba(255,255,255,0.06),transparent_42%)]" />
+              <span className="pointer-events-none absolute inset-0 opacity-[0.13] [background-image:linear-gradient(rgba(231,193,106,0.16)_1px,transparent_1px),linear-gradient(90deg,rgba(231,193,106,0.12)_1px,transparent_1px)] [background-size:18px_18px]" />
+              <span className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-relic/70 to-transparent" />
+              <p className="relative z-10 text-xs font-bold uppercase tracking-[0.2em] text-zinc-300">{labels.communityTitle}</p>
               <HomeCommunityLinks />
             </div>
           </div>
