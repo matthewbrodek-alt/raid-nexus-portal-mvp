@@ -29,7 +29,7 @@ function CommunityIcon({ icon, title }: { icon: string; title: string }) {
     <img
       src={icon}
       alt={title}
-      className="relative z-10 h-[82%] w-[82%] object-contain brightness-125 contrast-110 saturate-125 drop-shadow-[0_0_12px_rgba(231,193,106,0.45)] transition duration-200 group-hover:scale-110 group-hover:brightness-150"
+      className="relative z-10 h-[94%] w-[94%] object-contain brightness-125 contrast-110 saturate-125 drop-shadow-[0_0_10px_rgba(231,193,106,0.35)] transition duration-200 group-hover:scale-105 group-hover:brightness-150"
     />
   );
 }
@@ -46,17 +46,17 @@ export function HomeCommunityLinks() {
   }, []);
 
   return (
-    <div className="relative z-20 mt-5 grid grid-cols-5 gap-2.5">
+    <div className="relative z-20 mt-5 grid grid-cols-5 gap-2">
       {communityLinks.map((item) => {
         const href = links[item.key];
         const className =
-          "group relative z-20 aspect-square min-h-0 overflow-hidden rounded-[15px] border border-relic/32 bg-[#07101b]/92 shadow-[inset_0_0_16px_rgba(231,193,106,0.08),0_0_24px_rgba(0,0,0,0.4)] transition duration-200 hover:-translate-y-0.5 hover:border-relic/80 hover:bg-[#0d1826] hover:shadow-[inset_0_0_18px_rgba(231,193,106,0.16),0_0_22px_rgba(231,193,106,0.22)]";
+          "group relative z-20 aspect-square min-h-0 scale-[0.92] overflow-hidden rounded-[13px] bg-[#07101b]/80 shadow-[inset_0_0_10px_rgba(231,193,106,0.06),0_0_16px_rgba(0,0,0,0.36)] transition duration-200 hover:-translate-y-0.5 hover:scale-100 hover:bg-[#0d1826] hover:shadow-[inset_0_0_14px_rgba(231,193,106,0.12),0_0_18px_rgba(231,193,106,0.18)]";
         const icon = <CommunityIcon icon={item.icon} title={item.title} />;
 
         if (!href) {
           return (
             <span key={item.key} title={item.title} className={`${className} grid place-items-center opacity-100`}>
-              <span className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_20%,rgba(231,193,106,0.22),transparent_56%),linear-gradient(135deg,rgba(255,255,255,0.08),transparent_48%)] opacity-80" />
+              <span className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_20%,rgba(231,193,106,0.12),transparent_58%)] opacity-70" />
               {icon}
             </span>
           );
@@ -64,7 +64,7 @@ export function HomeCommunityLinks() {
 
         return (
           <Link key={item.key} href={href} target="_blank" rel="noreferrer" title={item.title} className={`${className} grid place-items-center`}>
-            <span className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_20%,rgba(231,193,106,0.22),transparent_56%),linear-gradient(135deg,rgba(255,255,255,0.08),transparent_48%)] opacity-80 transition group-hover:opacity-100" />
+            <span className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_20%,rgba(231,193,106,0.12),transparent_58%)] opacity-70 transition group-hover:opacity-100" />
             {icon}
           </Link>
         );
