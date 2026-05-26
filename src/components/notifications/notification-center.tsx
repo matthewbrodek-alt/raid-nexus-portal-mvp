@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, CheckCheck, Flame, MessageCircle, ShoppingBag } from "lucide-react";
+import { CheckCheck, Flame, MessageCircle, ShoppingBag } from "lucide-react";
 import { collection, limit, onSnapshot, query, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";

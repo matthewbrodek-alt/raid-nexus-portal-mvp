@@ -55,6 +55,10 @@ const stageCopy: Record<OrderStageId, { ru: string; en: string }> = {
 
 const visibleStages: OrderStageId[] = ["new", "payment", "in_progress", "completed"];
 
+function getSeconds(value?: FirestoreTime) {
+  return value?.seconds ?? 0;
+}
+
 function formatDate(seconds?: number, isRu = true) {
   if (!seconds) {
     return isRu ? "только что" : "just now";
