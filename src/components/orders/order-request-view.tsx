@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Check, Clock, MessageCircle, Send, ShieldCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Check, Clock, MessageCircle, Send, ShieldCheck } from "lucide-react";
 import { addDoc, collection, doc, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc } from "firebase/firestore";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -10,6 +11,7 @@ import { normalizeOrderStage, type OrderStageId } from "@/lib/bp-status";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import { useLanguage } from "@/lib/i18n/use-language";
+import { markNotificationSeen } from "@/lib/notifications/seen-state";
 
 type FirestoreTime = {
   seconds?: number;
@@ -72,39 +74,10 @@ function formatDate(seconds?: number, isRu = true) {
   }).format(new Date(seconds * 1000));
 }
 
-function seenStorageKey(uid: string) {
-  return `raid-notification-seen-${uid}`;
-}
-
-function markNotificationSeen(uid: string, bucket: "topupById" | "threadById", id: string, seconds: number) {
-  if (typeof window === "undefined" || !seconds) {
-    return;
-  }
-
-  try {
-    const current = JSON.parse(window.localStorage.getItem(seenStorageKey(uid)) ?? "{}") as {
-      topupById?: Record<string, number>;
-      threadById?: Record<string, number>;
-    };
-
-    window.localStorage.setItem(
-      seenStorageKey(uid),
-      JSON.stringify({
-        ...current,
-        [bucket]: {
-          ...(current[bucket] ?? {}),
-          [id]: seconds
-        }
-      })
-    );
-  } catch {
-    // Local notification state is best-effort only.
-  }
-}
-
 export function OrderRequestView({ leadId }: OrderRequestViewProps) {
   const { isRu } = useLanguage();
   const { profile, user } = useAuth();
+  const router = useRouter();
   const [lead, setLead] = useState<TopupLead | null>(null);
   const [loading, setLoading] = useState(true);
   const [messages, setMessages] = useState<OrderMessage[]>([]);
@@ -234,7 +207,24 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
   }
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          if (window.history.length > 1) {
+            router.back();
+            return;
+          }
+
+          router.push("/dashboard");
+        }}
+        className="mb-4 inline-flex items-center gap-2 rounded-xl border border-relic/35 bg-black/45 px-4 py-2 text-sm font-bold text-relic shadow-[0_0_22px_rgba(200,154,61,0.12)] transition hover:border-relic hover:bg-relic/10 hover:text-[#f4d784]"
+      >
+        <ArrowLeft size={16} />
+        {isRu ? "Назад" : "Back"}
+      </button>
+
+      <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
       <GlassPanel className="p-5 sm:p-6">
         <p className="text-xs uppercase tracking-[0.24em] text-relic">{isRu ? "Игровой набор RAID" : "RAID game pack"}</p>
         <h2 className="mt-2 font-[var(--font-cinzel)] text-3xl font-black text-white">{lead.packageName || (isRu ? "Заявка на донат" : "Donation request")}</h2>
@@ -350,6 +340,7 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
           </>
         )}
       </GlassPanel>
-    </div>
+      </div>
+    </>
   );
 }

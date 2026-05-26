@@ -7,6 +7,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
+import {
+  markNotificationSeen,
+  notificationSeenStateEvent,
+  notificationSeenStorageKey,
+  readNotificationSeenState,
+  writeNotificationSeenState,
+  type NotificationSeenState
+} from "@/lib/notifications/seen-state";
 
 type FirestoreTime = {
   seconds?: number;
@@ -30,11 +38,6 @@ type TopupLead = {
   updatedAt?: FirestoreTime;
 };
 
-type SeenState = {
-  topupById?: Record<string, number>;
-  threadById?: Record<string, number>;
-};
-
 type Toast = {
   id: string;
   icon: "message" | "topup";
@@ -49,49 +52,13 @@ function getSeconds(value?: FirestoreTime) {
   return value?.seconds ?? 0;
 }
 
-function seenStorageKey(uid: string) {
-  return `raid-notification-seen-${uid}`;
-}
-
-function readSeenState(uid: string): SeenState {
-  if (typeof window === "undefined") {
-    return {};
-  }
-
-  const raw = window.localStorage.getItem(seenStorageKey(uid));
-  if (!raw) {
-    return {};
-  }
-
-  try {
-    return JSON.parse(raw) as SeenState;
-  } catch {
-    return {};
-  }
-}
-
-function writeSeenState(uid: string, next: SeenState) {
-  window.localStorage.setItem(seenStorageKey(uid), JSON.stringify(next));
-}
-
-function markSeen(uid: string, bucket: "threadById" | "topupById", id: string, value: number) {
-  const current = readSeenState(uid);
-  writeSeenState(uid, {
-    ...current,
-    [bucket]: {
-      ...(current[bucket] ?? {}),
-      [id]: value
-    }
-  });
-}
-
 export function SiteNotificationToast() {
   const { profile, user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [threads, setThreads] = useState<DirectThread[]>([]);
   const [topupLeads, setTopupLeads] = useState<TopupLead[]>([]);
-  const [seenState, setSeenState] = useState<SeenState>({});
+  const [seenState, setSeenState] = useState<NotificationSeenState>({});
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
   const isAdmin = profile?.role === "admin" || profile?.role === "owner";
 
@@ -103,7 +70,31 @@ export function SiteNotificationToast() {
       return;
     }
 
-    setSeenState(readSeenState(user.uid));
+    setSeenState(readNotificationSeenState(user.uid));
+  }, [user?.uid]);
+
+  useEffect(() => {
+    if (!user?.uid) {
+      return;
+    }
+
+    function syncSeenState(event?: Event) {
+      if (event instanceof StorageEvent && event.key !== notificationSeenStorageKey(user.uid)) {
+        return;
+      }
+
+      setSeenState(readNotificationSeenState(user.uid));
+    }
+
+    window.addEventListener(notificationSeenStateEvent, syncSeenState);
+    window.addEventListener("storage", syncSeenState);
+    window.addEventListener("focus", syncSeenState);
+
+    return () => {
+      window.removeEventListener(notificationSeenStateEvent, syncSeenState);
+      window.removeEventListener("storage", syncSeenState);
+      window.removeEventListener("focus", syncSeenState);
+    };
   }, [user?.uid]);
 
   useEffect(() => {
@@ -159,7 +150,7 @@ export function SiteNotificationToast() {
     if (changed) {
       const next = { ...seenState, threadById: nextThreadById };
       setSeenState(next);
-      writeSeenState(user.uid, next);
+      writeNotificationSeenState(user.uid, next);
     }
   }, [pathname, seenState, threads, user?.uid]);
 
@@ -240,8 +231,8 @@ export function SiteNotificationToast() {
       return;
     }
 
-    markSeen(user.uid, activeToast.seenKey, activeToast.id, activeToast.seenValue);
-    setSeenState(readSeenState(user.uid));
+    markNotificationSeen(user.uid, activeToast.seenKey, activeToast.id, activeToast.seenValue);
+    setSeenState(readNotificationSeenState(user.uid));
     setDismissedIds((current) => [...current, `${activeToast.seenKey === "threadById" ? "thread" : "topup"}:${activeToast.id}`]);
   }
 

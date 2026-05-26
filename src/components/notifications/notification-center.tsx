@@ -11,6 +11,15 @@ import { getDonationOfferImageUrl, getDonationOfferTitle } from "@/lib/donation/
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import { useLanguage } from "@/lib/i18n/use-language";
+import {
+  markNotificationSeen,
+  notificationSeenStateEvent,
+  notificationSeenStorageKey,
+  readNotificationSeenState,
+  writeNotificationSeenState,
+  type NotificationSeenBucket,
+  type NotificationSeenState
+} from "@/lib/notifications/seen-state";
 
 type FirestoreTime = {
   seconds?: number;
@@ -33,12 +42,6 @@ type TopupLead = {
   updatedAt?: FirestoreTime;
 };
 
-type SeenState = {
-  threadById?: Record<string, number>;
-  topupById?: Record<string, number>;
-  offerById?: Record<string, number>;
-};
-
 const stageLabels: Record<string, { ru: string; en: string }> = {
   new: { ru: "Заявка создана", en: "Request created" },
   payment: { ru: "Ожидает оплату", en: "Waiting for payment" },
@@ -50,26 +53,6 @@ const stageLabels: Record<string, { ru: string; en: string }> = {
 
 function getSeconds(value?: FirestoreTime) {
   return value?.seconds ?? 0;
-}
-
-function seenStorageKey(uid: string) {
-  return `raid-notification-seen-${uid}`;
-}
-
-function readSeenState(uid: string): SeenState {
-  if (typeof window === "undefined") {
-    return {};
-  }
-
-  try {
-    return JSON.parse(window.localStorage.getItem(seenStorageKey(uid)) ?? "{}") as SeenState;
-  } catch {
-    return {};
-  }
-}
-
-function writeSeenState(uid: string, next: SeenState) {
-  window.localStorage.setItem(seenStorageKey(uid), JSON.stringify(next));
 }
 
 function formatDate(seconds?: number, isRu = true) {
@@ -91,8 +74,30 @@ export function NotificationCenter() {
   const offers = useDonationOffers();
   const [threads, setThreads] = useState<DirectThread[]>([]);
   const [topupLeads, setTopupLeads] = useState<TopupLead[]>([]);
-  const [seenState, setSeenState] = useState<SeenState>({});
+  const [seenState, setSeenState] = useState<NotificationSeenState>({});
   const seenUid = user?.uid ?? "guest";
+
+  useEffect(() => {
+    setSeenState(readNotificationSeenState(seenUid));
+
+    function syncSeenState(event?: Event) {
+      if (event instanceof StorageEvent && event.key !== notificationSeenStorageKey(seenUid)) {
+        return;
+      }
+
+      setSeenState(readNotificationSeenState(seenUid));
+    }
+
+    window.addEventListener(notificationSeenStateEvent, syncSeenState);
+    window.addEventListener("storage", syncSeenState);
+    window.addEventListener("focus", syncSeenState);
+
+    return () => {
+      window.removeEventListener(notificationSeenStateEvent, syncSeenState);
+      window.removeEventListener("storage", syncSeenState);
+      window.removeEventListener("focus", syncSeenState);
+    };
+  }, [seenUid]);
 
   useEffect(() => {
     if (!user?.uid) {
@@ -102,14 +107,14 @@ export function NotificationCenter() {
       return;
     }
 
-    setSeenState(readSeenState(seenUid));
+    setSeenState(readNotificationSeenState(seenUid));
 
     const threadsQuery = query(collection(db, "directThreads"), where("participants", "array-contains", user.uid));
     const unsubscribeThreads = onSnapshot(
       threadsQuery,
       (snapshot) => {
         setThreads(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<DirectThread, "id">) })));
-        setSeenState(readSeenState(seenUid));
+        setSeenState(readNotificationSeenState(seenUid));
       },
       () => setThreads([])
     );
@@ -119,7 +124,7 @@ export function NotificationCenter() {
       topupQuery,
       (snapshot) => {
         setTopupLeads(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<TopupLead, "id">) })));
-        setSeenState(readSeenState(seenUid));
+        setSeenState(readNotificationSeenState(seenUid));
       },
       () => setTopupLeads([])
     );
@@ -161,7 +166,7 @@ export function NotificationCenter() {
     const threadById = { ...(seenState.threadById ?? {}) };
     const topupById = { ...(seenState.topupById ?? {}) };
     const offerById = { ...(seenState.offerById ?? {}) };
-    const next: SeenState = { threadById, topupById, offerById };
+    const next: NotificationSeenState = { threadById, topupById, offerById };
 
     for (const thread of threads) {
       const seconds = getSeconds(thread.lastMessageAt);
@@ -181,23 +186,15 @@ export function NotificationCenter() {
       offerById[offer.id] = getSeconds(offer.updatedAt) || getSeconds(offer.createdAt) || 1;
     }
 
-    writeSeenState(seenUid, next);
+    writeNotificationSeenState(seenUid, next);
     setSeenState(next);
   }
 
   const hotOffers = offers.slice(0, 5);
 
-  function markSeen(bucket: "threadById" | "topupById" | "offerById", id: string, value: number) {
-    const next = {
-      ...seenState,
-      [bucket]: {
-        ...(seenState[bucket] ?? {}),
-        [id]: value || 1
-      }
-    };
-
-    writeSeenState(seenUid, next);
-    setSeenState(next);
+  function markSeen(bucket: NotificationSeenBucket, id: string, value: number) {
+    markNotificationSeen(seenUid, bucket, id, value);
+    setSeenState(readNotificationSeenState(seenUid));
   }
 
   return (

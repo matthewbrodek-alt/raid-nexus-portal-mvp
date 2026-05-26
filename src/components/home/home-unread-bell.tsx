@@ -7,6 +7,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
+import {
+  notificationSeenStateEvent,
+  notificationSeenStorageKey,
+  readNotificationSeenState,
+  type NotificationSeenState
+} from "@/lib/notifications/seen-state";
 
 type FirestoreTime = {
   seconds?: number;
@@ -33,30 +39,8 @@ type HotOffer = {
   updatedAt?: FirestoreTime;
 };
 
-type SeenState = {
-  threadById?: Record<string, number>;
-  topupById?: Record<string, number>;
-  offerById?: Record<string, number>;
-};
-
 function getSeconds(value?: FirestoreTime) {
   return value?.seconds ?? 0;
-}
-
-function seenStorageKey(uid: string) {
-  return `raid-notification-seen-${uid}`;
-}
-
-function readSeenState(uid: string): SeenState {
-  if (typeof window === "undefined") {
-    return {};
-  }
-
-  try {
-    return JSON.parse(window.localStorage.getItem(seenStorageKey(uid)) ?? "{}") as SeenState;
-  } catch {
-    return {};
-  }
 }
 
 export function HomeUnreadBell({ label }: { label: string }) {
@@ -64,25 +48,47 @@ export function HomeUnreadBell({ label }: { label: string }) {
   const [threads, setThreads] = useState<DirectThread[]>([]);
   const [topupLeads, setTopupLeads] = useState<TopupLead[]>([]);
   const [hotOffers, setHotOffers] = useState<HotOffer[]>([]);
-  const [seenState, setSeenState] = useState<SeenState>({});
+  const [seenState, setSeenState] = useState<NotificationSeenState>({});
   const seenUid = user?.uid ?? "guest";
+
+  useEffect(() => {
+    setSeenState(readNotificationSeenState(seenUid));
+
+    function syncSeenState(event?: Event) {
+      if (event instanceof StorageEvent && event.key !== notificationSeenStorageKey(seenUid)) {
+        return;
+      }
+
+      setSeenState(readNotificationSeenState(seenUid));
+    }
+
+    window.addEventListener(notificationSeenStateEvent, syncSeenState);
+    window.addEventListener("storage", syncSeenState);
+    window.addEventListener("focus", syncSeenState);
+
+    return () => {
+      window.removeEventListener(notificationSeenStateEvent, syncSeenState);
+      window.removeEventListener("storage", syncSeenState);
+      window.removeEventListener("focus", syncSeenState);
+    };
+  }, [seenUid]);
 
   useEffect(() => {
     if (!user?.uid) {
       setThreads([]);
       setTopupLeads([]);
-      setSeenState({});
+      setSeenState(readNotificationSeenState(seenUid));
       return;
     }
 
-    setSeenState(readSeenState(user.uid));
+    setSeenState(readNotificationSeenState(user.uid));
 
     const threadsQuery = query(collection(db, "directThreads"), where("participants", "array-contains", user.uid));
     return onSnapshot(
       threadsQuery,
       (snapshot) => {
         setThreads(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<DirectThread, "id">) })));
-        setSeenState(readSeenState(user.uid));
+        setSeenState(readNotificationSeenState(user.uid));
       },
       () => setThreads([])
     );
@@ -99,7 +105,7 @@ export function HomeUnreadBell({ label }: { label: string }) {
       topupQuery,
       (snapshot) => {
         setTopupLeads(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<TopupLead, "id">) })));
-        setSeenState(readSeenState(user.uid));
+        setSeenState(readNotificationSeenState(user.uid));
       },
       () => setTopupLeads([])
     );
@@ -115,7 +121,7 @@ export function HomeUnreadBell({ label }: { label: string }) {
 
         if (!cancelled) {
           setHotOffers(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<HotOffer, "id">) })));
-          setSeenState(readSeenState(seenUid));
+          setSeenState(readNotificationSeenState(seenUid));
         }
       } catch {
         if (!cancelled) {
