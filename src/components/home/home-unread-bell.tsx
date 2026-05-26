@@ -27,9 +27,16 @@ type TopupLead = {
   updatedAt?: FirestoreTime;
 };
 
+type HotOffer = {
+  id: string;
+  createdAt?: FirestoreTime;
+  updatedAt?: FirestoreTime;
+};
+
 type SeenState = {
   threadById?: Record<string, number>;
   topupById?: Record<string, number>;
+  offerById?: Record<string, number>;
 };
 
 function getSeconds(value?: FirestoreTime) {
@@ -56,8 +63,9 @@ export function HomeUnreadBell({ label }: { label: string }) {
   const { user } = useAuth();
   const [threads, setThreads] = useState<DirectThread[]>([]);
   const [topupLeads, setTopupLeads] = useState<TopupLead[]>([]);
-  const [hotOfferCount, setHotOfferCount] = useState(0);
+  const [hotOffers, setHotOffers] = useState<HotOffer[]>([]);
   const [seenState, setSeenState] = useState<SeenState>({});
+  const seenUid = user?.uid ?? "guest";
 
   useEffect(() => {
     if (!user?.uid) {
@@ -106,11 +114,12 @@ export function HomeUnreadBell({ label }: { label: string }) {
         const snapshot = await getDocs(offersQuery);
 
         if (!cancelled) {
-          setHotOfferCount(snapshot.size);
+          setHotOffers(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<HotOffer, "id">) })));
+          setSeenState(readSeenState(seenUid));
         }
       } catch {
         if (!cancelled) {
-          setHotOfferCount(0);
+          setHotOffers([]);
         }
       }
     }
@@ -120,7 +129,7 @@ export function HomeUnreadBell({ label }: { label: string }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [seenUid]);
 
   const unreadCount = useMemo(() => {
     if (!user?.uid) {
@@ -145,16 +154,31 @@ export function HomeUnreadBell({ label }: { label: string }) {
     }).length;
   }, [seenState.topupById, topupLeads, user?.uid]);
 
+  const hotOfferCount = useMemo(
+    () =>
+      hotOffers.filter((offer) => {
+        const seconds = getSeconds(offer.updatedAt) || getSeconds(offer.createdAt) || 1;
+        return (seenState.offerById?.[offer.id] ?? 0) < seconds;
+      }).length,
+    [hotOffers, seenState.offerById]
+  );
+
   const notificationCount = unreadCount + topupNotificationCount + hotOfferCount;
+  const hasActiveSignal = notificationCount > 0;
 
   return (
-    <Link href="/notifications" className="raid-glow-button relative grid h-11 w-11 place-items-center border border-transparent text-zinc-300" aria-label={label}>
-      <Bell size={20} />
+    <Link
+      href="/notifications"
+      className="group relative grid h-12 w-12 place-items-center overflow-visible rounded-2xl border border-relic/35 bg-[linear-gradient(145deg,rgba(9,14,22,0.96),rgba(24,17,9,0.88))] text-relic shadow-[inset_0_0_18px_rgba(231,193,106,0.08),0_0_24px_rgba(200,154,61,0.13)] transition duration-200 hover:-translate-y-0.5 hover:border-[#e7c16a] hover:text-[#f4d784] hover:shadow-[inset_0_0_22px_rgba(231,193,106,0.14),0_0_34px_rgba(200,154,61,0.28)]"
+      aria-label={label}
+    >
+      <span className="pointer-events-none absolute inset-[3px] rounded-[14px] border border-white/[0.04]" />
+      <Bell size={21} className="relative z-10 drop-shadow-[0_0_8px_rgba(231,193,106,0.35)] transition group-hover:scale-105" />
       {hotOfferCount > 0 ? (
-        <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border border-black bg-blood shadow-[0_0_14px_rgba(216,75,53,0.9)]" />
+        <span className="absolute right-2 top-2 z-20 h-2.5 w-2.5 rounded-full border border-black bg-blood shadow-[0_0_14px_rgba(216,75,53,0.9)]" />
       ) : null}
-      {notificationCount > 0 ? (
-        <span className="absolute -right-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full border border-black bg-relic px-1 text-[10px] font-black text-black">
+      {hasActiveSignal ? (
+        <span className="absolute -right-2 -top-2 z-30 grid min-h-6 min-w-6 place-items-center rounded-full border border-[#f7d98a] bg-[linear-gradient(180deg,#f4d784,#c89a3d)] px-1.5 text-[10px] font-black leading-none text-black shadow-[0_0_18px_rgba(231,193,106,0.62)]">
           {notificationCount > 9 ? "9+" : notificationCount}
         </span>
       ) : null}

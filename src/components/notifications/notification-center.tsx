@@ -36,6 +36,7 @@ type TopupLead = {
 type SeenState = {
   threadById?: Record<string, number>;
   topupById?: Record<string, number>;
+  offerById?: Record<string, number>;
 };
 
 const stageLabels: Record<string, { ru: string; en: string }> = {
@@ -91,6 +92,7 @@ export function NotificationCenter() {
   const [threads, setThreads] = useState<DirectThread[]>([]);
   const [topupLeads, setTopupLeads] = useState<TopupLead[]>([]);
   const [seenState, setSeenState] = useState<SeenState>({});
+  const seenUid = user?.uid ?? "guest";
 
   useEffect(() => {
     if (!user?.uid) {
@@ -100,14 +102,14 @@ export function NotificationCenter() {
       return;
     }
 
-    setSeenState(readSeenState(user.uid));
+    setSeenState(readSeenState(seenUid));
 
     const threadsQuery = query(collection(db, "directThreads"), where("participants", "array-contains", user.uid));
     const unsubscribeThreads = onSnapshot(
       threadsQuery,
       (snapshot) => {
         setThreads(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<DirectThread, "id">) })));
-        setSeenState(readSeenState(user.uid));
+        setSeenState(readSeenState(seenUid));
       },
       () => setThreads([])
     );
@@ -117,7 +119,7 @@ export function NotificationCenter() {
       topupQuery,
       (snapshot) => {
         setTopupLeads(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<TopupLead, "id">) })));
-        setSeenState(readSeenState(user.uid));
+        setSeenState(readSeenState(seenUid));
       },
       () => setTopupLeads([])
     );
@@ -126,7 +128,7 @@ export function NotificationCenter() {
       unsubscribeThreads();
       unsubscribeTopup();
     };
-  }, [user?.uid]);
+  }, [seenUid, user?.uid]);
 
   const unreadThreads = useMemo(() => {
     if (!user?.uid) {
@@ -156,13 +158,10 @@ export function NotificationCenter() {
   }, [seenState.topupById, topupLeads, user?.uid]);
 
   function markAllSeen() {
-    if (!user?.uid) {
-      return;
-    }
-
     const threadById = { ...(seenState.threadById ?? {}) };
     const topupById = { ...(seenState.topupById ?? {}) };
-    const next: SeenState = { threadById, topupById };
+    const offerById = { ...(seenState.offerById ?? {}) };
+    const next: SeenState = { threadById, topupById, offerById };
 
     for (const thread of threads) {
       const seconds = getSeconds(thread.lastMessageAt);
@@ -178,11 +177,28 @@ export function NotificationCenter() {
       }
     }
 
-    writeSeenState(user.uid, next);
+    for (const offer of hotOffers) {
+      offerById[offer.id] = getSeconds(offer.updatedAt) || getSeconds(offer.createdAt) || 1;
+    }
+
+    writeSeenState(seenUid, next);
     setSeenState(next);
   }
 
   const hotOffers = offers.slice(0, 5);
+
+  function markSeen(bucket: "threadById" | "topupById" | "offerById", id: string, value: number) {
+    const next = {
+      ...seenState,
+      [bucket]: {
+        ...(seenState[bucket] ?? {}),
+        [id]: value || 1
+      }
+    };
+
+    writeSeenState(seenUid, next);
+    setSeenState(next);
+  }
 
   return (
     <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
@@ -205,7 +221,7 @@ export function NotificationCenter() {
         <div className="mt-5 grid gap-3">
           {unreadThreads.length === 0 && updatedOrders.length === 0 ? (
             <div className="rounded-2xl border border-white/10 bg-black/25 p-5 text-sm leading-6 text-zinc-400">
-              {isRu ? "Новых личных уведомлений пока нет. Горящие предложения доступны справа." : "No new personal notifications yet. Hot offers are available on the right."}
+              {isRu ? "Новых личных уведомлений пока нет. Выгодные предложения доступны справа." : "No new personal notifications yet. Best deals are available on the right."}
             </div>
           ) : null}
 
@@ -216,6 +232,7 @@ export function NotificationCenter() {
               <Link
                 key={thread.id}
                 href={otherUid ? `/chat?user=${otherUid}` : "/chat"}
+                onClick={() => markSeen("threadById", thread.id, getSeconds(thread.lastMessageAt))}
                 className="group flex items-start gap-3 rounded-2xl border border-relic/[0.18] bg-black/30 p-4 transition hover:-translate-y-0.5 hover:border-relic/45 hover:bg-relic/[0.07]"
               >
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-relic/30 bg-relic/[0.12] text-relic">
@@ -244,6 +261,7 @@ export function NotificationCenter() {
               <Link
                 key={lead.id}
                 href={`/orders/${lead.id}`}
+                onClick={() => markSeen("topupById", lead.id, seconds)}
                 className="group flex items-start gap-3 rounded-2xl border border-relic/[0.18] bg-black/30 p-4 transition hover:-translate-y-0.5 hover:border-relic/45 hover:bg-relic/[0.07]"
               >
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-relic/30 bg-relic/[0.12] text-relic">
@@ -271,7 +289,7 @@ export function NotificationCenter() {
             <Flame size={20} />
           </span>
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-relic">{isRu ? "Горящие точки" : "Hot spots"}</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-relic">{isRu ? "Выгодное предложение" : "Best deal"}</p>
             <h2 className="font-[var(--font-cinzel)] text-2xl font-black text-white">{isRu ? "Предложения доната" : "Donation offers"}</h2>
           </div>
         </div>
@@ -284,6 +302,7 @@ export function NotificationCenter() {
               <Link
                 key={offer.id}
                 href={`/donate?package=${offer.id}`}
+                onClick={() => markSeen("offerById", offer.id, getSeconds(offer.updatedAt) || getSeconds(offer.createdAt) || 1)}
                 className="group relative min-h-[132px] overflow-hidden rounded-2xl border border-relic/20 bg-[#07111d] p-4 transition hover:-translate-y-0.5 hover:border-relic/55"
               >
                 {imageUrl ? (
@@ -294,7 +313,7 @@ export function NotificationCenter() {
                   <span>
                     <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.22em] text-blood">
                       <span className="h-2 w-2 rounded-full bg-blood shadow-[0_0_12px_rgba(216,75,53,0.8)]" />
-                      {isRu ? "Горит" : "Hot"}
+                      {isRu ? "Выгодно" : "Best deal"}
                     </span>
                     <span className="mt-2 block max-w-[72%] text-xl font-black leading-tight text-white">{getDonationOfferTitle(offer, isRu)}</span>
                   </span>
