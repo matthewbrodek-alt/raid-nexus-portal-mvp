@@ -71,7 +71,8 @@ export function SiteNotificationToast() {
       return;
     }
 
-    setSeenState(readNotificationSeenState(userUid));
+    const uid = userUid;
+    setSeenState(readNotificationSeenState(uid));
   }, [userUid]);
 
   useEffect(() => {
@@ -79,12 +80,14 @@ export function SiteNotificationToast() {
       return;
     }
 
+    const uid = userUid;
+
     function syncSeenState(event?: Event) {
-      if (event instanceof StorageEvent && event.key !== notificationSeenStorageKey(userUid)) {
+      if (event instanceof StorageEvent && event.key !== notificationSeenStorageKey(uid)) {
         return;
       }
 
-      setSeenState(readNotificationSeenState(userUid));
+      setSeenState(readNotificationSeenState(uid));
     }
 
     window.addEventListener(notificationSeenStateEvent, syncSeenState);
@@ -103,7 +106,8 @@ export function SiteNotificationToast() {
       return;
     }
 
-    const threadsQuery = query(collection(db, "directThreads"), where("participants", "array-contains", userUid));
+    const uid = userUid;
+    const threadsQuery = query(collection(db, "directThreads"), where("participants", "array-contains", uid));
     return onSnapshot(
       threadsQuery,
       (snapshot) => {
@@ -118,9 +122,10 @@ export function SiteNotificationToast() {
       return;
     }
 
+    const uid = userUid;
     const topupQuery = isAdmin
       ? query(collection(db, collections.topupLeads), orderBy("createdAt", "desc"), limit(20))
-      : query(collection(db, collections.topupLeads), where("uid", "==", userUid));
+      : query(collection(db, collections.topupLeads), where("uid", "==", uid));
 
     return onSnapshot(
       topupQuery,
@@ -136,6 +141,7 @@ export function SiteNotificationToast() {
       return;
     }
 
+    const uid = userUid;
     const nextThreadById = { ...(seenState.threadById ?? {}) };
     let changed = false;
 
@@ -151,7 +157,7 @@ export function SiteNotificationToast() {
     if (changed) {
       const next = { ...seenState, threadById: nextThreadById };
       setSeenState(next);
-      writeNotificationSeenState(userUid, next);
+      writeNotificationSeenState(uid, next);
     }
   }, [pathname, seenState, threads, userUid]);
 
@@ -160,13 +166,14 @@ export function SiteNotificationToast() {
       return null;
     }
 
+    const uid = userUid;
     const unreadThread = threads
       .filter((thread) => {
         const seconds = getSeconds(thread.lastMessageAt);
         return (
           seconds > 0 &&
           thread.lastMessageUid &&
-          thread.lastMessageUid !== userUid &&
+          thread.lastMessageUid !== uid &&
           (seenState.threadById?.[thread.id] ?? 0) < seconds
         );
       })
@@ -197,7 +204,7 @@ export function SiteNotificationToast() {
           return status === "new" || status === "pending";
         }
 
-        return lead.uid === userUid && status !== "new";
+        return lead.uid === uid && status !== "new";
       })
       .sort((a, b) => (getSeconds(b.updatedAt) || getSeconds(b.createdAt)) - (getSeconds(a.updatedAt) || getSeconds(a.createdAt)))[0];
 
@@ -232,8 +239,9 @@ export function SiteNotificationToast() {
       return;
     }
 
-    markNotificationSeen(userUid, activeToast.seenKey, activeToast.id, activeToast.seenValue);
-    setSeenState(readNotificationSeenState(userUid));
+    const uid = userUid;
+    markNotificationSeen(uid, activeToast.seenKey, activeToast.id, activeToast.seenValue);
+    setSeenState(readNotificationSeenState(uid));
     setDismissedIds((current) => [...current, `${activeToast.seenKey === "threadById" ? "thread" : "topup"}:${activeToast.id}`]);
   }
 
