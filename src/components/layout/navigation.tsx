@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { RaidLogo } from "@/components/brand/raid-logo";
+import { HomeCommunityLinks } from "@/components/home/home-community-links";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { useLanguage } from "@/lib/i18n/use-language";
 
@@ -112,6 +113,15 @@ export function Navigation({ sections }: NavigationProps) {
             <span className="relative z-10">{labels.dashboard}</span>
           </Link>
         </nav>
+
+        <div className="relative mt-5 overflow-hidden rounded-[22px] border border-relic/28 bg-[#050b12]/82 p-4 shadow-[inset_0_0_28px_rgba(231,193,106,0.06),0_18px_55px_rgba(0,0,0,0.38)]">
+          <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(231,193,106,0.16),transparent_34%),radial-gradient(circle_at_86%_92%,rgba(39,76,145,0.2),transparent_38%),linear-gradient(135deg,rgba(255,255,255,0.06),transparent_42%)]" />
+          <span className="pointer-events-none absolute inset-0 opacity-[0.12] [background-image:linear-gradient(rgba(231,193,106,0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(231,193,106,0.1)_1px,transparent_1px)] [background-size:18px_18px]" />
+          <p className="relative z-10 text-xs font-bold uppercase tracking-[0.2em] text-zinc-300">
+            {language === "ru" ? "РџСЂРёСЃРѕРµРґРёРЅСЏР№СЃСЏ Рє СЃРѕРѕР±С‰РµСЃС‚РІСѓ" : "Join the community"}
+          </p>
+          <HomeCommunityLinks />
+        </div>
       </div>
     </div>
   ) : null;
