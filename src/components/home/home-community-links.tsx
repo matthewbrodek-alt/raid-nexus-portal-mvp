@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { doc, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
@@ -27,16 +26,16 @@ function CommunityIcon({ icon, label, title }: { icon: string; label: string; ti
   const [failed, setFailed] = useState(false);
 
   if (failed) {
-    return <span className="text-[10px] font-black tracking-[0.08em] text-relic">{label}</span>;
+    return <span className="relative z-10 text-[10px] font-black tracking-[0.08em] text-relic">{label}</span>;
   }
 
   return (
-    <Image
+    // A plain image keeps local public assets visible even before Next optimizes them.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
       src={icon}
       alt={title}
-      width={24}
-      height={24}
-      className="h-6 w-6 object-contain"
+      className="relative z-10 h-6 w-6 object-contain drop-shadow-[0_0_10px_rgba(231,193,106,0.35)]"
       onError={() => setFailed(true)}
     />
   );
@@ -54,16 +53,17 @@ export function HomeCommunityLinks() {
   }, []);
 
   return (
-    <div className="mt-4 flex flex-wrap gap-3">
+    <div className="relative z-20 mt-4 flex flex-wrap gap-3">
       {communityLinks.map((item) => {
         const href = links[item.key];
         const className =
-          "group grid h-10 w-10 place-items-center rounded-full border border-relic/28 bg-black/35 shadow-[0_0_22px_rgba(200,154,61,0.1)] transition hover:-translate-y-0.5 hover:border-relic/60 hover:bg-relic/12";
+          "group relative z-20 grid h-10 w-10 place-items-center overflow-hidden rounded-full border border-relic/36 bg-[#05070b]/90 shadow-[0_0_22px_rgba(200,154,61,0.16)] transition hover:-translate-y-0.5 hover:border-relic/70 hover:bg-relic/14";
         const icon = <CommunityIcon icon={item.icon} label={item.label} title={item.title} />;
 
         if (!href) {
           return (
             <span key={item.key} title={item.title} className={`${className} opacity-70`}>
+              <span className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_25%,rgba(231,193,106,0.2),transparent_58%)] opacity-55" />
               {icon}
             </span>
           );
@@ -71,6 +71,7 @@ export function HomeCommunityLinks() {
 
         return (
           <Link key={item.key} href={href} target="_blank" rel="noreferrer" title={item.title} className={className}>
+            <span className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_25%,rgba(231,193,106,0.2),transparent_58%)] opacity-55 transition group-hover:opacity-90" />
             {icon}
           </Link>
         );
