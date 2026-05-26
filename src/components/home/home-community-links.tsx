@@ -29,7 +29,7 @@ function CommunityIcon({ icon, title }: { icon: string; title: string }) {
     <img
       src={icon}
       alt={title}
-      className="relative z-10 h-[94%] w-[94%] object-contain brightness-125 contrast-110 saturate-125 drop-shadow-[0_0_10px_rgba(231,193,106,0.35)] transition duration-200 group-hover:scale-105 group-hover:brightness-150"
+      className="relative z-10 h-[125%] w-[125%] max-w-none object-cover brightness-125 contrast-110 saturate-125 drop-shadow-[0_0_8px_rgba(231,193,106,0.28)] transition duration-200 group-hover:scale-105 group-hover:brightness-150"
     />
   );
 }
@@ -50,13 +50,12 @@ export function HomeCommunityLinks() {
       {communityLinks.map((item) => {
         const href = links[item.key];
         const className =
-          "group relative z-20 aspect-square min-h-0 scale-[0.92] overflow-hidden rounded-[13px] bg-[#07101b]/80 shadow-[inset_0_0_10px_rgba(231,193,106,0.06),0_0_16px_rgba(0,0,0,0.36)] transition duration-200 hover:-translate-y-0.5 hover:scale-100 hover:bg-[#0d1826] hover:shadow-[inset_0_0_14px_rgba(231,193,106,0.12),0_0_18px_rgba(231,193,106,0.18)]";
+          "group relative z-20 aspect-square min-h-0 scale-[0.88] overflow-hidden rounded-[12px] bg-transparent shadow-[0_0_14px_rgba(0,0,0,0.32)] transition duration-200 hover:-translate-y-0.5 hover:scale-95 hover:shadow-[0_0_18px_rgba(231,193,106,0.18)]";
         const icon = <CommunityIcon icon={item.icon} title={item.title} />;
 
         if (!href) {
           return (
             <span key={item.key} title={item.title} className={`${className} grid place-items-center opacity-100`}>
-              <span className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_20%,rgba(231,193,106,0.12),transparent_58%)] opacity-70" />
               {icon}
             </span>
           );
@@ -64,7 +63,6 @@ export function HomeCommunityLinks() {
 
         return (
           <Link key={item.key} href={href} target="_blank" rel="noreferrer" title={item.title} className={`${className} grid place-items-center`}>
-            <span className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_50%_20%,rgba(231,193,106,0.12),transparent_58%)] opacity-70 transition group-hover:opacity-100" />
             {icon}
           </Link>
         );

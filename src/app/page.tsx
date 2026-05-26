@@ -19,7 +19,6 @@ import { HomeBroadcast } from "@/components/home/home-broadcast";
 import { HomeCommunityLinks } from "@/components/home/home-community-links";
 import { HomeEventCalendarCard } from "@/components/home/home-event-calendar-card";
 import { HomeMobileHeader } from "@/components/home/home-mobile-header";
-import { HomeSocialLinks } from "@/components/home/home-social-links";
 import { HomeUnreadBell } from "@/components/home/home-unread-bell";
 import { HomeUserCard } from "@/components/home/home-user-card";
 import { LatestNewsRail } from "@/components/home/latest-news-rail";
@@ -74,7 +73,6 @@ export default function Home() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-transparent text-pale">
       <HomeBackgroundVideo />
-      <HomeSocialLinks />
       <div className="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(circle_at_50%_0%,rgba(231,193,106,0.16),transparent_26%),linear-gradient(90deg,rgba(3,7,12,0.46),rgba(3,7,12,0.17)_48%,rgba(3,7,12,0.42))]" />
 
       <div className="raid-dashboard-shell relative z-10 min-h-screen lg:grid lg:grid-cols-[300px_1fr]">
