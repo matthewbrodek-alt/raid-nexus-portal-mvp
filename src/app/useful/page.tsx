@@ -1,6 +1,8 @@
 import { PageShell } from "@/components/layout/page-shell";
 import { DeadwoodArenaCalculator } from "@/components/tools/deadwood-arena-calculator";
 import { DamageComparisonCalculator } from "@/components/tools/damage-comparison-calculator";
+import { CollapsibleToolSection } from "@/components/tools/collapsible-tool-section";
+import { ExternalRaidResources } from "@/components/tools/external-raid-resources";
 
 export default function UsefulPage() {
   return (
@@ -13,11 +15,23 @@ export default function UsefulPage() {
       }}
     >
       <div className="grid gap-6">
-        <DeadwoodArenaCalculator />
-      </div>
+        <CollapsibleToolSection
+          eyebrow="Arena speed tune"
+          title="Калькулятор хода без разрыва"
+          description="Расчет скорости для 2, 3 и 4 героя, чтобы они ходили после заливщика без вклинивания."
+        >
+          <DeadwoodArenaCalculator />
+        </CollapsibleToolSection>
 
-      <div className="mt-6">
-        <DamageComparisonCalculator />
+        <CollapsibleToolSection
+          eyebrow="Damage comparison"
+          title="Калькулятор сравнения урона"
+          description="Сравнение двух сборок по стату, множителю, критическому урону, бонусам и защите цели."
+        >
+          <DamageComparisonCalculator />
+        </CollapsibleToolSection>
+
+        <ExternalRaidResources />
       </div>
     </PageShell>
   );
