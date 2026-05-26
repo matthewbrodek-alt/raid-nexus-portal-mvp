@@ -492,7 +492,7 @@ export function AdminCrmPanel() {
                       {lead.uid ? (
                         <button
                           type="button"
-                          onClick={() => router.push(`/chat?user=${lead.uid}`)}
+                          onClick={() => router.push(`/orders/${lead.id}`)}
                           className="inline-flex items-center justify-center gap-2 rounded-md border border-relic/30 bg-relic/10 px-3 py-2 font-semibold text-relic"
                         >
                           <MessageSquare size={15} />

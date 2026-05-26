@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Camera, CreditCard, MessageCircle, Paperclip, Send, ShieldCheck, Timer, WalletCards, X } from "lucide-react";
 import { addDoc, collection, doc, getDocs, query, serverTimestamp, setDoc, where } from "firebase/firestore";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useDonationOffers } from "@/components/donate/use-donation-offers";
@@ -108,6 +109,7 @@ type TopupLeadFormProps = {
 export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
   const { language, isRu } = useLanguage();
   const { profile, user } = useAuth();
+  const router = useRouter();
   const donationOffers = useDonationOffers();
   const t = copy[language];
   const [telegram, setTelegram] = useState("");
@@ -262,6 +264,7 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
       setStatus("sent");
       setScreenshotFile(null);
       setFileError("");
+      router.push(`/orders/${topupRef.id}`);
     } catch {
       setStatus("error");
     }

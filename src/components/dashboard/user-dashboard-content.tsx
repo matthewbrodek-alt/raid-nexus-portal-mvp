@@ -357,7 +357,7 @@ export function UserDashboardContent() {
             <p className="text-sm text-zinc-400">Загрузите свой аватар. Рамка зависит от BP-статуса.</p>
           </div>
         </div>
-        <label className="mb-5 flex cursor-pointer flex-col gap-2 rounded-xl border border-relic/18 bg-black/24 p-4 text-sm text-zinc-300 transition hover:border-relic/45 sm:flex-row sm:items-center sm:justify-between">
+        <label className="mb-5 flex cursor-pointer flex-col gap-2 rounded-xl border border-relic/[0.18] bg-black/24 p-4 text-sm text-zinc-300 transition hover:border-relic/45 sm:flex-row sm:items-center sm:justify-between">
           <span>
             <span className="block font-semibold text-white">Загрузить свой аватар</span>
             <span className="mt-1 block text-xs text-zinc-500">PNG/JPG/WebP до 6 MB</span>
@@ -390,7 +390,7 @@ export function UserDashboardContent() {
               type="button"
               onClick={() => void copyReferralLink()}
               disabled={!referralLink}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-relic/35 bg-relic/12 px-5 py-4 font-bold text-relic transition hover:bg-relic hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-relic/35 bg-relic/[0.12] px-5 py-4 font-bold text-relic transition hover:bg-relic hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ClipboardCopy size={18} />
               Скопировать
@@ -490,7 +490,7 @@ export function UserDashboardContent() {
                       const passed = currentIndex >= stageIndex && activeStage !== "cancelled";
 
                       return (
-                        <div key={stage.id} className={`rounded-lg border p-3 ${active ? "border-relic bg-relic/12 text-white" : passed ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-200" : "border-white/10 bg-black/18 text-zinc-500"}`}>
+                        <div key={stage.id} className={`rounded-lg border p-3 ${active ? "border-relic bg-relic/[0.12] text-white" : passed ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-200" : "border-white/10 bg-black/18 text-zinc-500"}`}>
                           <p className="text-[11px] font-bold leading-4">{stage.clientLabel}</p>
                         </div>
                       );
@@ -511,6 +511,9 @@ export function UserDashboardContent() {
                       Открыть чат с менеджером
                     </Link>
                   ) : null}
+                  <Link className="ml-0 mt-3 inline-flex rounded-lg border border-relic/30 bg-relic/10 px-3 py-2 text-sm font-semibold text-relic transition hover:border-relic hover:bg-relic/20 sm:ml-3" href={`/orders/${lead.id}`}>
+                    Открыть страницу заявки
+                  </Link>
                 </div>
               );
             })}

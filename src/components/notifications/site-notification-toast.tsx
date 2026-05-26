@@ -219,7 +219,7 @@ export function SiteNotificationToast() {
         body: isAdmin
           ? `${relevantTopup.telegram || "Клиент"}: ${relevantTopup.packageName || "выбранный набор"}`
           : `${relevantTopup.packageName || "Ваш набор"}: ${relevantTopup.status || "обновлено"}`,
-        href: isAdmin ? "/admin" : "/dashboard",
+        href: isAdmin ? "/admin" : `/orders/${relevantTopup.id}`,
         seenKey: "topupById",
         seenValue: seconds
       };
