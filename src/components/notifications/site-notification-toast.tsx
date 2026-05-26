@@ -61,29 +61,30 @@ export function SiteNotificationToast() {
   const [seenState, setSeenState] = useState<NotificationSeenState>({});
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
   const isAdmin = profile?.role === "admin" || profile?.role === "owner";
+  const userUid = user?.uid;
 
   useEffect(() => {
-    if (!user?.uid) {
+    if (!userUid) {
       setThreads([]);
       setTopupLeads([]);
       setSeenState({});
       return;
     }
 
-    setSeenState(readNotificationSeenState(user.uid));
-  }, [user?.uid]);
+    setSeenState(readNotificationSeenState(userUid));
+  }, [userUid]);
 
   useEffect(() => {
-    if (!user?.uid) {
+    if (!userUid) {
       return;
     }
 
     function syncSeenState(event?: Event) {
-      if (event instanceof StorageEvent && event.key !== notificationSeenStorageKey(user.uid)) {
+      if (event instanceof StorageEvent && event.key !== notificationSeenStorageKey(userUid)) {
         return;
       }
 
-      setSeenState(readNotificationSeenState(user.uid));
+      setSeenState(readNotificationSeenState(userUid));
     }
 
     window.addEventListener(notificationSeenStateEvent, syncSeenState);
@@ -95,14 +96,14 @@ export function SiteNotificationToast() {
       window.removeEventListener("storage", syncSeenState);
       window.removeEventListener("focus", syncSeenState);
     };
-  }, [user?.uid]);
+  }, [userUid]);
 
   useEffect(() => {
-    if (!user?.uid) {
+    if (!userUid) {
       return;
     }
 
-    const threadsQuery = query(collection(db, "directThreads"), where("participants", "array-contains", user.uid));
+    const threadsQuery = query(collection(db, "directThreads"), where("participants", "array-contains", userUid));
     return onSnapshot(
       threadsQuery,
       (snapshot) => {
@@ -110,16 +111,16 @@ export function SiteNotificationToast() {
       },
       () => setThreads([])
     );
-  }, [user?.uid]);
+  }, [userUid]);
 
   useEffect(() => {
-    if (!user?.uid) {
+    if (!userUid) {
       return;
     }
 
     const topupQuery = isAdmin
       ? query(collection(db, collections.topupLeads), orderBy("createdAt", "desc"), limit(20))
-      : query(collection(db, collections.topupLeads), where("uid", "==", user.uid));
+      : query(collection(db, collections.topupLeads), where("uid", "==", userUid));
 
     return onSnapshot(
       topupQuery,
@@ -128,10 +129,10 @@ export function SiteNotificationToast() {
       },
       () => setTopupLeads([])
     );
-  }, [isAdmin, user?.uid]);
+  }, [isAdmin, userUid]);
 
   useEffect(() => {
-    if (!user?.uid || !pathname?.startsWith("/chat")) {
+    if (!userUid || !pathname?.startsWith("/chat")) {
       return;
     }
 
@@ -150,12 +151,12 @@ export function SiteNotificationToast() {
     if (changed) {
       const next = { ...seenState, threadById: nextThreadById };
       setSeenState(next);
-      writeNotificationSeenState(user.uid, next);
+      writeNotificationSeenState(userUid, next);
     }
-  }, [pathname, seenState, threads, user?.uid]);
+  }, [pathname, seenState, threads, userUid]);
 
   const toast = useMemo<Toast | null>(() => {
-    if (!user?.uid) {
+    if (!userUid) {
       return null;
     }
 
@@ -165,7 +166,7 @@ export function SiteNotificationToast() {
         return (
           seconds > 0 &&
           thread.lastMessageUid &&
-          thread.lastMessageUid !== user.uid &&
+          thread.lastMessageUid !== userUid &&
           (seenState.threadById?.[thread.id] ?? 0) < seconds
         );
       })
@@ -196,7 +197,7 @@ export function SiteNotificationToast() {
           return status === "new" || status === "pending";
         }
 
-        return lead.uid === user.uid && status !== "new";
+        return lead.uid === userUid && status !== "new";
       })
       .sort((a, b) => (getSeconds(b.updatedAt) || getSeconds(b.createdAt)) - (getSeconds(a.updatedAt) || getSeconds(a.createdAt)))[0];
 
@@ -217,9 +218,9 @@ export function SiteNotificationToast() {
     }
 
     return null;
-  }, [dismissedIds, isAdmin, seenState, threads, topupLeads, user?.uid]);
+  }, [dismissedIds, isAdmin, seenState, threads, topupLeads, userUid]);
 
-  if (!toast || !user?.uid) {
+  if (!toast || !userUid) {
     return null;
   }
 
@@ -227,12 +228,12 @@ export function SiteNotificationToast() {
   const Icon = activeToast.icon === "message" ? MessageCircle : ShoppingBag;
 
   function closeToast() {
-    if (!user?.uid) {
+    if (!userUid) {
       return;
     }
 
-    markNotificationSeen(user.uid, activeToast.seenKey, activeToast.id, activeToast.seenValue);
-    setSeenState(readNotificationSeenState(user.uid));
+    markNotificationSeen(userUid, activeToast.seenKey, activeToast.id, activeToast.seenValue);
+    setSeenState(readNotificationSeenState(userUid));
     setDismissedIds((current) => [...current, `${activeToast.seenKey === "threadById" ? "thread" : "topup"}:${activeToast.id}`]);
   }
 
