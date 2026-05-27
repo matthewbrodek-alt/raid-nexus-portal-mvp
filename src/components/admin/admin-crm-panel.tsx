@@ -1,6 +1,6 @@
 "use client";
 
-import { BellRing, CheckCircle2, ClipboardCopy, Download, MessageSquare, Save, Table2 } from "lucide-react";
+import { BellRing, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, ClipboardCopy, FileSpreadsheet, MessageSquare, Save, Table2 } from "lucide-react";
 import { addDoc, collection, doc, getDoc, increment, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -49,6 +49,25 @@ const serviceLabels: Record<ServiceType, string> = {
 function currentMonthValue() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function addMonths(monthValue: string, offset: number) {
+  const [year, month] = monthValue.split("-").map(Number);
+  const date = new Date(year, (month || 1) - 1 + offset, 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function formatMonthLabel(monthValue: string) {
+  const [year, month] = monthValue.split("-").map(Number);
+
+  if (!year || !month) {
+    return monthValue;
+  }
+
+  return new Intl.DateTimeFormat("ru-RU", {
+    month: "long",
+    year: "numeric"
+  }).format(new Date(year, month - 1, 1));
 }
 
 function formatDate(seconds?: number) {
@@ -114,6 +133,14 @@ function downloadFile(name: string, content: string, type: string) {
   link.download = name;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+function escapeExcelCell(value: unknown) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 }
 
 async function updateCustomerBpTotal(lead: TopupLead, amountRub: number, nextStatus: OrderStageId) {
@@ -230,6 +257,19 @@ export function AdminCrmPanel() {
     });
   }, []);
 
+  const availableMonths = useMemo(() => {
+    const months = new Set([currentMonthValue(), selectedMonth]);
+
+    for (const lead of leads) {
+      const month = leadMonth(lead);
+
+      if (month) {
+        months.add(month);
+      }
+    }
+
+    return Array.from(months).sort((a, b) => b.localeCompare(a));
+  }, [leads, selectedMonth]);
   const monthLeads = useMemo(() => leads.filter((lead) => leadMonth(lead) === selectedMonth), [leads, selectedMonth]);
   const unprocessedCount = useMemo(() => monthLeads.filter((lead) => !isCompletedOrder(lead.status)).length, [monthLeads]);
   const completedAmount = useMemo(
@@ -316,9 +356,10 @@ export function AdminCrmPanel() {
   }
 
   function downloadCsv() {
-    const header = "date;service;telegram;client;request;amountRub;stage;paymentDetails;managerNote;comment";
-    const rows = monthLeads.map((lead) =>
+    const header = "number;date;service;telegram;client;request;amountRub;stage;paymentDetails;managerNote;comment";
+    const rows = monthLeads.map((lead, index) =>
       [
+        String(index + 1),
         formatDate(lead.createdAt?.seconds),
         serviceLabel(lead.serviceType),
         lead.telegram ?? "",
@@ -334,7 +375,46 @@ export function AdminCrmPanel() {
         .join(";")
     );
 
-    downloadFile(`raid-orders-${selectedMonth}.csv`, [header, ...rows].join("\n"), "text/csv;charset=utf-8");
+    downloadFile(`raid-orders-${selectedMonth}.csv`, `\uFEFF${[header, ...rows].join("\n")}`, "text/csv;charset=utf-8");
+  }
+
+  function downloadExcel() {
+    const headers = ["№", "Дата", "Услуга", "Telegram", "Клиент", "Заявка", "Сумма", "Этап", "Оплата", "Заметка", "Комментарий"];
+    const rows = monthLeads.map((lead, index) => [
+      index + 1,
+      formatDate(lead.createdAt?.seconds),
+      serviceLabel(lead.serviceType),
+      lead.telegram ?? "",
+      lead.clientName ?? lead.email ?? lead.uid ?? "",
+      lead.packageName ?? lead.packageId ?? "",
+      lead.amountRub ?? 0,
+      getOrderStage(lead.status).clientLabel,
+      lead.paymentDetails ?? "",
+      lead.managerNote ?? "",
+      lead.comment ?? ""
+    ]);
+    const html = `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body { font-family: Arial, sans-serif; }
+      table { border-collapse: collapse; width: 100%; }
+      th { background: #111827; color: #f3c35f; font-weight: 700; }
+      th, td { border: 1px solid #94a3b8; padding: 8px; vertical-align: top; }
+      td { mso-number-format:"\\@"; }
+    </style>
+  </head>
+  <body>
+    <h2>Raid Portal - заявки за ${escapeExcelCell(formatMonthLabel(selectedMonth))}</h2>
+    <table>
+      <thead><tr>${headers.map((header) => `<th>${escapeExcelCell(header)}</th>`).join("")}</tr></thead>
+      <tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${escapeExcelCell(cell)}</td>`).join("")}</tr>`).join("")}</tbody>
+    </table>
+  </body>
+</html>`;
+
+    downloadFile(`raid-orders-${selectedMonth}.xls`, html, "application/vnd.ms-excel;charset=utf-8");
   }
 
   return (
@@ -347,22 +427,61 @@ export function AdminCrmPanel() {
             <h2 className="text-xl font-bold text-white sm:text-2xl">Панель заявок и монетизации</h2>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <input
-            type="month"
-            value={selectedMonth}
-            onChange={(event) => setSelectedMonth(event.target.value)}
-            className="rounded-md border-white/10 bg-black/30 text-sm text-white focus:border-relic focus:ring-relic"
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center overflow-hidden rounded-md border border-white/10 bg-black/30">
+            <button
+              type="button"
+              onClick={() => setSelectedMonth((current) => addMonths(current, -1))}
+              className="grid h-10 w-10 place-items-center border-r border-white/10 text-zinc-300 transition hover:bg-relic/10 hover:text-relic"
+              aria-label="Previous month"
+            >
+              <ChevronLeft size={17} />
+            </button>
+            <label className="flex h-10 items-center gap-2 px-3 text-sm text-zinc-300">
+              <CalendarDays size={16} className="text-relic" />
+              <input
+                type="month"
+                value={selectedMonth}
+                onChange={(event) => setSelectedMonth(event.target.value)}
+                className="w-[140px] border-0 bg-transparent p-0 text-sm font-semibold text-white focus:ring-0"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => setSelectedMonth((current) => addMonths(current, 1))}
+              className="grid h-10 w-10 place-items-center border-l border-white/10 text-zinc-300 transition hover:bg-relic/10 hover:text-relic"
+              aria-label="Next month"
+            >
+              <ChevronRight size={17} />
+            </button>
+          </div>
           <button type="button" onClick={() => void copyMonthText()} className="inline-flex items-center gap-2 rounded-md border border-relic/30 bg-relic/10 px-3 py-2 text-sm font-semibold text-relic">
             <ClipboardCopy size={16} />
             Текст
           </button>
+          <button type="button" onClick={downloadExcel} className="inline-flex items-center gap-2 rounded-md border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-200">
+            <FileSpreadsheet size={16} />
+            Excel
+          </button>
           <button type="button" onClick={downloadCsv} className="inline-flex items-center gap-2 rounded-md border border-relic/30 bg-relic/10 px-3 py-2 text-sm font-semibold text-relic">
-            <Download size={16} />
+            <FileSpreadsheet size={16} />
             CSV
           </button>
         </div>
+      </div>
+
+      <div className="mb-5 flex gap-2 overflow-x-auto pb-1">
+        {availableMonths.map((month) => (
+          <button
+            key={month}
+            type="button"
+            onClick={() => setSelectedMonth(month)}
+            data-active={month === selectedMonth ? "true" : "false"}
+            className="shrink-0 rounded-full border border-white/10 bg-black/25 px-4 py-2 text-sm font-semibold capitalize text-zinc-400 transition hover:border-relic/40 hover:text-relic data-[active=true]:border-relic/60 data-[active=true]:bg-relic/15 data-[active=true]:text-relic"
+          >
+            {formatMonthLabel(month)}
+          </button>
+        ))}
       </div>
 
       <div className="mb-5 grid gap-3 sm:grid-cols-3">
@@ -401,9 +520,10 @@ export function AdminCrmPanel() {
 
       {statusText ? <p className="mb-4 rounded-lg border border-relic/20 bg-relic/[0.08] p-3 text-sm text-zinc-300">{statusText}</p> : null}
 
-      <div className="max-h-[620px] overflow-auto rounded-xl border border-white/10 bg-[#071019]/70">
-        <table className="w-[1360px] min-w-[1360px] border-separate border-spacing-0 text-left text-[13px]">
+      <div className="max-h-[620px] overflow-auto rounded-xl border border-white/10 bg-[#071019]/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+        <table className="w-[1420px] min-w-[1420px] border-separate border-spacing-0 text-left text-[13px]">
           <colgroup>
+            <col className="w-[60px]" />
             <col className="w-[120px]" />
             <col className="w-[135px]" />
             <col className="w-[190px]" />
@@ -416,6 +536,7 @@ export function AdminCrmPanel() {
           </colgroup>
           <thead className="sticky top-0 z-10 bg-[#0b1320]/98 text-[11px] uppercase tracking-[0.1em] text-relic backdrop-blur">
             <tr>
+              <th className="sticky left-0 z-20 whitespace-nowrap border-b border-r border-white/10 bg-[#0b1320] p-3 text-center">№</th>
               <th className="whitespace-nowrap border-b border-r border-white/10 p-3">Дата</th>
               <th className="whitespace-nowrap border-b border-r border-white/10 p-3">Услуга</th>
               <th className="whitespace-nowrap border-b border-r border-white/10 p-3">Клиент</th>
@@ -428,12 +549,13 @@ export function AdminCrmPanel() {
             </tr>
           </thead>
           <tbody>
-            {monthLeads.map((lead) => {
+            {monthLeads.map((lead, index) => {
               const draft = drafts[lead.id] ?? draftFromLead(lead);
               const completed = isCompletedOrder(draft.status);
 
               return (
                 <tr key={lead.id} className={`${completed ? "bg-emerald-400/[0.04]" : "bg-black/18"} transition hover:bg-relic/[0.06]`}>
+                  <td className="sticky left-0 z-[1] border-b border-r border-white/10 bg-[#071019] p-3 text-center align-top font-semibold text-zinc-500">{index + 1}</td>
                   <td className="whitespace-nowrap border-b border-r border-white/10 p-3 align-top text-zinc-400">{formatDate(lead.createdAt?.seconds)}</td>
                   <td className="whitespace-nowrap border-b border-r border-white/10 p-3 align-top font-semibold text-white">{serviceLabel(lead.serviceType)}</td>
                   <td className="border-b border-r border-white/10 p-3 align-top">
