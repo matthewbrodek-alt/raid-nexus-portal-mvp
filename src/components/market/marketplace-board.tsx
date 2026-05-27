@@ -65,7 +65,10 @@ const copy = {
     lots: "лотов",
     page: "Страница",
     previous: "Назад",
-    next: "Вперед"
+    next: "Вперед",
+    allSections: "Все разделы",
+    enterSection: "Открыть раздел",
+    backToSections: "Назад ко всем разделам"
   },
   en: {
     eyebrow: "Raid account store",
@@ -106,7 +109,10 @@ const copy = {
     lots: "lots",
     page: "Page",
     previous: "Previous",
-    next: "Next"
+    next: "Next",
+    allSections: "All sections",
+    enterSection: "Open section",
+    backToSections: "Back to all sections"
   }
 };
 
@@ -156,6 +162,7 @@ export function MarketplaceBoard() {
   const [minLevel, setMinLevel] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [onlyAvailable, setOnlyAvailable] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<AccountCategory | "all">("all");
   const [sectionPages, setSectionPages] = useState<Record<AccountCategory, number>>({ ...initialSectionPages });
   const [selectedAccount, setSelectedAccount] = useState<MarketplaceAccount | null>(null);
   const [previewImage, setPreviewImage] = useState("");
@@ -223,6 +230,8 @@ export function MarketplaceBoard() {
     };
   });
 
+  const visibleGroups = activeCategory === "all" ? pagedGroups : pagedGroups.filter((group) => group.id === activeCategory);
+
   const heroStats = {
     total: filteredAccounts.length,
     minPrice: filteredAccounts.length ? Math.min(...filteredAccounts.map((item) => item.price)) : 0,
@@ -237,6 +246,7 @@ export function MarketplaceBoard() {
     setMinLevel("");
     setMaxPrice("");
     setOnlyAvailable(false);
+    setActiveCategory("all");
     setSectionPages({ ...initialSectionPages });
   }
 
@@ -245,6 +255,12 @@ export function MarketplaceBoard() {
       ...current,
       [category]: Math.max(1, nextPage)
     }));
+  }
+
+  function openCategory(category: AccountCategory) {
+    setActiveCategory(category);
+    setSectionPages((current) => ({ ...current, [category]: 1 }));
+    window.setTimeout(() => document.getElementById(`market-${category}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
   }
 
   return (
@@ -316,28 +332,55 @@ export function MarketplaceBoard() {
       </div>
 
       <GlassPanel className="mb-6 p-3 lg:sticky lg:top-3 lg:z-20">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <p className="px-2 text-xs font-bold uppercase tracking-[0.26em] text-relic">{t.navTitle}</p>
-          <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[720px]">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            <button
+              type="button"
+              onClick={() => setActiveCategory("all")}
+              className={`rounded-2xl border p-3 text-left transition hover:border-relic/55 hover:bg-relic/[0.08] ${
+                activeCategory === "all" ? "border-relic/55 bg-relic/[0.1]" : "border-relic/20 bg-black/30"
+              }`}
+            >
+              <span className="flex items-center justify-between gap-3 text-sm font-black text-white">
+                {t.allSections}
+                <span className="rounded-full border border-relic/30 px-2 py-0.5 text-[11px] text-relic">{filteredAccounts.length}</span>
+              </span>
+            </button>
             {categoryTabs.map((tab) => {
               const count = filteredAccounts.filter((account) => (account.category ?? "starter") === tab.id).length;
 
               return (
-                <a key={tab.id} href={`#market-${tab.id}`} className="group rounded-2xl border border-relic/20 bg-black/30 p-3 transition hover:border-relic/55 hover:bg-relic/[0.08]">
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => openCategory(tab.id)}
+                  className={`group rounded-2xl border p-3 text-left transition hover:border-relic/55 hover:bg-relic/[0.08] ${
+                    activeCategory === tab.id ? "border-relic/55 bg-relic/[0.1]" : "border-relic/20 bg-black/30"
+                  }`}
+                >
                   <span className="flex items-center justify-between gap-3 text-sm font-black text-white">
                     {tab.title}
                     <span className="rounded-full border border-relic/30 px-2 py-0.5 text-[11px] text-relic">{count}</span>
                   </span>
                   <span className="mt-1 line-clamp-2 block text-xs leading-5 text-zinc-500 group-hover:text-zinc-300">{tab.text}</span>
-                </a>
+                  <span className="mt-2 inline-flex text-[11px] font-bold uppercase tracking-[0.18em] text-relic">{t.enterSection}</span>
+                </button>
               );
             })}
-          </div>
         </div>
       </GlassPanel>
 
+      {activeCategory !== "all" ? (
+        <button
+          type="button"
+          onClick={() => setActiveCategory("all")}
+          className="mb-5 inline-flex items-center justify-center rounded-xl border border-relic/30 bg-black/35 px-4 py-2 text-sm font-bold text-relic transition hover:border-relic hover:bg-relic/10"
+        >
+          {t.backToSections}
+        </button>
+      ) : null}
+
       <div className="space-y-9">
-        {pagedGroups.map((group) => (
+        {visibleGroups.map((group) => (
           <section id={`market-${group.id}`} key={group.id} className="scroll-mt-28">
             <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
               <div>
