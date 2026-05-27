@@ -240,8 +240,7 @@ export function SiteNotificationToast() {
     }
 
     const uid = userUid;
-    markNotificationSeen(uid, activeToast.seenKey, activeToast.id, activeToast.seenValue);
-    setSeenState(readNotificationSeenState(uid));
+    setSeenState(markNotificationSeen(uid, activeToast.seenKey, activeToast.id, activeToast.seenValue));
     setDismissedIds((current) => [...current, `${activeToast.seenKey === "threadById" ? "thread" : "topup"}:${activeToast.id}`]);
   }
 

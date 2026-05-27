@@ -217,8 +217,7 @@ export function NotificationCenter() {
   }
 
   function markSeen(bucket: NotificationSeenBucket, id: string, value: number) {
-    markNotificationSeen(seenUid, bucket, id, value);
-    setSeenState(readNotificationSeenState(seenUid));
+    setSeenState(markNotificationSeen(seenUid, bucket, id, value));
   }
 
   return (

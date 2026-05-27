@@ -38,17 +38,21 @@ export function writeNotificationSeenState(uid: string, next: NotificationSeenSt
 }
 
 export function markNotificationSeen(uid: string, bucket: NotificationSeenBucket, id: string, value: number) {
-  if (!id) {
-    return;
-  }
-
   const current = readNotificationSeenState(uid);
 
-  writeNotificationSeenState(uid, {
+  if (!id) {
+    return current;
+  }
+
+  const nextValue = Math.max(current[bucket]?.[id] ?? 0, value || 1);
+  const next = {
     ...current,
     [bucket]: {
       ...(current[bucket] ?? {}),
-      [id]: value || 1
+      [id]: nextValue
     }
-  });
+  };
+
+  writeNotificationSeenState(uid, next);
+  return next;
 }

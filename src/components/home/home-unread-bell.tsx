@@ -44,6 +44,10 @@ function getSeconds(value?: FirestoreTime) {
   return value?.seconds ?? 0;
 }
 
+function formatNotificationCount(count: number) {
+  return count > 99 ? "99+" : String(count);
+}
+
 export function HomeUnreadBell({ label }: { label: string }) {
   const { user } = useAuth();
   const [threads, setThreads] = useState<DirectThread[]>([]);
@@ -208,7 +212,7 @@ export function HomeUnreadBell({ label }: { label: string }) {
       ) : null}
       {hasActiveSignal ? (
         <span className="absolute -right-2 -top-2 z-30 grid min-h-6 min-w-6 place-items-center rounded-full border border-[#f7d98a] bg-[linear-gradient(180deg,#f4d784,#c89a3d)] px-1.5 text-[10px] font-black leading-none text-black shadow-[0_0_18px_rgba(231,193,106,0.62)]">
-          {notificationCount > 9 ? "9+" : notificationCount}
+          {formatNotificationCount(notificationCount)}
         </span>
       ) : null}
     </Link>
