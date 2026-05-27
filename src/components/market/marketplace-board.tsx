@@ -61,7 +61,7 @@ const copy = {
     shards: "Аккаунт с осколками",
     shardsText: "Лоты с запасом осколков и ресурсов для открытия героев и ивентов призыва.",
     storeNote: "Все детали уточняются через менеджера. Карточки можно дополнять скриншотами, героями и описанием из админ-панели.",
-    featured: "Витрина",
+    featured: "Аккаунты",
     lots: "лотов",
     page: "Страница",
     previous: "Назад",
@@ -105,7 +105,7 @@ const copy = {
     shards: "Shard Account",
     shardsText: "Lots with shard and resource stock for champion pulls and summon events.",
     storeNote: "All details are clarified through a manager. Cards can be enriched with screenshots, heroes and descriptions in the admin panel.",
-    featured: "Storefront",
+    featured: "Accounts",
     lots: "lots",
     page: "Page",
     previous: "Previous",
@@ -162,6 +162,7 @@ export function MarketplaceBoard() {
   const [minLevel, setMinLevel] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [onlyAvailable, setOnlyAvailable] = useState(false);
+  const [sectionFilter, setSectionFilter] = useState<AccountCategory | "all">("all");
   const [activeCategory, setActiveCategory] = useState<AccountCategory | "all">("all");
   const [sectionPages, setSectionPages] = useState<Record<AccountCategory, number>>({ ...initialSectionPages });
   const [selectedAccount, setSelectedAccount] = useState<MarketplaceAccount | null>(null);
@@ -181,7 +182,7 @@ export function MarketplaceBoard() {
 
   useEffect(() => {
     setSectionPages({ ...initialSectionPages });
-  }, [maxPrice, minLegendary, minLevel, minMythical, minVoid, onlyAvailable, search]);
+  }, [maxPrice, minLegendary, minLevel, minMythical, minVoid, onlyAvailable, search, sectionFilter]);
 
   const categoryTabs: Array<{ id: AccountCategory; title: string; text: string }> = [
     { id: "starter", title: t.starter, text: t.starterText },
@@ -189,7 +190,7 @@ export function MarketplaceBoard() {
     { id: "shards", title: t.shards, text: t.shardsText }
   ];
 
-  const filteredAccounts = useMemo(() => {
+  const filterBaseAccounts = useMemo(() => {
     const queryText = search.trim().toLowerCase();
     const mythical = Number(minMythical) || 0;
     const legendary = Number(minLegendary) || 0;
@@ -212,6 +213,14 @@ export function MarketplaceBoard() {
     });
   }, [accounts, maxPrice, minLegendary, minLevel, minMythical, minVoid, onlyAvailable, search]);
 
+  const filteredAccounts = useMemo(() => {
+    if (sectionFilter === "all") {
+      return filterBaseAccounts;
+    }
+
+    return filterBaseAccounts.filter((item) => (item.category ?? "starter") === sectionFilter);
+  }, [filterBaseAccounts, sectionFilter]);
+
   const groupedAccounts = categoryTabs.map((group) => ({
     ...group,
     items: filteredAccounts.filter((account) => (account.category ?? "starter") === group.id)
@@ -230,7 +239,7 @@ export function MarketplaceBoard() {
     };
   });
 
-  const visibleGroups = activeCategory === "all" ? pagedGroups : pagedGroups.filter((group) => group.id === activeCategory);
+  const visibleGroups = activeCategory === "all" ? pagedGroups.filter((group) => group.items.length > 0) : pagedGroups.filter((group) => group.id === activeCategory);
 
   const heroStats = {
     total: filteredAccounts.length,
@@ -246,6 +255,7 @@ export function MarketplaceBoard() {
     setMinLevel("");
     setMaxPrice("");
     setOnlyAvailable(false);
+    setSectionFilter("all");
     setActiveCategory("all");
     setSectionPages({ ...initialSectionPages });
   }
@@ -258,9 +268,18 @@ export function MarketplaceBoard() {
   }
 
   function openCategory(category: AccountCategory) {
+    setSectionFilter(category);
     setActiveCategory(category);
     setSectionPages((current) => ({ ...current, [category]: 1 }));
     window.setTimeout(() => document.getElementById(`market-${category}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+  }
+
+  function selectSectionFilter(nextSection: AccountCategory | "all") {
+    setSectionFilter(nextSection);
+    setActiveCategory(nextSection);
+    if (nextSection !== "all") {
+      setSectionPages((current) => ({ ...current, [nextSection]: 1 }));
+    }
   }
 
   return (
@@ -311,6 +330,18 @@ export function MarketplaceBoard() {
                   />
                 </label>
                 <div className="grid gap-3 sm:grid-cols-2">
+                  <select
+                    value={sectionFilter}
+                    onChange={(event) => selectSectionFilter(event.target.value as AccountCategory | "all")}
+                    className="rounded-xl border-white/10 bg-black/45 text-sm text-white focus:border-relic focus:ring-relic sm:col-span-2"
+                  >
+                    <option value="all">{t.allSections}</option>
+                    {categoryTabs.map((tab) => (
+                      <option key={tab.id} value={tab.id}>
+                        {tab.title}
+                      </option>
+                    ))}
+                  </select>
                   <input type="number" value={minMythical} onChange={(event) => setMinMythical(event.target.value)} placeholder={t.minMythical} className="rounded-xl border-white/10 bg-black/45 text-sm text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
                   <input type="number" value={minLegendary} onChange={(event) => setMinLegendary(event.target.value)} placeholder={t.minLegendary} className="rounded-xl border-white/10 bg-black/45 text-sm text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
                   <input type="number" value={minVoid} onChange={(event) => setMinVoid(event.target.value)} placeholder={t.minVoid} className="rounded-xl border-white/10 bg-black/45 text-sm text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
@@ -332,21 +363,9 @@ export function MarketplaceBoard() {
       </div>
 
       <GlassPanel className="mb-6 p-3 lg:sticky lg:top-3 lg:z-20">
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-            <button
-              type="button"
-              onClick={() => setActiveCategory("all")}
-              className={`rounded-2xl border p-3 text-left transition hover:border-relic/55 hover:bg-relic/[0.08] ${
-                activeCategory === "all" ? "border-relic/55 bg-relic/[0.1]" : "border-relic/20 bg-black/30"
-              }`}
-            >
-              <span className="flex items-center justify-between gap-3 text-sm font-black text-white">
-                {t.allSections}
-                <span className="rounded-full border border-relic/30 px-2 py-0.5 text-[11px] text-relic">{filteredAccounts.length}</span>
-              </span>
-            </button>
+        <div className="grid gap-2 md:grid-cols-3">
             {categoryTabs.map((tab) => {
-              const count = filteredAccounts.filter((account) => (account.category ?? "starter") === tab.id).length;
+              const count = filterBaseAccounts.filter((account) => (account.category ?? "starter") === tab.id).length;
 
               return (
                 <button
@@ -372,7 +391,7 @@ export function MarketplaceBoard() {
       {activeCategory !== "all" ? (
         <button
           type="button"
-          onClick={() => setActiveCategory("all")}
+          onClick={() => selectSectionFilter("all")}
           className="mb-5 inline-flex items-center justify-center rounded-xl border border-relic/30 bg-black/35 px-4 py-2 text-sm font-bold text-relic transition hover:border-relic hover:bg-relic/10"
         >
           {t.backToSections}
@@ -384,8 +403,7 @@ export function MarketplaceBoard() {
           <section id={`market-${group.id}`} key={group.id} className="scroll-mt-28">
             <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.26em] text-relic">{t.featured}</p>
-                <h2 className="raid-title-metal mt-1 text-3xl font-black">{group.title}</h2>
+                <h2 className="raid-title-metal text-3xl font-black">{group.title}</h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-400">{group.text}</p>
               </div>
               <span className="text-xs uppercase tracking-[0.18em] text-zinc-500">
@@ -490,6 +508,7 @@ export function MarketplaceBoard() {
             ) : null}
           </section>
         ))}
+        {visibleGroups.length === 0 ? <GlassPanel className="p-6 text-sm text-zinc-400">{t.noItems}</GlassPanel> : null}
       </div>
 
       <p className="mt-6 rounded-2xl border border-relic/20 bg-relic/[0.06] p-4 text-xs leading-5 text-zinc-400">{t.storeNote}</p>
