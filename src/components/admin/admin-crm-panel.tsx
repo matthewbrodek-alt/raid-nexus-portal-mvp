@@ -520,7 +520,17 @@ export function AdminCrmPanel() {
 
       {statusText ? <p className="mb-4 rounded-lg border border-relic/20 bg-relic/[0.08] p-3 text-sm text-zinc-300">{statusText}</p> : null}
 
-      <div className="max-h-[620px] overflow-auto rounded-xl border border-white/10 bg-[#071019]/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+      <div className="overflow-hidden rounded-xl border border-slate-500/25 bg-[#071019]/78 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_18px_55px_rgba(0,0,0,0.28)]">
+        <div className="flex flex-col gap-2 border-b border-slate-500/20 bg-[#0d1624]/92 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-relic">Spreadsheet view</p>
+            <p className="mt-1 text-sm text-zinc-400">Месячная таблица заявок: редактируй ячейки, сохраняй строку, скачивай Excel или CSV.</p>
+          </div>
+          <span className="rounded-full border border-white/10 bg-black/28 px-3 py-1 text-xs font-semibold text-zinc-300">
+            {formatMonthLabel(selectedMonth)} · {monthLeads.length} строк
+          </span>
+        </div>
+        <div className="max-h-[620px] overflow-auto">
         <table className="w-[1420px] min-w-[1420px] border-separate border-spacing-0 text-left text-[13px]">
           <colgroup>
             <col className="w-[60px]" />
@@ -631,6 +641,7 @@ export function AdminCrmPanel() {
           </tbody>
         </table>
         {monthLeads.length === 0 ? <p className="p-5 text-sm text-zinc-500">За выбранный месяц заявок нет.</p> : null}
+        </div>
       </div>
 
       <div className="mt-4 rounded-lg border border-relic/16 bg-black/22 p-4 text-sm leading-6 text-zinc-400">

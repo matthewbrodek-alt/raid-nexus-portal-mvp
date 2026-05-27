@@ -162,6 +162,32 @@ export function NotificationCenter() {
       .sort((a, b) => (getSeconds(b.updatedAt) || getSeconds(b.createdAt)) - (getSeconds(a.updatedAt) || getSeconds(a.createdAt)));
   }, [seenState.topupById, topupLeads, user?.uid]);
 
+  const hotOffers = useMemo(() => offers.slice(0, 5), [offers]);
+
+  useEffect(() => {
+    if (!user?.uid || hotOffers.length === 0) {
+      return;
+    }
+
+    const offerById = { ...(seenState.offerById ?? {}) };
+    let changed = false;
+
+    for (const offer of hotOffers) {
+      const seconds = getSeconds(offer.updatedAt) || getSeconds(offer.createdAt) || 1;
+
+      if ((offerById[offer.id] ?? 0) < seconds) {
+        offerById[offer.id] = seconds;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      const next = { ...seenState, offerById };
+      writeNotificationSeenState(seenUid, next);
+      setSeenState(next);
+    }
+  }, [hotOffers, seenState, seenUid, user?.uid]);
+
   function markAllSeen() {
     const threadById = { ...(seenState.threadById ?? {}) };
     const topupById = { ...(seenState.topupById ?? {}) };
@@ -189,8 +215,6 @@ export function NotificationCenter() {
     writeNotificationSeenState(seenUid, next);
     setSeenState(next);
   }
-
-  const hotOffers = offers.slice(0, 5);
 
   function markSeen(bucket: NotificationSeenBucket, id: string, value: number) {
     markNotificationSeen(seenUid, bucket, id, value);
