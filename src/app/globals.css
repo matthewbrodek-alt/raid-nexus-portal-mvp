@@ -26,7 +26,6 @@ body {
   min-height: 100vh;
   margin: 0;
   background: linear-gradient(180deg, #05070b 0%, #09111e 100%);
-  background-attachment: fixed;
   background-position: center top;
   background-repeat: no-repeat;
   background-size: cover;
@@ -38,7 +37,7 @@ body::before {
   position: fixed;
   inset: 0;
   z-index: -2;
-  background: url("/images/raid-castle-bg.png") center top / cover fixed no-repeat;
+  background: url("/images/raid-castle-bg.png") center top / cover no-repeat;
   pointer-events: none;
 }
 
@@ -210,7 +209,7 @@ body::after {
   background:
     linear-gradient(180deg, rgba(2, 5, 9, 0.08), rgba(2, 5, 9, 0.42)),
     radial-gradient(circle at 50% 0%, rgba(231, 193, 106, 0.2), transparent 28%),
-    url("/images/raid-castle-bg.png") center top / cover fixed no-repeat !important;
+    url("/images/raid-castle-bg.png") center top / cover no-repeat !important;
   background-blend-mode: normal, screen, normal;
 }
 

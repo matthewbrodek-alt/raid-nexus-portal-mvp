@@ -18,6 +18,13 @@ type FirestoreMarketplaceAccount = MarketplaceAccount & {
 
 type AccountCategory = NonNullable<MarketplaceAccount["category"]>;
 
+const accountPageSize = 6;
+const initialSectionPages: Record<AccountCategory, number> = {
+  starter: 1,
+  progressed: 1,
+  shards: 1
+};
+
 const copy = {
   ru: {
     eyebrow: "Raid account store",
@@ -55,7 +62,10 @@ const copy = {
     shardsText: "Лоты с запасом осколков и ресурсов для открытия героев и ивентов призыва.",
     storeNote: "Все детали уточняются через менеджера. Карточки можно дополнять скриншотами, героями и описанием из админ-панели.",
     featured: "Витрина",
-    lots: "лотов"
+    lots: "лотов",
+    page: "Страница",
+    previous: "Назад",
+    next: "Вперед"
   },
   en: {
     eyebrow: "Raid account store",
@@ -93,7 +103,10 @@ const copy = {
     shardsText: "Lots with shard and resource stock for champion pulls and summon events.",
     storeNote: "All details are clarified through a manager. Cards can be enriched with screenshots, heroes and descriptions in the admin panel.",
     featured: "Storefront",
-    lots: "lots"
+    lots: "lots",
+    page: "Page",
+    previous: "Previous",
+    next: "Next"
   }
 };
 
@@ -143,6 +156,7 @@ export function MarketplaceBoard() {
   const [minLevel, setMinLevel] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [onlyAvailable, setOnlyAvailable] = useState(false);
+  const [sectionPages, setSectionPages] = useState<Record<AccountCategory, number>>({ ...initialSectionPages });
   const [selectedAccount, setSelectedAccount] = useState<MarketplaceAccount | null>(null);
   const [previewImage, setPreviewImage] = useState("");
 
@@ -157,6 +171,10 @@ export function MarketplaceBoard() {
       setAccounts(items.length ? items : marketplaceHighlights.map((item) => normalizeAccount({ ...item, status: "available" as const })));
     });
   }, []);
+
+  useEffect(() => {
+    setSectionPages({ ...initialSectionPages });
+  }, [maxPrice, minLegendary, minLevel, minMythical, minVoid, onlyAvailable, search]);
 
   const categoryTabs: Array<{ id: AccountCategory; title: string; text: string }> = [
     { id: "starter", title: t.starter, text: t.starterText },
@@ -192,6 +210,19 @@ export function MarketplaceBoard() {
     items: filteredAccounts.filter((account) => (account.category ?? "starter") === group.id)
   }));
 
+  const pagedGroups = groupedAccounts.map((group) => {
+    const pageCount = Math.max(1, Math.ceil(group.items.length / accountPageSize));
+    const page = Math.min(sectionPages[group.id] ?? 1, pageCount);
+    const start = (page - 1) * accountPageSize;
+
+    return {
+      ...group,
+      page,
+      pageCount,
+      pageItems: group.items.slice(start, start + accountPageSize)
+    };
+  });
+
   const heroStats = {
     total: filteredAccounts.length,
     minPrice: filteredAccounts.length ? Math.min(...filteredAccounts.map((item) => item.price)) : 0,
@@ -206,6 +237,14 @@ export function MarketplaceBoard() {
     setMinLevel("");
     setMaxPrice("");
     setOnlyAvailable(false);
+    setSectionPages({ ...initialSectionPages });
+  }
+
+  function setCategoryPage(category: AccountCategory, nextPage: number) {
+    setSectionPages((current) => ({
+      ...current,
+      [category]: Math.max(1, nextPage)
+    }));
   }
 
   return (
@@ -276,7 +315,7 @@ export function MarketplaceBoard() {
         </div>
       </div>
 
-      <GlassPanel className="sticky top-3 z-20 mb-6 p-3 backdrop-blur-xl">
+      <GlassPanel className="mb-6 p-3 lg:sticky lg:top-3 lg:z-20">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <p className="px-2 text-xs font-bold uppercase tracking-[0.26em] text-relic">{t.navTitle}</p>
           <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[720px]">
@@ -284,7 +323,7 @@ export function MarketplaceBoard() {
               const count = filteredAccounts.filter((account) => (account.category ?? "starter") === tab.id).length;
 
               return (
-                <a key={tab.id} href={`#market-${tab.id}`} className="group rounded-2xl border border-relic/20 bg-black/30 p-3 transition hover:-translate-y-0.5 hover:border-relic/55 hover:bg-relic/[0.08]">
+                <a key={tab.id} href={`#market-${tab.id}`} className="group rounded-2xl border border-relic/20 bg-black/30 p-3 transition hover:border-relic/55 hover:bg-relic/[0.08]">
                   <span className="flex items-center justify-between gap-3 text-sm font-black text-white">
                     {tab.title}
                     <span className="rounded-full border border-relic/30 px-2 py-0.5 text-[11px] text-relic">{count}</span>
@@ -298,7 +337,7 @@ export function MarketplaceBoard() {
       </GlassPanel>
 
       <div className="space-y-9">
-        {groupedAccounts.map((group) => (
+        {pagedGroups.map((group) => (
           <section id={`market-${group.id}`} key={group.id} className="scroll-mt-28">
             <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
               <div>
@@ -313,8 +352,8 @@ export function MarketplaceBoard() {
 
             {group.items.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {group.items.map((account) => (
-                  <GlassPanel key={account.id} className="group overflow-hidden rounded-[24px] transition duration-200 hover:-translate-y-1 hover:border-relic/45 hover:shadow-[0_22px_70px_rgba(0,0,0,0.5)]">
+                {group.pageItems.map((account) => (
+                  <GlassPanel key={account.id} className="group overflow-hidden rounded-[24px] transition duration-200 hover:border-relic/45">
                     <div
                       className="relative aspect-[16/10] bg-gradient-to-br from-[#111827] via-[#24111b] to-[#3b1c0f] bg-cover bg-center"
                       style={
@@ -380,6 +419,32 @@ export function MarketplaceBoard() {
             ) : (
               <GlassPanel className="p-6 text-sm text-zinc-400">{t.noItems}</GlassPanel>
             )}
+
+            {group.pageCount > 1 ? (
+              <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-relic/20 bg-black/25 p-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm font-semibold text-zinc-400">
+                  {t.page} {group.page} / {group.pageCount}
+                </p>
+                <div className="grid grid-cols-2 gap-2 sm:flex">
+                  <button
+                    type="button"
+                    disabled={group.page <= 1}
+                    onClick={() => setCategoryPage(group.id, group.page - 1)}
+                    className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-bold text-zinc-300 transition hover:border-relic/45 hover:text-white disabled:cursor-not-allowed disabled:opacity-35"
+                  >
+                    {t.previous}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={group.page >= group.pageCount}
+                    onClick={() => setCategoryPage(group.id, group.page + 1)}
+                    className="rounded-xl border border-relic/30 bg-relic/10 px-4 py-2 text-sm font-bold text-relic transition hover:border-relic hover:bg-relic/20 disabled:cursor-not-allowed disabled:opacity-35"
+                  >
+                    {t.next}
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </section>
         ))}
       </div>
