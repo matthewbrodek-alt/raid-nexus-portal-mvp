@@ -59,9 +59,20 @@ export const marketplaceHighlights: MarketplaceAccount[] = [
     mythicCount: 2,
     legendaryCount: 42,
     voidCount: 9,
-    category: "shards",
+    category: "progressed",
     price: 690,
     tags: ["Hydra", "Mythical", "Gear"]
+  },
+  {
+    id: "acc-shards-004",
+    title: "Shard stock",
+    level: 48,
+    mythicCount: 0,
+    legendaryCount: 3,
+    voidCount: 4,
+    category: "shards",
+    price: 240,
+    tags: ["Ancient Shards", "Void Shards", "Summon"]
   },
   {
     id: "acc-budget-003",

@@ -149,6 +149,7 @@ export function AdminMarketplaceManager() {
             <input value={title} onChange={(event) => setTitle(event.target.value)} required placeholder="Lot title" className="rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
             <select value={category} onChange={(event) => setCategory(event.target.value as MarketplaceAccount["category"])} className="rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
               <option value="starter">Стартовый аккаунт</option>
+              <option value="progressed">Прокаченный аккаунт</option>
               <option value="shards">Аккаунт с осколками</option>
             </select>
             <input type="number" value={price} onChange={(event) => setPrice(event.target.value)} required placeholder="Price, RUB" className="rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />

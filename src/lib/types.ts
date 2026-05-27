@@ -62,7 +62,7 @@ export type MarketplaceAccount = {
   description?: string;
   heroes?: string[];
   status?: "available" | "reserved" | "sold";
-  category?: "starter" | "shards";
+  category?: "starter" | "progressed" | "shards";
   screenshotUrl?: string;
   galleryUrls?: string[];
   power?: number;
