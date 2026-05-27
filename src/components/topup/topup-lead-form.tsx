@@ -8,21 +8,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useDonationOffers } from "@/components/donate/use-donation-offers";
 import { GlassPanel } from "@/components/ui/glass-panel";
-import { fallbackDonationOffers, getDonationOfferTitle } from "@/lib/donation/offers";
+import { getDonationOfferTitle } from "@/lib/donation/offers";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import { useLanguage } from "@/lib/i18n/use-language";
-
-const donationPackages = [
-  { id: "monthly-rubies", ru: "Рубины на месяц", en: "Monthly Rubies", priceRub: 900, tag: "best start" },
-  { id: "monthly-pack-small", ru: "Ежемесячный набор", en: "Monthly Pack", priceRub: 2700, tag: "daily value" },
-  { id: "forge-pass-base", ru: "Пропуск кузни без уровней", en: "Forge Pass", priceRub: 1800, tag: "forge" },
-  { id: "energy-day", ru: "Энергичный набор дня", en: "Energy Day Pack", priceRub: 1800, tag: "energy" },
-  { id: "forge-pass-25", ru: "Пропуск кузни +25 уровней", en: "Forge Pass +25", priceRub: 3600, tag: "fast pass" },
-  { id: "monthly-pack-big", ru: "Ежемесячный набор XL", en: "Monthly Pack XL", priceRub: 4500, tag: "premium" },
-  { id: "rebirth-path", ru: "Путь возрождения", en: "Path of Rebirth", priceRub: 1800, tag: "event" },
-  { id: "hero-pass-predator", ru: "Пропуск героя: Хищник", en: "Hero Pass: Predator", priceRub: 3600, tag: "hero pass" }
-];
 
 const MAX_SCREENSHOT_SIZE = 6 * 1024 * 1024;
 
@@ -44,6 +33,7 @@ const copy = {
     submit: "Отправить заявку",
     sent: "Заявка отправлена. Менеджер получит уведомление.",
     error: "Не удалось сохранить заявку. Проверь вход в аккаунт и доступ к базе.",
+    noPackages: "Наборы появятся после добавления в админ-панели.",
     from: "от",
     rub: "₽"
   },
@@ -64,6 +54,7 @@ const copy = {
     submit: "Send request",
     sent: "Request sent. Manager will receive it.",
     error: "Could not save request. Check your account session and database access.",
+    noPackages: "Packs will appear after they are added in the admin panel.",
     from: "from",
     rub: "RUB"
   }
@@ -113,7 +104,7 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
   const donationOffers = useDonationOffers();
   const t = copy[language];
   const [telegram, setTelegram] = useState("");
-  const [packageId, setPackageId] = useState(selectedPackageId ?? fallbackDonationOffers[0].id);
+  const [packageId, setPackageId] = useState(selectedPackageId ?? "");
   const [paymentMethod, setPaymentMethod] = useState("manager");
   const [comment, setComment] = useState("");
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
@@ -133,13 +124,13 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
       return;
     }
 
-    if (donationOffers.length > 0 && !donationOffers.some((item) => item.id === packageId)) {
+    if (donationOffers.length > 0 && (!packageId || !donationOffers.some((item) => item.id === packageId))) {
       setPackageId(donationOffers[0].id);
     }
   }, [donationOffers, packageId, selectedPackageId]);
 
   const selectedPackage = useMemo(
-    () => donationOffers.find((item) => item.id === packageId) ?? donationOffers[0] ?? fallbackDonationOffers[0],
+    () => donationOffers.find((item) => item.id === packageId) ?? donationOffers[0] ?? null,
     [donationOffers, packageId]
   );
 
@@ -187,6 +178,11 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
     event.preventDefault();
 
     if (!user?.uid) {
+      setStatus("error");
+      return;
+    }
+
+    if (!selectedPackage) {
       setStatus("error");
       return;
     }
@@ -320,10 +316,12 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
           <label className="block space-y-2">
             <span className="text-sm text-zinc-300">{t.package}</span>
             <select
-              value={packageId}
+              value={selectedPackage ? selectedPackage.id : ""}
               onChange={(event) => setPackageId(event.target.value)}
+              disabled={donationOffers.length === 0}
               className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic"
             >
+              {donationOffers.length === 0 ? <option value="">{t.noPackages}</option> : null}
               {donationOffers.map((pack) => (
                 <option key={pack.id} value={pack.id}>
                   {getDonationOfferTitle(pack, isRu)} - {t.from} {pack.priceRub.toLocaleString("ru-RU")} {t.rub}
@@ -392,7 +390,7 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
         </div>
 
         <button
-          disabled={status === "sending" || !user}
+          disabled={status === "sending" || !user || !selectedPackage}
           className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-semibold text-black transition hover:bg-[#f0c766] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Send size={18} />
@@ -415,7 +413,7 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
           <p className="rounded-md border border-relic/20 bg-relic/[0.08] px-3 py-2 text-sm text-relic">
             {t.sent}
             <Link className="ml-2 font-bold underline underline-offset-4" href="/dashboard">
-              {isRu ? "РњРѕРё Р·Р°СЏРІРєРё" : "My requests"}
+              {isRu ? "Мои заявки" : "My requests"}
             </Link>
             {activeManagerUid ? (
               <Link className="ml-2 font-bold underline underline-offset-4" href={`/chat?user=${activeManagerUid}`}>
@@ -440,5 +438,3 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
     </GlassPanel>
   );
 }
-
-export { donationPackages };

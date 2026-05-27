@@ -65,29 +65,6 @@ export const orderStages = [
   }
 ] as const;
 
-export const avatarPresets = [
-  {
-    id: "raid-logo",
-    label: "RAID",
-    url: "/images/raid-shadow-legends-logo.png"
-  },
-  {
-    id: "castle",
-    label: "Citadel",
-    url: "/images/raid-castle-bg.png"
-  },
-  {
-    id: "relic-r",
-    label: "Relic R",
-    url: ""
-  },
-  {
-    id: "shadow",
-    label: "Shadow",
-    url: ""
-  }
-] as const;
-
 export function getBpStatus(totalRub: number) {
   return [...bpStatuses].reverse().find((status) => totalRub >= status.minTotalRub) ?? bpStatuses[0];
 }
@@ -145,4 +122,3 @@ export function getOrderStage(status?: string) {
 export function isCompletedOrder(status?: string) {
   return normalizeOrderStage(status) === "completed";
 }
-

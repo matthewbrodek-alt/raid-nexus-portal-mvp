@@ -8,8 +8,6 @@ import { AdminMarketplaceManager } from "@/components/admin/admin-marketplace-ma
 import { AdminUserManagement } from "@/components/admin/admin-user-management";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
-import { GlassPanel } from "@/components/ui/glass-panel";
-import { adminDashboard } from "@/lib/data/dashboard";
 
 export default function AdminDashboardPage() {
   return (
@@ -18,21 +16,11 @@ export default function AdminDashboardPage() {
         mode="admin"
         title={{ ru: "Админ-панель портала", en: "Portal admin panel" }}
         subtitle={{
-          ru: "Операционный центр для новостей, героев, календаря акций, маркетплейса, модерации, CRM и личных диалогов с игроками.",
-          en: "Operations center for news, heroes, event calendar, marketplace, moderation, CRM and direct player dialogs."
+          ru: "Операционный центр для новостей, героев, календаря событий, маркетплейса, модерации, заявок и личных диалогов с игроками.",
+          en: "Operations center for news, heroes, event calendar, marketplace, moderation, orders and direct player dialogs."
         }}
       >
-        <div className="grid gap-4 md:grid-cols-4">
-          {adminDashboard.pulse.map((item) => (
-            <GlassPanel key={item.label} className="p-5">
-              <p className="text-sm text-zinc-400">{item.label}</p>
-              <p className="mt-3 text-4xl font-black text-white">{item.value}</p>
-              <p className="mt-2 text-sm text-relic">{item.trend}</p>
-            </GlassPanel>
-          ))}
-        </div>
-
-        <div className="mt-6">
+        <div>
           <AdminUserManagement />
         </div>
 

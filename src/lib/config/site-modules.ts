@@ -25,9 +25,9 @@ export const siteModules: SiteModule[] = [
     route: "/donate",
     navGroup: "public",
     enabled: true,
-    featureFlags: ["crmWebhook", "managerRouting", "directChat"],
-    aiCapabilities: ["createTopupLead", "sendManagerWebhook", "openDirectChat"],
-    description: "Dark fantasy donation flow with manager contact and CRM routing."
+    featureFlags: ["orderDesk", "managerRouting", "directChat"],
+    aiCapabilities: ["createTopupLead", "openDirectChat"],
+    description: "Dark fantasy donation flow with manager contact and internal order desk."
   },
   {
     id: "useful",
@@ -45,7 +45,7 @@ export const siteModules: SiteModule[] = [
     route: "/marketplace",
     navGroup: "public",
     enabled: true,
-    featureFlags: ["advancedFilters", "accountReservation", "crmSync"],
+    featureFlags: ["advancedFilters", "accountReservation", "orderDesk"],
     aiCapabilities: ["filterAccounts", "compareAccounts", "reserveAccount"],
     description: "Account marketplace with filters by heroes, level, void and legendary count."
   },
@@ -85,9 +85,9 @@ export const siteModules: SiteModule[] = [
     route: "/admin",
     navGroup: "admin",
     enabled: true,
-    featureFlags: ["contentOps", "heroCalendar", "chatModeration", "crmTables"],
-    aiCapabilities: ["auditContent", "draftNews", "prioritizeModeration", "syncCrm"],
-    description: "Admin war room for content, hero DB, chat moderation and CRM sync."
+    featureFlags: ["contentOps", "heroCalendar", "chatModeration", "orderTables"],
+    aiCapabilities: ["auditContent", "draftNews", "prioritizeModeration"],
+    description: "Admin war room for content, hero DB, chat moderation and internal order tables."
   }
 ];
 

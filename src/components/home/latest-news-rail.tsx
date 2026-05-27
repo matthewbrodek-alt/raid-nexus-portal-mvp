@@ -23,27 +23,6 @@ type NewsItem = {
   } | null;
 };
 
-const fallbackNews: NewsItem[] = [
-  {
-    id: "fallback-1",
-    title: "Новый портал открыт",
-    titleEn: "New Portal Is Live",
-    summary: "Новости, герои, заявки и чат собраны в одном игровом центре.",
-    summaryEn: "News, heroes, requests and chat are gathered in one game hub.",
-    markdownBody: "Опубликуйте новость через админ-панель Content Forge, и она появится в этой колонке.",
-    markdownBodyEn: "Publish a news item through the admin Content Forge and it will appear in this column."
-  },
-  {
-    id: "fallback-2",
-    title: "Готовится следующий розыгрыш",
-    titleEn: "Next Giveaway Is Preparing",
-    summary: "Четыре розыгрыша в месяц по 5 паков рубинов.",
-    summaryEn: "Four monthly giveaways with 5 ruby subscriptions each.",
-    markdownBody: "Зарегистрированные игроки смогут участвовать в розыгрыше через отдельную страницу события.",
-    markdownBodyEn: "Registered players can join the giveaway through the event page."
-  }
-];
-
 const copy: Record<
   Language,
   {
@@ -52,6 +31,7 @@ const copy: Record<
     allNews: string;
     details: string;
     emptyDescription: string;
+    emptyList: string;
     closeList: string;
     closeNews: string;
     openNewsLabel: string;
@@ -64,6 +44,7 @@ const copy: Record<
     allNews: "Все новости",
     details: "Подробности",
     emptyDescription: "Описание новости пока не заполнено.",
+    emptyList: "Новости появятся здесь после публикации из админ-панели.",
     closeList: "Закрыть список новостей",
     closeNews: "Закрыть новость",
     openNewsLabel: "Открыть новость",
@@ -75,6 +56,7 @@ const copy: Record<
     allNews: "All News",
     details: "Details",
     emptyDescription: "News description has not been filled in yet.",
+    emptyList: "News will appear here after publication from the admin panel.",
     closeList: "Close news list",
     closeNews: "Close news",
     openNewsLabel: "Open news",
@@ -132,7 +114,7 @@ function formatNewsDate(item: NewsItem, language: Language) {
 export function LatestNewsRail() {
   const { language } = useLanguage();
   const labels = copy[language];
-  const [news, setNews] = useState<NewsItem[]>(fallbackNews);
+  const [news, setNews] = useState<NewsItem[]>([]);
   const [allNewsOpen, setAllNewsOpen] = useState(false);
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const visibleNews = news.slice(0, 10);
@@ -147,9 +129,9 @@ export function LatestNewsRail() {
           .map((item) => ({ id: item.id, ...(item.data() as Omit<NewsItem, "id">) }))
           .sort((a, b) => (b.publishedAt?.seconds ?? b.createdAt?.seconds ?? 0) - (a.publishedAt?.seconds ?? a.createdAt?.seconds ?? 0))
           .slice(0, 12);
-        setNews(items.length ? items : fallbackNews);
+        setNews(items);
       },
-      () => setNews(fallbackNews)
+      () => setNews([])
     );
   }, []);
 
@@ -207,7 +189,15 @@ export function LatestNewsRail() {
           </button>
         </div>
 
-        <div className="mt-2">{renderNewsList(visibleNews)}</div>
+        <div className="mt-2">
+          {visibleNews.length ? (
+            renderNewsList(visibleNews)
+          ) : (
+            <div className="rounded-[18px] border border-relic/18 bg-black/28 p-6 text-sm leading-6 text-zinc-400">
+              {labels.emptyList}
+            </div>
+          )}
+        </div>
       </div>
 
       {allNewsOpen ? (
@@ -228,7 +218,9 @@ export function LatestNewsRail() {
                   <X size={18} />
                 </button>
               </div>
-              <div className="max-h-[72dvh] overflow-y-auto p-3 sm:p-5">{renderNewsList(news, true, () => setAllNewsOpen(false))}</div>
+              <div className="max-h-[72dvh] overflow-y-auto p-3 sm:p-5">
+                {news.length ? renderNewsList(news, true, () => setAllNewsOpen(false)) : <p className="p-4 text-sm text-zinc-400">{labels.emptyList}</p>}
+              </div>
             </div>
           </div>
         </div>

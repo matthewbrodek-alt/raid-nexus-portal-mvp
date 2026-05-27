@@ -4,7 +4,6 @@ import { Eye, Filter, MessageSquare, Search, ShieldCheck, SlidersHorizontal, X }
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { GlassPanel } from "@/components/ui/glass-panel";
-import { marketplaceHighlights } from "@/lib/data/mock";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import { useLanguage } from "@/lib/i18n/use-language";
@@ -154,7 +153,7 @@ function accountScore(account: MarketplaceAccount) {
 export function MarketplaceBoard() {
   const { language } = useLanguage();
   const t = copy[language];
-  const [accounts, setAccounts] = useState<MarketplaceAccount[]>(marketplaceHighlights.map((item) => ({ ...item, status: "available" as const })));
+  const [accounts, setAccounts] = useState<MarketplaceAccount[]>([]);
   const [search, setSearch] = useState("");
   const [minMythical, setMinMythical] = useState("");
   const [minLegendary, setMinLegendary] = useState("");
@@ -176,7 +175,7 @@ export function MarketplaceBoard() {
         .map((item) => normalizeAccount({ id: item.id, ...(item.data() as Omit<FirestoreMarketplaceAccount, "id">) }))
         .sort((a, b) => ((b as FirestoreMarketplaceAccount).createdAt?.seconds ?? 0) - ((a as FirestoreMarketplaceAccount).createdAt?.seconds ?? 0))
         .filter((item) => item.status !== "sold");
-      setAccounts(items.length ? items : marketplaceHighlights.map((item) => normalizeAccount({ ...item, status: "available" as const })));
+      setAccounts(items);
     });
   }, []);
 

@@ -558,7 +558,7 @@ export function AdminContentForge() {
           className="inline-flex items-center justify-center gap-2 rounded-md border border-relic/30 bg-relic/10 px-4 py-2 text-sm font-semibold text-relic transition hover:bg-relic/15"
         >
           <ExternalLink size={16} />
-          Открыть CRM
+          Открыть таблицу заявок
         </Link>
       </div>
 

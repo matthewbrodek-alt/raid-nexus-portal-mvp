@@ -31,7 +31,8 @@ const content = {
       "Данные игрового аккаунта должны храниться в зашифрованном виде."
     ],
     from: "от",
-    rub: "₽"
+    rub: "₽",
+    noOffers: "Пока нет опубликованных наборов. Администратор может добавить их в разделе управления донатом."
   },
   en: {
     eyebrow: "Donate",
@@ -55,7 +56,8 @@ const content = {
       "Game account data should be stored encrypted."
     ],
     from: "from",
-    rub: "RUB"
+    rub: "RUB",
+    noOffers: "No published packs yet. An administrator can add them in donation management."
   }
 };
 
@@ -67,8 +69,8 @@ export function DonatePageContent() {
   const integrationCards = [
     {
       Icon: Bot,
-      title: "CRM workflow",
-      text: isRu ? "Заявка уходит менеджеру через уже подключенный workflow." : "Request goes to the manager through your connected workflow."
+      title: isRu ? "Панель менеджера" : "Manager panel",
+      text: isRu ? "Заявка сохраняется на сайте и попадает в общую таблицу админов." : "Request is saved on-site and appears in the shared admin table."
     },
     {
       Icon: MessageSquareText,
@@ -116,6 +118,11 @@ export function DonatePageContent() {
           </GlassPanel>
 
           <div className="grid gap-4 sm:grid-cols-2">
+            {donationOffers.length === 0 ? (
+              <div className="rounded-[18px] border border-relic/20 bg-black/30 p-5 text-sm leading-6 text-zinc-400 sm:col-span-2">
+                {t.noOffers}
+              </div>
+            ) : null}
             {donationOffers.map((pack) => {
               const imageUrl = getDonationOfferImageUrl(pack);
               const selected = selectedPackageId === pack.id;

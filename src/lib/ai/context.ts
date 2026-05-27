@@ -6,7 +6,7 @@ export const aiNavigationMap: AiNavigationNode[] = [
     id: "topup",
     label: "Донат",
     route: "/donate",
-    capabilities: ["createTopupLead", "sendManagerWebhook", "recommendDonationPack"],
+    capabilities: ["createTopupLead", "openManagerDialog", "recommendDonationPack"],
     queryExamples: ["Хочу купить гемы", "Свяжи меня с менеджером"]
   },
   {
