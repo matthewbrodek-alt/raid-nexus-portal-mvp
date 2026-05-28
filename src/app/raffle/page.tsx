@@ -12,8 +12,17 @@ import { getNextRaffleInfo, getRaffleTimeLeft, RAFFLE_PRIZE, type RaffleInfo } f
 
 const CRY_LINES = ["Ай-ай-ай!", "Хнык...", "Не по пузику!", "Еще чуть-чуть...", "Мачеха терпит ради рубинов", "Уже почти участник!"];
 const REQUIRED_CLICKS = 100;
-const MACHEHA_VIDEO_SRC = "/videos/raffle/macheha.webm";
+const MACHEHA_WEBM_VIDEO_SRC = "/videos/raffle/macheha.webm";
+const MACHEHA_IOS_VIDEO_SRC = "/videos/raffle/macheha.mov";
 const MACHEHA_CRY_SOUND_SRC = "/sounds/macheha-cry.mp3";
+
+function getMachehaVideoSrc() {
+  const userAgent = navigator.userAgent;
+  const isIos = /iPad|iPhone|iPod/.test(userAgent);
+  const isSafari = /^((?!chrome|android|crios|fxios|edgios).)*safari/i.test(userAgent);
+
+  return isIos || isSafari ? MACHEHA_IOS_VIDEO_SRC : MACHEHA_WEBM_VIDEO_SRC;
+}
 
 export default function RafflePage() {
   const { loading, profile, user } = useAuth();
@@ -24,6 +33,7 @@ export default function RafflePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [cryIndex, setCryIndex] = useState(0);
+  const [videoSrc, setVideoSrc] = useState("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const timeLeft = useMemo(() => (raffle && now ? getRaffleTimeLeft(raffle.date, now) : { days: 0, hours: 0, minutes: 0, seconds: 0 }), [now, raffle]);
@@ -31,6 +41,7 @@ export default function RafflePage() {
   const entryId = user && raffle ? `${user.uid}_${raffle.drawKey}` : "";
 
   useEffect(() => {
+    setVideoSrc(getMachehaVideoSrc());
     setRaffle(getNextRaffleInfo());
     setNow(new Date());
     const timer = window.setInterval(() => setNow(new Date()), 1000);
@@ -165,18 +176,21 @@ export default function RafflePage() {
               >
                 <span className="pointer-events-none absolute left-[44%] top-[48%] h-[74%] w-[72%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(3,4,7,0.04),rgba(3,4,7,0.42)_54%,rgba(3,4,7,0.84)_78%,transparent_88%)] blur-xl" />
                 <span className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_44%_52%,transparent_0_35%,rgba(3,4,7,0.28)_56%,rgba(3,4,7,0.68)_82%)]" />
-                <video
-                  ref={videoRef}
-                  src={MACHEHA_VIDEO_SRC}
-                  className="pointer-events-none absolute inset-y-0 left-[44%] z-[2] h-full w-[112%] max-w-none -translate-x-1/2 object-contain object-center drop-shadow-[0_28px_55px_rgba(0,0,0,0.72)] [mask-image:radial-gradient(ellipse_at_44%_52%,black_0_54%,rgba(0,0,0,0.72)_64%,transparent_82%)] [mask-repeat:no-repeat] [mask-size:100%_100%]"
-                  muted
-                  playsInline
-                  preload="auto"
-                  onEnded={(event) => {
-                    event.currentTarget.pause();
-                    event.currentTarget.currentTime = 0;
-                  }}
-                />
+                {videoSrc ? (
+                  <video
+                    key={videoSrc}
+                    ref={videoRef}
+                    src={videoSrc}
+                    className="pointer-events-none absolute inset-y-0 left-[44%] z-[2] h-full w-[112%] max-w-none -translate-x-1/2 object-contain object-center drop-shadow-[0_28px_55px_rgba(0,0,0,0.72)] [mask-image:radial-gradient(ellipse_at_44%_52%,black_0_54%,rgba(0,0,0,0.72)_64%,transparent_82%)] [mask-repeat:no-repeat] [mask-size:100%_100%]"
+                    muted
+                    playsInline
+                    preload="auto"
+                    onEnded={(event) => {
+                      event.currentTarget.pause();
+                      event.currentTarget.currentTime = 0;
+                    }}
+                  />
+                ) : null}
 
                 <button
                   type="button"
