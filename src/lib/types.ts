@@ -37,13 +37,22 @@ export type PortalEventWidget = {
 export type HeroProfile = {
   id: string;
   slug?: string;
+  source?: "firestore" | "gestal";
+  gestalId?: number;
+  shortName?: string;
   name: string;
   nameRu?: string;
   faction: string;
-  rarity: "Legendary" | "Epic" | "Rare" | "Mythical";
+  rarity: "Legendary" | "Epic" | "Rare" | "Mythical" | "Common" | "Uncommon";
+  rarityColor?: string;
+  affinity?: string;
+  aura?: string;
   role: string;
+  roles?: string[];
   rating: number;
   avatarUrl?: string;
+  portraitUrl?: string;
+  borderUrl?: string;
   galleryUrls: string[];
   comment: string;
   youtubeVideoId?: string;
