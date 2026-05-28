@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { sendEmailVerification } from "firebase/auth";
 import { useEffect, useState } from "react";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { useAuth } from "@/components/auth/auth-provider";
+import { sendPortalEmailVerification } from "@/lib/auth/email-verification";
 import type { UserRole } from "@/lib/auth/types";
 
 type ProtectedRouteProps = {
@@ -53,7 +53,7 @@ export function ProtectedRoute({ allowedRoles, children }: ProtectedRouteProps) 
             <button
               type="button"
               onClick={async () => {
-                await sendEmailVerification(user);
+                await sendPortalEmailVerification(user);
                 setVerificationStatus("Письмо подтверждения отправлено повторно.");
               }}
               className="rounded-md bg-relic px-4 py-2 text-sm font-black text-black"

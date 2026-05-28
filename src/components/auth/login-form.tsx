@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import {
   browserLocalPersistence,
   browserSessionPersistence,
-  sendEmailVerification,
   setPersistence,
   signInWithEmailAndPassword,
   signOut
 } from "firebase/auth";
 import { useState } from "react";
 import { auth } from "@/lib/firebase/client";
+import { sendPortalEmailVerification } from "@/lib/auth/email-verification";
 import { normalizeEmail } from "@/lib/auth/role-utils";
 import { GlassPanel } from "@/components/ui/glass-panel";
 
@@ -35,7 +35,7 @@ export function LoginForm() {
       const credential = await signInWithEmailAndPassword(auth, normalizeEmail(email), password);
 
       if (!rememberMe && !credential.user.emailVerified) {
-        await sendEmailVerification(credential.user);
+        await sendPortalEmailVerification(credential.user);
         await signOut(auth);
         setNotice("Мы отправили письмо для подтверждения email. Подтвердите почту и войдите снова.");
         return;

@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { createUserWithEmailAndPassword, sendEmailVerification, signOut, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword, signOut, updateProfile } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { auth, db } from "@/lib/firebase/client";
 import { normalizeEmail } from "@/lib/auth/role-utils";
+import { sendPortalEmailVerification } from "@/lib/auth/email-verification";
 import type { UserProfile } from "@/lib/auth/types";
 import { collections } from "@/lib/firebase/collections";
 import { makeReferralCode, normalizeReferralCode } from "@/lib/referrals";
@@ -159,7 +160,7 @@ export function RegisterForm() {
       await updateProfile(credential.user, { displayName });
       await createUserProfile(credential.user.uid, credential.user.email ?? email, displayName);
       await saveEncryptedGameData(credential.user.uid);
-      await sendEmailVerification(credential.user);
+      await sendPortalEmailVerification(credential.user);
       await signOut(auth);
       setNotice("Аккаунт создан. Мы отправили письмо для подтверждения email. Подтвердите почту и затем войдите.");
       setDisplayName("");
