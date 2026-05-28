@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { getBpStatus, getOrderStage, isCompletedOrder, orderStages, type OrderStageId } from "@/lib/bp-status";
+import { copyTextToClipboard } from "@/lib/browser/clipboard";
 import type { UserProfile } from "@/lib/auth/types";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
@@ -351,7 +352,7 @@ export function AdminCrmPanel() {
   }
 
   async function copyMonthText() {
-    await navigator.clipboard.writeText(exportRows(monthLeads));
+    await copyTextToClipboard(exportRows(monthLeads));
     setStatusText("Текстовая выгрузка скопирована.");
   }
 

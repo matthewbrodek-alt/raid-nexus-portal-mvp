@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { GlassPanel } from "@/components/ui/glass-panel";
+import { copyTextToClipboard } from "@/lib/browser/clipboard";
 import { getBpProgress, getOrderStage, isCompletedOrder, normalizeOrderStage, orderStages } from "@/lib/bp-status";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
@@ -298,7 +299,7 @@ export function UserDashboardContent() {
       return;
     }
 
-    await navigator.clipboard.writeText(referralLink);
+    await copyTextToClipboard(referralLink);
     setReferralNotice("Реферальная ссылка скопирована.");
     window.setTimeout(() => setReferralNotice(""), 2200);
   }
