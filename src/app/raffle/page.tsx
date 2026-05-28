@@ -13,7 +13,6 @@ import { getNextRaffleInfo, getRaffleTimeLeft, RAFFLE_PRIZE, type RaffleInfo } f
 const CRY_LINES = ["Ай-ай-ай!", "Хнык...", "Не по пузику!", "Еще чуть-чуть...", "Мачеха терпит ради рубинов", "Уже почти участник!"];
 const REQUIRED_CLICKS = 100;
 const MACHEHA_VIDEO_SRC = "/videos/raffle/macheha.webm";
-const MACHEHA_IOS_FALLBACK_SRC = "/images/raffle/macheha-ios.png";
 const MACHEHA_CRY_SOUND_SRC = "/sounds/macheha-cry.mp3";
 
 export default function RafflePage() {
@@ -25,9 +24,8 @@ export default function RafflePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [cryIndex, setCryIndex] = useState(0);
-  const [isIosWebKit, setIsIosWebKit] = useState(false);
-  const [iosFallbackBroken, setIosFallbackBroken] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const timeLeft = useMemo(() => (raffle && now ? getRaffleTimeLeft(raffle.date, now) : { days: 0, hours: 0, minutes: 0, seconds: 0 }), [now, raffle]);
   const progress = Math.min(100, Math.round((clicks / REQUIRED_CLICKS) * 100));
   const entryId = user && raffle ? `${user.uid}_${raffle.drawKey}` : "";
@@ -37,14 +35,6 @@ export default function RafflePage() {
     setNow(new Date());
     const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    const platform = window.navigator.platform.toLowerCase();
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    const isTouchMac = platform === "macintel" && window.navigator.maxTouchPoints > 1;
-
-    setIsIosWebKit(/iphone|ipad|ipod/.test(userAgent) || isTouchMac);
   }, []);
 
   useEffect(() => {
@@ -102,6 +92,20 @@ export default function RafflePage() {
       return;
     }
 
+    if (videoRef.current) {
+      const video = videoRef.current;
+
+      video.pause();
+
+      try {
+        video.currentTime = 0;
+      } catch {
+        // Some mobile browsers reject seeking before metadata is ready.
+      }
+
+      void video.play().catch(() => undefined);
+    }
+
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
       void audioRef.current.play().catch(() => undefined);
@@ -155,37 +159,35 @@ export default function RafflePage() {
               <div className="absolute inset-0 bg-[url('/images/raid-castle-bg.png')] bg-cover bg-center opacity-62" />
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_44%_54%,rgba(231,193,106,0.12),transparent_30%),linear-gradient(90deg,rgba(3,4,7,0.9),rgba(3,4,7,0.34),rgba(3,4,7,0.92))]" />
 
-              <button
-                type="button"
-                onClick={tapMacheha}
-                disabled={!user || entryExists || saving}
-                className="group relative block min-h-[520px] w-full overflow-hidden text-left transition hover:scale-[1.005] disabled:cursor-default disabled:hover:scale-100"
+              <div
+                className="group relative block min-h-[520px] w-full overflow-hidden text-left"
                 aria-label="Потыкай мачеху в пузико"
               >
                 <span className="pointer-events-none absolute left-[44%] top-[48%] h-[74%] w-[72%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(3,4,7,0.04),rgba(3,4,7,0.42)_54%,rgba(3,4,7,0.84)_78%,transparent_88%)] blur-xl" />
                 <span className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_44%_52%,transparent_0_35%,rgba(3,4,7,0.28)_56%,rgba(3,4,7,0.68)_82%)]" />
-                {isIosWebKit && !iosFallbackBroken ? (
-                  <img
-                    src={MACHEHA_IOS_FALLBACK_SRC}
-                    alt=""
-                    aria-hidden="true"
-                    className="absolute inset-y-0 left-[44%] z-[2] h-full w-[112%] max-w-none -translate-x-1/2 object-contain object-center drop-shadow-[0_28px_55px_rgba(0,0,0,0.72)] transition duration-200 group-active:scale-[0.992]"
-                    onError={() => setIosFallbackBroken(true)}
-                  />
-                ) : (
-                  <video
-                    src={MACHEHA_VIDEO_SRC}
-                    className="absolute inset-y-0 left-[44%] z-[2] h-full w-[112%] max-w-none -translate-x-1/2 object-contain object-center drop-shadow-[0_28px_55px_rgba(0,0,0,0.72)] [mask-image:radial-gradient(ellipse_at_44%_52%,black_0_54%,rgba(0,0,0,0.72)_64%,transparent_82%)] [mask-repeat:no-repeat] [mask-size:100%_100%] transition duration-200 group-active:scale-[0.992]"
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    preload="auto"
-                  />
-                )}
+                <video
+                  ref={videoRef}
+                  src={MACHEHA_VIDEO_SRC}
+                  className="pointer-events-none absolute inset-y-0 left-[44%] z-[2] h-full w-[112%] max-w-none -translate-x-1/2 object-contain object-center drop-shadow-[0_28px_55px_rgba(0,0,0,0.72)] [mask-image:radial-gradient(ellipse_at_44%_52%,black_0_54%,rgba(0,0,0,0.72)_64%,transparent_82%)] [mask-repeat:no-repeat] [mask-size:100%_100%]"
+                  muted
+                  playsInline
+                  preload="auto"
+                  onEnded={(event) => {
+                    event.currentTarget.pause();
+                    event.currentTarget.currentTime = 0;
+                  }}
+                />
 
-                <span className="pointer-events-none absolute left-[47%] top-[54%] z-[3] grid h-24 w-24 -translate-x-1/2 place-items-center rounded-full border-2 border-relic/45 bg-black/42 font-[var(--font-cinzel)] text-4xl font-black text-relic opacity-90 shadow-[0_0_38px_rgba(200,154,61,0.28)] backdrop-blur-sm">
-                  {clicks}
+                <button
+                  type="button"
+                  onClick={tapMacheha}
+                  disabled={!user || entryExists || saving}
+                  className="absolute left-[45%] top-[38%] z-[4] h-[37%] w-[31%] -translate-x-1/2 rounded-full bg-transparent text-transparent outline-none disabled:cursor-default"
+                  aria-label="РџРѕС‚С‹РєР°Р№ РјР°С‡РµС…Сѓ РІ РїСѓР·РёРєРѕ"
+                />
+
+                <span className="pointer-events-none absolute left-4 top-4 z-[5] grid min-w-20 place-items-center rounded-[14px] border border-relic/40 bg-black/58 px-3 py-2 font-[var(--font-cinzel)] text-lg font-black text-relic shadow-[0_0_28px_rgba(200,154,61,0.2)] backdrop-blur-sm">
+                  {clicks}/{REQUIRED_CLICKS}
                 </span>
 
                 <span className="pointer-events-none absolute bottom-5 left-5 right-5 z-[3] rounded-[20px] border border-relic/24 bg-black/68 p-4 backdrop-blur-sm">
@@ -197,7 +199,7 @@ export default function RafflePage() {
                     <span className="block h-full rounded-full bg-relic transition-all" style={{ width: `${progress}%` }} />
                   </span>
                 </span>
-              </button>
+              </div>
             </div>
 
             <audio ref={audioRef} src={MACHEHA_CRY_SOUND_SRC} preload="auto" />
