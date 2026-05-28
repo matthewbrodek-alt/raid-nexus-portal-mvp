@@ -141,8 +141,8 @@ export default function RafflePage() {
             </div>
 
             <div className="relative mt-7 overflow-hidden rounded-[28px] border border-relic/30 bg-[#030407] shadow-[0_28px_90px_rgba(0,0,0,0.55)]">
-              <div className="absolute inset-0 bg-[url('/images/raid-castle-bg.png')] bg-cover bg-center opacity-48" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_52%_54%,rgba(231,193,106,0.24),transparent_30%),linear-gradient(90deg,rgba(3,4,7,0.9),rgba(3,4,7,0.28),rgba(3,4,7,0.9))]" />
+              <div className="absolute inset-0 bg-[url('/images/raid-castle-bg.png')] bg-cover bg-center opacity-56" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_52%_54%,rgba(231,193,106,0.16),transparent_28%),linear-gradient(90deg,rgba(3,4,7,0.92),rgba(3,4,7,0.42),rgba(3,4,7,0.92))]" />
 
               <button
                 type="button"
@@ -151,10 +151,10 @@ export default function RafflePage() {
                 className="group relative block min-h-[520px] w-full overflow-hidden text-left transition hover:scale-[1.005] disabled:cursor-default disabled:hover:scale-100"
                 aria-label="Потыкай мачеху в пузико"
               >
-                <span className="pointer-events-none absolute left-1/2 top-[47%] h-[68%] w-[76%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(231,193,106,0.26),rgba(216,75,53,0.18)_34%,transparent_66%)] blur-2xl" />
+                <span className="pointer-events-none absolute left-1/2 top-[47%] h-[72%] w-[78%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(3,4,7,0.1),rgba(3,4,7,0.64)_45%,rgba(3,4,7,0.88)_70%,transparent_82%)] blur-xl" />
                 <video
                   src={MACHEHA_VIDEO_SRC}
-                  className="absolute inset-0 h-full w-full object-contain object-center brightness-125 contrast-125 saturate-150 drop-shadow-[0_28px_55px_rgba(0,0,0,0.86)] transition duration-200 group-active:scale-[0.992]"
+                  className="absolute inset-0 h-full w-full object-contain object-center mix-blend-darken drop-shadow-[0_28px_55px_rgba(0,0,0,0.72)] transition duration-200 group-active:scale-[0.992]"
                   autoPlay
                   loop
                   muted
