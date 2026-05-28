@@ -141,8 +141,8 @@ export default function RafflePage() {
             </div>
 
             <div className="relative mt-7 overflow-hidden rounded-[28px] border border-relic/30 bg-[#030407] shadow-[0_28px_90px_rgba(0,0,0,0.55)]">
-              <div className="absolute inset-0 bg-[url('/images/raid-castle-bg.png')] bg-cover bg-center opacity-56" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_52%_54%,rgba(231,193,106,0.16),transparent_28%),linear-gradient(90deg,rgba(3,4,7,0.92),rgba(3,4,7,0.42),rgba(3,4,7,0.92))]" />
+              <div className="absolute inset-0 bg-[url('/images/raid-castle-bg.png')] bg-cover bg-center opacity-62" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_44%_54%,rgba(231,193,106,0.12),transparent_30%),linear-gradient(90deg,rgba(3,4,7,0.9),rgba(3,4,7,0.34),rgba(3,4,7,0.92))]" />
 
               <button
                 type="button"
@@ -151,10 +151,11 @@ export default function RafflePage() {
                 className="group relative block min-h-[520px] w-full overflow-hidden text-left transition hover:scale-[1.005] disabled:cursor-default disabled:hover:scale-100"
                 aria-label="Потыкай мачеху в пузико"
               >
-                <span className="pointer-events-none absolute left-1/2 top-[47%] h-[72%] w-[78%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(3,4,7,0.1),rgba(3,4,7,0.64)_45%,rgba(3,4,7,0.88)_70%,transparent_82%)] blur-xl" />
+                <span className="pointer-events-none absolute left-[44%] top-[48%] h-[74%] w-[72%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(3,4,7,0.04),rgba(3,4,7,0.42)_54%,rgba(3,4,7,0.84)_78%,transparent_88%)] blur-xl" />
+                <span className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_44%_52%,transparent_0_35%,rgba(3,4,7,0.28)_56%,rgba(3,4,7,0.68)_82%)]" />
                 <video
                   src={MACHEHA_VIDEO_SRC}
-                  className="absolute inset-0 h-full w-full object-contain object-center mix-blend-darken drop-shadow-[0_28px_55px_rgba(0,0,0,0.72)] transition duration-200 group-active:scale-[0.992]"
+                  className="absolute inset-y-0 left-[44%] z-[2] h-full w-[112%] max-w-none -translate-x-1/2 object-contain object-center drop-shadow-[0_28px_55px_rgba(0,0,0,0.72)] [mask-image:radial-gradient(ellipse_at_44%_52%,black_0_54%,rgba(0,0,0,0.72)_64%,transparent_82%)] [mask-repeat:no-repeat] [mask-size:100%_100%] transition duration-200 group-active:scale-[0.992]"
                   autoPlay
                   loop
                   muted
@@ -162,11 +163,11 @@ export default function RafflePage() {
                   preload="auto"
                 />
 
-                <span className="pointer-events-none absolute left-1/2 top-[54%] grid h-24 w-24 -translate-x-1/2 place-items-center rounded-full border-2 border-relic/45 bg-black/42 font-[var(--font-cinzel)] text-4xl font-black text-relic opacity-90 shadow-[0_0_38px_rgba(200,154,61,0.28)] backdrop-blur-sm">
+                <span className="pointer-events-none absolute left-[47%] top-[54%] z-[3] grid h-24 w-24 -translate-x-1/2 place-items-center rounded-full border-2 border-relic/45 bg-black/42 font-[var(--font-cinzel)] text-4xl font-black text-relic opacity-90 shadow-[0_0_38px_rgba(200,154,61,0.28)] backdrop-blur-sm">
                   {clicks}
                 </span>
 
-                <span className="pointer-events-none absolute bottom-5 left-5 right-5 rounded-[20px] border border-relic/24 bg-black/68 p-4 backdrop-blur-sm">
+                <span className="pointer-events-none absolute bottom-5 left-5 right-5 z-[3] rounded-[20px] border border-relic/24 bg-black/68 p-4 backdrop-blur-sm">
                   <span className="flex items-center justify-between gap-3">
                     <span className="font-black text-white">{entryExists ? "Спасибо за участие в розыгрыше" : CRY_LINES[cryIndex]}</span>
                     <span className="text-sm font-bold text-relic">{progress}%</span>
