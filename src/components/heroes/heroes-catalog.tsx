@@ -502,7 +502,7 @@ export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", r
                         <span className="font-black text-relic">{skill.slot}</span>
                         <span className="min-w-0">
                           <span className="block truncate font-semibold text-white">{skill.name}</span>
-                          {skill.form ? <span className="text-xs text-zinc-500">{skill.form}</span> : null}
+                          {"form" in skill && skill.form ? <span className="text-xs text-zinc-500">{skill.form}</span> : null}
                         </span>
                         <span className="font-black text-white">{skill.multiplier}</span>
                       </div>
