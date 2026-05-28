@@ -140,9 +140,9 @@ export default function RafflePage() {
               </div>
             </div>
 
-            <div className="relative mt-7 overflow-hidden rounded-[28px] border border-relic/30 bg-[#120906] shadow-[0_28px_90px_rgba(0,0,0,0.55)]">
-              <div className="absolute inset-0 bg-[url('/images/raid-castle-bg.png')] bg-cover bg-center opacity-45" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_52%_54%,rgba(216,75,53,0.22),transparent_24%),linear-gradient(90deg,rgba(6,8,11,0.9),rgba(6,8,11,0.24),rgba(6,8,11,0.9))]" />
+            <div className="relative mt-7 overflow-hidden rounded-[28px] border border-relic/30 bg-[#030407] shadow-[0_28px_90px_rgba(0,0,0,0.55)]">
+              <div className="absolute inset-0 bg-[url('/images/raid-castle-bg.png')] bg-cover bg-center opacity-72" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_52%_54%,rgba(216,75,53,0.22),transparent_24%),linear-gradient(90deg,rgba(3,4,7,0.96),rgba(3,4,7,0.36),rgba(3,4,7,0.96))]" />
 
               <button
                 type="button"
@@ -153,7 +153,7 @@ export default function RafflePage() {
               >
                 <video
                   src={MACHEHA_VIDEO_SRC}
-                  className="absolute inset-0 h-full w-full object-contain object-center drop-shadow-[0_28px_55px_rgba(0,0,0,0.72)] transition duration-200 group-active:scale-[0.992]"
+                  className="absolute inset-0 h-full w-full object-contain object-center mix-blend-multiply brightness-110 contrast-125 saturate-125 drop-shadow-[0_28px_55px_rgba(0,0,0,0.72)] transition duration-200 group-active:scale-[0.992]"
                   autoPlay
                   loop
                   muted

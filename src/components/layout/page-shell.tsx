@@ -35,10 +35,10 @@ export function PageShell({ eyebrow, title, description, children, compact = fal
       <Navigation sections={sections} />
       <section className={`mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 ${compact ? "py-4" : "py-10"}`}>
         {!compact ? (
-          <div className="mb-8 max-w-4xl">
-            <p className="text-sm uppercase tracking-[0.24em] text-relic">{resolveText(eyebrow, language)}</p>
-            <h1 className="mt-3 break-words font-[var(--font-cinzel)] text-3xl font-black text-white sm:text-5xl">{resolveText(title, language)}</h1>
-            {resolvedDescription ? <p className="mt-4 text-base leading-8 text-zinc-300">{resolvedDescription}</p> : null}
+          <div className="mb-8 max-w-4xl rounded-[24px] border border-relic/20 bg-[#04070d]/88 p-5 shadow-[0_22px_70px_rgba(0,0,0,0.62)] backdrop-blur-md sm:p-6">
+            <p className="text-sm font-bold uppercase tracking-[0.24em] text-relic drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">{resolveText(eyebrow, language)}</p>
+            <h1 className="mt-3 break-words font-[var(--font-cinzel)] text-3xl font-black text-white drop-shadow-[0_3px_14px_rgba(0,0,0,0.95)] sm:text-5xl">{resolveText(title, language)}</h1>
+            {resolvedDescription ? <p className="mt-4 text-base font-medium leading-8 text-zinc-100 drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)]">{resolvedDescription}</p> : null}
           </div>
         ) : null}
         {children}

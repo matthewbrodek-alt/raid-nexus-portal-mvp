@@ -58,6 +58,8 @@ type ManagedHero = {
   faction?: string;
   rarity?: string;
   role?: string;
+  avatar?: CloudinaryAsset | null;
+  gallery?: Array<CloudinaryAsset & { sortOrder?: number }>;
   markdownComment?: string;
   isPublished?: boolean;
 };
@@ -112,6 +114,8 @@ export function AdminContentForge() {
   const [editHeroRarity, setEditHeroRarity] = useState("legendary");
   const [editHeroRole, setEditHeroRole] = useState("");
   const [editHeroDescription, setEditHeroDescription] = useState("");
+  const [editHeroAvatar, setEditHeroAvatar] = useState<File | null>(null);
+  const [editHeroGallery, setEditHeroGallery] = useState<FileList | null>(null);
   const [broadcastTitle, setBroadcastTitle] = useState("");
   const [broadcastVideoUrl, setBroadcastVideoUrl] = useState("");
   const [broadcastBackgroundImageUrl, setBroadcastBackgroundImageUrl] = useState("");
@@ -432,6 +436,8 @@ export function AdminContentForge() {
     setEditHeroRarity(heroRarities.some((rarity) => rarity.value === hero.rarity) ? hero.rarity ?? "legendary" : "legendary");
     setEditHeroRole(raidRoles.some((role) => role.value === hero.role) ? hero.role ?? "support" : "support");
     setEditHeroDescription(hero.markdownComment ?? "");
+    setEditHeroAvatar(null);
+    setEditHeroGallery(null);
   }
 
   async function saveHeroEdits() {
@@ -443,16 +449,46 @@ export function AdminContentForge() {
     setStatus("");
 
     try {
-      await updateDoc(doc(db, collections.heroes, editingHeroId), {
-        name: editHeroName.trim(),
+      const name = editHeroName.trim();
+      const safeName = name || "Hero";
+      const slug = slugify(safeName);
+      const payload: Record<string, unknown> = {
+        name,
         nameRu: editHeroNameRu.trim(),
         faction: editHeroFaction.trim() || "Unknown",
         rarity: editHeroRarity,
         role: editHeroRole,
         markdownComment: editHeroDescription.trim(),
         updatedAt: serverTimestamp()
-      });
+      };
+
+      if (editHeroAvatar) {
+        const avatarAsset = await uploadImage(editHeroAvatar, `${slug}/avatar-${Date.now()}`);
+        payload.avatar = {
+          ...avatarAsset,
+          alt: safeName
+        };
+      }
+
+      const galleryFiles = Array.from(editHeroGallery ?? []).slice(0, 5);
+
+      if (galleryFiles.length > 0) {
+        const stamp = Date.now();
+        const galleryAssets = await Promise.all(
+          galleryFiles.map((file, index) => uploadImage(file, `${slug}/build-${stamp}-${index + 1}`))
+        );
+
+        payload.gallery = galleryAssets.map((asset, index) => ({
+          ...asset,
+          alt: `${safeName} build ${index + 1}`,
+          sortOrder: index + 1
+        }));
+      }
+
+      await updateDoc(doc(db, collections.heroes, editingHeroId), payload);
       setEditingHeroId("");
+      setEditHeroAvatar(null);
+      setEditHeroGallery(null);
       setStatus("Герой обновлен.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Не удалось обновить героя.");
@@ -487,9 +523,9 @@ export function AdminContentForge() {
       const name = heroName.trim();
       const slug = slugify(name);
       const avatarAsset = await uploadImage(avatar, `${slug}/avatar`);
-      const galleryFiles = Array.from(gallery ?? []).slice(0, 3);
+      const galleryFiles = Array.from(gallery ?? []).slice(0, 5);
       const galleryAssets = await Promise.all(
-        galleryFiles.map((file, index) => uploadImage(file, `${slug}/gallery-${index + 1}`))
+        galleryFiles.map((file, index) => uploadImage(file, `${slug}/build-${index + 1}`))
       );
 
       await addDoc(collection(db, collections.heroes), {
@@ -506,7 +542,7 @@ export function AdminContentForge() {
         },
         gallery: galleryAssets.map((asset, index) => ({
           ...asset,
-          alt: `${name} screenshot ${index + 1}`,
+          alt: `${name} build ${index + 1}`,
           sortOrder: index + 1
         })),
         markdownComment: heroDescription.trim(),
@@ -773,7 +809,7 @@ export function AdminContentForge() {
             <input type="file" accept="image/*" onChange={(event) => setAvatar(event.target.files?.[0] ?? null)} required className="mt-2 block w-full text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-relic file:px-3 file:py-2 file:font-bold file:text-black" />
           </label>
           <label className="block text-sm text-zinc-300">
-            3 дополнительных фото
+            До 5 фото сборки героя
             <input type="file" accept="image/*" multiple onChange={(event) => setGallery(event.target.files)} className="mt-2 block w-full text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-white/10 file:px-3 file:py-2 file:font-bold file:text-white" />
           </label>
           <textarea value={heroDescription} onChange={(event) => setHeroDescription(event.target.value)} rows={5} placeholder="Комментарий / описание героя" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
@@ -830,6 +866,16 @@ export function AdminContentForge() {
               ))}
             </select>
             <textarea value={editHeroDescription} onChange={(event) => setEditHeroDescription(event.target.value)} rows={5} placeholder="Описание" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block text-sm text-zinc-300">
+                Заменить главное фото
+                <input type="file" accept="image/*" onChange={(event) => setEditHeroAvatar(event.target.files?.[0] ?? null)} className="mt-2 block w-full text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-white/10 file:px-3 file:py-2 file:font-bold file:text-white" />
+              </label>
+              <label className="block text-sm text-zinc-300">
+                Заменить сборку героя (до 5 фото)
+                <input type="file" accept="image/*" multiple onChange={(event) => setEditHeroGallery(event.target.files)} className="mt-2 block w-full text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-white/10 file:px-3 file:py-2 file:font-bold file:text-white" />
+              </label>
+            </div>
             <button type="button" disabled={!editingHeroId || saving} onClick={() => void saveHeroEdits()} className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
               <Save size={16} />
               Сохранить героя

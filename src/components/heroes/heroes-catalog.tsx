@@ -1,10 +1,11 @@
 "use client";
 
-import { X } from "lucide-react";
+import { ExternalLink, X } from "lucide-react";
 import { collection, deleteDoc, doc, onSnapshot, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { HeroCard } from "@/components/heroes/hero-card";
+import { championMultipliers } from "@/lib/data/champion-multipliers";
 import { getChampionRussianNameByEnglish, normalizeChampionSearch, transliterateChampionName } from "@/lib/data/champion-localization";
 import { gestalChampions, type GestalChampion } from "@/lib/data/gestal-champions";
 import { db } from "@/lib/firebase/client";
@@ -341,6 +342,16 @@ export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", r
     return hero.roles?.length ? hero.roles.map((role) => formatRole(role, language)).join(" / ") : formatRole(hero.role, language);
   }
 
+  const selectedHeroMultiplier = useMemo(() => {
+    if (!selectedHero) {
+      return null;
+    }
+
+    const selectedName = normalizeChampionSearch(selectedHero.name);
+
+    return championMultipliers.find((entry) => normalizeChampionSearch(entry.nameEn) === selectedName) ?? null;
+  }, [selectedHero]);
+
   async function deleteSelectedHero() {
     if (!selectedHero || selectedHero.source !== "firestore" || !window.confirm("Удалить героя из базы?")) {
       return;
@@ -465,6 +476,45 @@ export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", r
                 </button>
               </div>
 
+              <div className="rounded-[18px] border border-white/10 bg-black/20 p-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-relic">{language === "ru" ? "Урон" : "Damage"}</p>
+                    <h3 className="mt-1 text-2xl font-black text-white">{language === "ru" ? "Множители навыков" : "Skill multipliers"}</h3>
+                  </div>
+                  {selectedHeroMultiplier?.sourceUrl ? (
+                    <a
+                      href={selectedHeroMultiplier.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-xl border border-relic/25 bg-relic/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.14em] text-relic transition hover:bg-relic hover:text-black"
+                    >
+                      <ExternalLink size={14} />
+                      {language === "ru" ? "Источник" : "Source"}
+                    </a>
+                  ) : null}
+                </div>
+
+                {selectedHeroMultiplier ? (
+                  <div className="mt-4 grid gap-2">
+                    {selectedHeroMultiplier.skills.map((skill, index) => (
+                      <div key={`${skill.slot}-${skill.name}-${index}`} className="grid gap-2 rounded-xl border border-relic/15 bg-black/25 p-3 text-sm sm:grid-cols-[82px_1fr_110px] sm:items-center">
+                        <span className="font-black text-relic">{skill.slot}</span>
+                        <span className="min-w-0">
+                          <span className="block truncate font-semibold text-white">{skill.name}</span>
+                          {skill.form ? <span className="text-xs text-zinc-500">{skill.form}</span> : null}
+                        </span>
+                        <span className="font-black text-white">{skill.multiplier}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-4 rounded-xl border border-white/10 bg-black/20 p-4 text-sm leading-6 text-zinc-400">
+                    {language === "ru" ? "Множители пока не добавлены для этого героя." : "No multipliers have been added for this champion yet."}
+                  </p>
+                )}
+              </div>
+
               {canManageHeroes && selectedHero.source === "firestore" ? (
                 <div className="space-y-3 rounded-[18px] border border-relic/20 bg-relic/[0.06] p-5">
                   <h3 className="text-xl font-black text-white">Админ-правка</h3>
@@ -506,8 +556,8 @@ export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", r
 
               <div className="rounded-[18px] border border-white/10 bg-black/20 p-5">
                 <h3 className="text-2xl font-black text-white">Сборка героя</h3>
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                  {selectedHero.galleryUrls.slice(0, 3).map((url, index) => (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                  {selectedHero.galleryUrls.slice(0, 5).map((url, index) => (
                     <button key={url} type="button" onClick={() => setSelectedScreenshot(url)} className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.04] transition hover:border-relic/50">
                       <img src={url} alt={`${selectedHero.name} ${index + 1}`} loading="lazy" decoding="async" className="aspect-[4/3] w-full object-cover" />
                     </button>
