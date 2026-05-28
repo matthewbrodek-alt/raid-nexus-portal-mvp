@@ -26,7 +26,8 @@ export default function RafflePage() {
   const [error, setError] = useState("");
   const [cryIndex, setCryIndex] = useState(0);
   const [isIosWebKit, setIsIosWebKit] = useState(false);
-  const [iosFallbackBroken, setIosFallbackBroken] = useState(false);
+  const [platformReady, setPlatformReady] = useState(false);
+  const [iosFallbackMissing, setIosFallbackMissing] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timeLeft = useMemo(() => (raffle && now ? getRaffleTimeLeft(raffle.date, now) : { days: 0, hours: 0, minutes: 0, seconds: 0 }), [now, raffle]);
   const progress = Math.min(100, Math.round((clicks / REQUIRED_CLICKS) * 100));
@@ -45,6 +46,7 @@ export default function RafflePage() {
     const isTouchMac = platform === "macintel" && window.navigator.maxTouchPoints > 1;
 
     setIsIosWebKit(/iphone|ipad|ipod/.test(userAgent) || isTouchMac);
+    setPlatformReady(true);
   }, []);
 
   useEffect(() => {
@@ -164,14 +166,26 @@ export default function RafflePage() {
               >
                 <span className="pointer-events-none absolute left-[44%] top-[48%] h-[74%] w-[72%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(3,4,7,0.04),rgba(3,4,7,0.42)_54%,rgba(3,4,7,0.84)_78%,transparent_88%)] blur-xl" />
                 <span className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_44%_52%,transparent_0_35%,rgba(3,4,7,0.28)_56%,rgba(3,4,7,0.68)_82%)]" />
-                {isIosWebKit && !iosFallbackBroken ? (
-                  <img
-                    src={MACHEHA_IOS_FALLBACK_SRC}
-                    alt=""
+                {!platformReady ? (
+                  <span
+                    className="absolute inset-y-0 left-[44%] z-[2] h-full w-[112%] max-w-none -translate-x-1/2 rounded-[28px] bg-[radial-gradient(ellipse_at_44%_52%,rgba(231,193,106,0.12),rgba(3,4,7,0.5)_45%,rgba(3,4,7,0.88)_78%)]"
                     aria-hidden="true"
-                    className="absolute inset-y-0 left-[44%] z-[2] h-full w-[112%] max-w-none -translate-x-1/2 object-contain object-center drop-shadow-[0_28px_55px_rgba(0,0,0,0.72)] transition duration-200 group-active:scale-[0.992]"
-                    onError={() => setIosFallbackBroken(true)}
                   />
+                ) : isIosWebKit ? (
+                  iosFallbackMissing ? (
+                    <span className="absolute inset-x-6 top-1/2 z-[2] -translate-y-1/2 rounded-[24px] border border-relic/25 bg-[#030407]/92 p-5 text-center text-sm font-semibold leading-6 text-zinc-300 shadow-[0_28px_70px_rgba(0,0,0,0.7)]">
+                      Добавьте iOS-изображение персонажа:
+                      <span className="mt-2 block break-all text-relic">/images/raffle/macheha-ios.png</span>
+                    </span>
+                  ) : (
+                    <img
+                      src={MACHEHA_IOS_FALLBACK_SRC}
+                      alt=""
+                      aria-hidden="true"
+                      className="absolute inset-y-0 left-[44%] z-[2] h-full w-[112%] max-w-none -translate-x-1/2 object-contain object-center drop-shadow-[0_28px_55px_rgba(0,0,0,0.72)] transition duration-200 group-active:scale-[0.992]"
+                      onError={() => setIosFallbackMissing(true)}
+                    />
+                  )
                 ) : (
                   <video
                     src={MACHEHA_VIDEO_SRC}
