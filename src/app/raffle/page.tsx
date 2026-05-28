@@ -141,8 +141,8 @@ export default function RafflePage() {
             </div>
 
             <div className="relative mt-7 overflow-hidden rounded-[28px] border border-relic/30 bg-[#030407] shadow-[0_28px_90px_rgba(0,0,0,0.55)]">
-              <div className="absolute inset-0 bg-[url('/images/raid-castle-bg.png')] bg-cover bg-center opacity-72" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_52%_54%,rgba(216,75,53,0.22),transparent_24%),linear-gradient(90deg,rgba(3,4,7,0.96),rgba(3,4,7,0.36),rgba(3,4,7,0.96))]" />
+              <div className="absolute inset-0 bg-[url('/images/raid-castle-bg.png')] bg-cover bg-center opacity-48" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_52%_54%,rgba(231,193,106,0.24),transparent_30%),linear-gradient(90deg,rgba(3,4,7,0.9),rgba(3,4,7,0.28),rgba(3,4,7,0.9))]" />
 
               <button
                 type="button"
@@ -151,9 +151,10 @@ export default function RafflePage() {
                 className="group relative block min-h-[520px] w-full overflow-hidden text-left transition hover:scale-[1.005] disabled:cursor-default disabled:hover:scale-100"
                 aria-label="Потыкай мачеху в пузико"
               >
+                <span className="pointer-events-none absolute left-1/2 top-[47%] h-[68%] w-[76%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(231,193,106,0.26),rgba(216,75,53,0.18)_34%,transparent_66%)] blur-2xl" />
                 <video
                   src={MACHEHA_VIDEO_SRC}
-                  className="absolute inset-0 h-full w-full object-contain object-center mix-blend-multiply brightness-110 contrast-125 saturate-125 drop-shadow-[0_28px_55px_rgba(0,0,0,0.72)] transition duration-200 group-active:scale-[0.992]"
+                  className="absolute inset-0 h-full w-full object-contain object-center brightness-125 contrast-125 saturate-150 drop-shadow-[0_28px_55px_rgba(0,0,0,0.86)] transition duration-200 group-active:scale-[0.992]"
                   autoPlay
                   loop
                   muted
