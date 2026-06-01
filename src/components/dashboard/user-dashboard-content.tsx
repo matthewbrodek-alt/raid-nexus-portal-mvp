@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BadgeCheck, ClipboardCopy, Coins, FileText, MessageSquare, Palette, ScrollText, Send, Swords, Users } from "lucide-react";
+import { BadgeCheck, Check, ClipboardCopy, Coins, FileText, MessageSquare, Palette, ScrollText, Send, Swords, Users } from "lucide-react";
 import { collection, doc, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -493,10 +493,16 @@ export function UserDashboardContent() {
                 >
                   <span className="flex items-center gap-3">
                     <span
-                      className={`grid h-11 w-11 place-items-center rounded-xl border-2 bg-gradient-to-br transition ${
+                      className={`relative grid h-11 w-11 place-items-center rounded-xl border-2 bg-gradient-to-br transition ${
                         selected ? "scale-105 shadow-[0_0_18px_rgba(231,193,106,0.35)]" : "scale-95"
                       } ${frame.previewClassName} ${frame.className}`}
-                    />
+                    >
+                      {selected ? (
+                        <span className="absolute -bottom-1 -left-1 grid h-5 w-5 place-items-center rounded-md border border-[#b8ff7a]/70 bg-[#133d12] text-[#7dff54] shadow-[0_0_14px_rgba(70,255,84,0.42)]">
+                          <Check size={13} strokeWidth={3} />
+                        </span>
+                      ) : null}
+                    </span>
                     <span>
                       <span className={`block text-sm font-black ${selected ? "text-white" : "text-zinc-500"}`}>{frame.label}</span>
                       <span className="text-xs text-zinc-500">{unlocked ? "Доступно" : `С ${frame.minStatus} BP`}</span>

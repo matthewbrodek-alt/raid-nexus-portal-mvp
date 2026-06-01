@@ -19,56 +19,56 @@ export const avatarFrames: Array<Unlockable & { id: AvatarFrameId; label: string
     id: "none",
     label: "Без рамки",
     minStatus: "bronze",
-    className: "border-transparent shadow-none",
+    className: "bp-frame-none",
     previewClassName: "from-zinc-950 via-zinc-800 to-zinc-700"
   },
   {
     id: "bronze",
     label: "Bronze",
     minStatus: "bronze",
-    className: "border-[#a97142] shadow-[0_0_22px_rgba(169,113,66,0.24)]",
+    className: "bp-frame-bronze",
     previewClassName: "from-[#3b2417] via-[#a97142] to-[#f1b37a]"
   },
   {
     id: "silver",
     label: "Silver",
     minStatus: "silver",
-    className: "border-[#cfd8e3] shadow-[0_0_24px_rgba(207,216,227,0.3)]",
+    className: "bp-frame-silver",
     previewClassName: "from-[#5d6670] via-[#cfd8e3] to-[#ffffff]"
   },
   {
     id: "gold",
     label: "Gold",
     minStatus: "gold",
-    className: "border-[#e7c16a] shadow-[0_0_30px_rgba(231,193,106,0.44)]",
+    className: "bp-frame-gold",
     previewClassName: "from-[#704611] via-[#e7c16a] to-[#fff0a8]"
   },
   {
     id: "ember",
     label: "Ember",
     minStatus: "gold",
-    className: "border-[#ff7a2f] shadow-[0_0_30px_rgba(255,122,47,0.42)]",
+    className: "bp-frame-ember",
     previewClassName: "from-[#42110a] via-[#ff7a2f] to-[#ffd28b]"
   },
   {
     id: "platinum",
     label: "Platinum",
     minStatus: "platinum",
-    className: "border-[#9ee7ff] shadow-[0_0_34px_rgba(158,231,255,0.4)]",
+    className: "bp-frame-platinum",
     previewClassName: "from-[#1d3f55] via-[#9ee7ff] to-[#ffffff]"
   },
   {
     id: "void",
     label: "Void",
     minStatus: "platinum",
-    className: "border-[#b589ff] shadow-[0_0_34px_rgba(181,137,255,0.42)]",
+    className: "bp-frame-void",
     previewClassName: "from-[#1b102d] via-[#7c3aed] to-[#d8b4fe]"
   },
   {
     id: "rgb",
     label: "RGB",
     minStatus: "gold",
-    className: "bp-avatar-rgb border-white/70",
+    className: "bp-frame-rgb bp-avatar-rgb",
     previewClassName: "from-red-500 via-emerald-400 to-cyan-400"
   },
   {
@@ -76,7 +76,7 @@ export const avatarFrames: Array<Unlockable & { id: AvatarFrameId; label: string
     label: "Admin Blue",
     minStatus: "bronze",
     adminOnly: true,
-    className: "border-[#315f9d] bg-[#06111f] shadow-[0_0_28px_rgba(49,95,157,0.38)]",
+    className: "bp-frame-admin-blue",
     previewClassName: "from-[#06111f] via-[#163a68] to-[#5d93d8]"
   }
 ];
@@ -133,7 +133,7 @@ export function normalizeNicknameStyle(styleId: string | undefined, statusId: Bp
 export function getAvatarFrameClass(frameId: string | undefined, statusId: BpStatusId) {
   const direct = avatarFrames.find((frame) => frame.id === frameId);
   const normalized = normalizeAvatarFrame(frameId, statusId);
-  return direct?.className ?? avatarFrames.find((frame) => frame.id === normalized)?.className ?? "border-transparent shadow-none";
+  return direct?.className ?? avatarFrames.find((frame) => frame.id === normalized)?.className ?? "bp-frame-none";
 }
 
 export function getNicknameClass(styleId: string | undefined, statusId: BpStatusId) {

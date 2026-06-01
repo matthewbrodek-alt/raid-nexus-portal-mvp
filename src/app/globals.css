@@ -77,6 +77,96 @@ body::after {
   animation: bp-rgb-frame 4.2s linear infinite;
 }
 
+.bp-frame-none {
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.bp-frame-bronze,
+.bp-frame-silver,
+.bp-frame-gold,
+.bp-frame-ember,
+.bp-frame-platinum,
+.bp-frame-void,
+.bp-frame-admin-blue,
+.bp-frame-rgb {
+  border-style: solid;
+  border-width: 3px;
+  background-clip: padding-box;
+  box-shadow:
+    inset 0 0 0 1px rgba(5, 7, 11, 0.9),
+    inset 0 0 0 4px rgba(255, 255, 255, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.9),
+    0 0 22px rgba(0, 0, 0, 0.48);
+}
+
+.bp-frame-bronze {
+  border-color: #9f6a35 !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(40, 23, 12, 0.95),
+    inset 0 0 0 4px rgba(241, 179, 122, 0.16),
+    0 0 0 1px rgba(38, 22, 12, 0.92),
+    0 0 22px rgba(169, 113, 66, 0.28);
+}
+
+.bp-frame-silver {
+  border-color: #cfd8e3 !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(30, 37, 46, 0.95),
+    inset 0 0 0 4px rgba(255, 255, 255, 0.2),
+    0 0 0 1px rgba(8, 14, 24, 0.95),
+    0 0 24px rgba(207, 216, 227, 0.36);
+}
+
+.bp-frame-gold {
+  border-color: #e7c16a !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(56, 35, 8, 0.95),
+    inset 0 0 0 4px rgba(255, 240, 168, 0.22),
+    0 0 0 1px rgba(58, 37, 9, 0.95),
+    0 0 28px rgba(231, 193, 106, 0.46);
+}
+
+.bp-frame-ember {
+  border-color: #ff7a2f !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(68, 18, 10, 0.95),
+    inset 0 0 0 4px rgba(255, 180, 105, 0.2),
+    0 0 0 1px rgba(58, 16, 8, 0.95),
+    0 0 30px rgba(255, 122, 47, 0.42);
+}
+
+.bp-frame-platinum {
+  border-color: #9ee7ff !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(14, 43, 58, 0.95),
+    inset 0 0 0 4px rgba(255, 255, 255, 0.24),
+    0 0 0 1px rgba(5, 20, 30, 0.95),
+    0 0 34px rgba(158, 231, 255, 0.44);
+}
+
+.bp-frame-void {
+  border-color: #b589ff !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(30, 16, 54, 0.95),
+    inset 0 0 0 4px rgba(216, 180, 254, 0.18),
+    0 0 0 1px rgba(24, 13, 43, 0.95),
+    0 0 34px rgba(181, 137, 255, 0.42);
+}
+
+.bp-frame-admin-blue {
+  border-color: #315f9d !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(5, 17, 31, 0.95),
+    inset 0 0 0 4px rgba(93, 147, 216, 0.18),
+    0 0 0 1px rgba(5, 17, 31, 0.95),
+    0 0 30px rgba(49, 95, 157, 0.42);
+}
+
+.bp-frame-rgb {
+  border-width: 3px;
+}
+
 @keyframes bp-rgb-flow {
   0% {
     background-position: 0% 50%;
