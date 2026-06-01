@@ -31,6 +31,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { normalizeOrderStage, orderStages, type OrderStageId } from "@/lib/bp-status";
+import { getClipboardImageFile } from "@/lib/browser/clipboard-image";
 import type { CloudinaryAsset } from "@/lib/cloudinary/types";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
@@ -326,6 +327,17 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
     }
 
     setAttachmentFile(file);
+  }
+
+  function handlePasteImage(event: React.ClipboardEvent<HTMLElement>) {
+    const imageFile = getClipboardImageFile(event.clipboardData, `order-${leadId}-${Date.now()}.png`);
+
+    if (!imageFile) {
+      return;
+    }
+
+    event.preventDefault();
+    applySelectedFile(imageFile);
   }
 
   async function saveOrderPanel() {
@@ -674,7 +686,7 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
                 </div>
               ) : null}
 
-              <form onSubmit={sendMessage} className="mt-4 flex gap-2">
+              <form onSubmit={sendMessage} onPaste={handlePasteImage} className="mt-4 flex gap-2">
                 <label className="grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-xl border border-white/10 bg-black/35 text-relic transition hover:border-relic/35 hover:bg-relic/10">
                   <ImagePlus size={18} />
                   <input type="file" accept="image/*" className="hidden" onChange={(event) => applySelectedFile(event.target.files?.[0])} />

@@ -20,6 +20,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import type { UserProfile } from "@/lib/auth/types";
+import { getClipboardImageFile } from "@/lib/browser/clipboard-image";
 import type { CloudinaryAsset } from "@/lib/cloudinary/types";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
@@ -544,7 +545,7 @@ export function ChatWindow() {
   }
 
   function handlePaste(event: React.ClipboardEvent<HTMLTextAreaElement>) {
-    const imageFile = Array.from(event.clipboardData.files).find((file) => file.type.startsWith("image/"));
+    const imageFile = getClipboardImageFile(event.clipboardData, `chat-${Date.now()}.png`);
 
     if (imageFile) {
       event.preventDefault();

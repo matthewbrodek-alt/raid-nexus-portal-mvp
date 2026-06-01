@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useDonationOffers } from "@/components/donate/use-donation-offers";
 import { GlassPanel } from "@/components/ui/glass-panel";
+import { getClipboardImageFile } from "@/lib/browser/clipboard-image";
 import { getDonationOfferTitle } from "@/lib/donation/offers";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
@@ -157,6 +158,17 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
     setScreenshotFile(file);
   }
 
+  function handlePasteImage(event: React.ClipboardEvent<HTMLFormElement>) {
+    const imageFile = getClipboardImageFile(event.clipboardData, `topup-${Date.now()}.png`);
+
+    if (!imageFile) {
+      return;
+    }
+
+    event.preventDefault();
+    updateScreenshot(imageFile);
+  }
+
   async function uploadScreenshot(file: File): Promise<UploadedScreenshot> {
     const formData = new FormData();
     formData.append("file", file);
@@ -300,7 +312,7 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
         ))}
       </div>
 
-      <form className="space-y-4" onSubmit={submitLead}>
+      <form className="space-y-4" onSubmit={submitLead} onPaste={handlePasteImage}>
         <label className="block space-y-2">
           <span className="text-sm text-zinc-300">{t.telegram}</span>
           <input
