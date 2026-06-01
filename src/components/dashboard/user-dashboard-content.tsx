@@ -373,8 +373,8 @@ export function UserDashboardContent() {
       <GlassPanel className="mb-6 overflow-hidden p-5 sm:p-6">
         <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div className="flex items-center gap-4">
-            <span className={`grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-2xl border-2 bg-relic/15 text-xl font-black text-relic ${activeAvatarFrameClass}`}>
-              {avatarUrl ? <img src={avatarUrl} alt={profile?.displayName ?? "Avatar"} className="h-full w-full object-cover" /> : avatarFallback(profile?.displayName)}
+            <span className={`grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-xl border-2 bg-relic/15 text-xl font-black text-relic ${activeAvatarFrameClass}`}>
+              {avatarUrl ? <img src={avatarUrl} alt={profile?.displayName ?? "Avatar"} className="h-full w-full rounded-lg object-cover" /> : avatarFallback(profile?.displayName)}
             </span>
             <div className="min-w-0">
               <p className="inline-flex items-center gap-2 rounded-full border border-relic/25 bg-relic/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-relic">
