@@ -954,7 +954,7 @@ export function ChatWindow() {
       {memberMenu ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
           <div className="w-full max-w-sm rounded-lg border border-relic/25 bg-[#0b101b] p-4 shadow-2xl">
-            <div className="flex items-center gap-5">
+            <div className="relative flex items-center gap-5 rounded-lg border border-white/10 bg-black/20 p-3">
               <span className={`bp-avatar-chat-preview grid h-24 w-24 shrink-0 place-items-center overflow-visible rounded-xl border bg-gradient-to-br from-violet-500 to-cyan-600 text-2xl font-black text-white ${getAvatarFrameClass(memberMenu.avatarFrame, memberMenu.bpStatus ?? "bronze")}`}>
                 {memberMenu.avatarUrl ? <img src={memberMenu.avatarUrl} alt={memberMenu.displayName} className="h-full w-full rounded-lg object-cover" /> : memberMenu.displayName.slice(0, 2).toUpperCase()}
               </span>
@@ -962,12 +962,12 @@ export function ChatWindow() {
                 <p className={`truncate font-bold ${getNicknameClass(memberMenu.nicknameStyle, memberMenu.bpStatus ?? "bronze")}`}>{memberMenu.displayName}</p>
                 <p className="text-xs text-zinc-500">Действия с участником</p>
               </div>
-              <button type="button" onClick={() => setMemberMenu(null)} className="ml-auto grid h-9 w-9 place-items-center rounded-md border border-white/10 text-zinc-400 hover:text-white">
+              <button type="button" onClick={() => setMemberMenu(null)} className="ml-auto grid h-9 w-9 shrink-0 place-items-center rounded-md border border-white/10 text-zinc-400 hover:text-white">
                 <X size={16} />
               </button>
             </div>
 
-            <div className="mt-4 grid gap-2">
+            <div className="mt-5 grid gap-2 border-t border-relic/20 pt-4">
               <button type="button" onClick={() => startDirectMessage(memberMenu)} className="rounded-md border border-relic/30 bg-relic/10 px-4 py-3 text-left font-semibold text-relic hover:bg-relic hover:text-black">
                 Перейти в личные сообщения
               </button>
