@@ -1,6 +1,6 @@
 import type { BpStatusId } from "@/lib/bp-status";
 
-export type AvatarFrameId = "bronze" | "silver" | "gold" | "platinum" | "ember" | "void" | "rgb";
+export type AvatarFrameId = "none" | "bronze" | "silver" | "gold" | "platinum" | "ember" | "void" | "rgb" | "admin-blue";
 export type NicknameStyleId = "plain" | "relic" | "ember" | "rgb";
 
 const statusRank: Record<BpStatusId, number> = {
@@ -14,7 +14,14 @@ type Unlockable = {
   minStatus: BpStatusId;
 };
 
-export const avatarFrames: Array<Unlockable & { id: AvatarFrameId; label: string; className: string; previewClassName: string }> = [
+export const avatarFrames: Array<Unlockable & { id: AvatarFrameId; label: string; className: string; previewClassName: string; adminOnly?: boolean }> = [
+  {
+    id: "none",
+    label: "Без рамки",
+    minStatus: "bronze",
+    className: "border-transparent shadow-none",
+    previewClassName: "from-zinc-950 via-zinc-800 to-zinc-700"
+  },
   {
     id: "bronze",
     label: "Bronze",
@@ -63,6 +70,14 @@ export const avatarFrames: Array<Unlockable & { id: AvatarFrameId; label: string
     minStatus: "gold",
     className: "bp-avatar-rgb border-white/70",
     previewClassName: "from-red-500 via-emerald-400 to-cyan-400"
+  },
+  {
+    id: "admin-blue",
+    label: "Admin Blue",
+    minStatus: "bronze",
+    adminOnly: true,
+    className: "border-[#315f9d] bg-[#06111f] shadow-[0_0_28px_rgba(49,95,157,0.38)]",
+    previewClassName: "from-[#06111f] via-[#163a68] to-[#5d93d8]"
   }
 ];
 
@@ -97,17 +112,17 @@ function canUse(minStatus: BpStatusId, statusId: BpStatusId) {
   return statusRank[statusId] >= statusRank[minStatus];
 }
 
-export function getAvailableAvatarFrames(statusId: BpStatusId) {
-  return avatarFrames.filter((frame) => canUse(frame.minStatus, statusId));
+export function getAvailableAvatarFrames(statusId: BpStatusId, isAdmin = false) {
+  return avatarFrames.filter((frame) => canUse(frame.minStatus, statusId) && (!frame.adminOnly || isAdmin));
 }
 
 export function getAvailableNicknameStyles(statusId: BpStatusId) {
   return nicknameStyles.filter((style) => canUse(style.minStatus, statusId));
 }
 
-export function normalizeAvatarFrame(frameId: string | undefined, statusId: BpStatusId): AvatarFrameId {
-  const available = getAvailableAvatarFrames(statusId);
-  return (available.find((frame) => frame.id === frameId)?.id ?? available[0].id) as AvatarFrameId;
+export function normalizeAvatarFrame(frameId: string | undefined, statusId: BpStatusId, isAdmin = false): AvatarFrameId {
+  const available = getAvailableAvatarFrames(statusId, isAdmin);
+  return (available.find((frame) => frame.id === frameId)?.id ?? "none") as AvatarFrameId;
 }
 
 export function normalizeNicknameStyle(styleId: string | undefined, statusId: BpStatusId): NicknameStyleId {
@@ -116,8 +131,9 @@ export function normalizeNicknameStyle(styleId: string | undefined, statusId: Bp
 }
 
 export function getAvatarFrameClass(frameId: string | undefined, statusId: BpStatusId) {
+  const direct = avatarFrames.find((frame) => frame.id === frameId);
   const normalized = normalizeAvatarFrame(frameId, statusId);
-  return avatarFrames.find((frame) => frame.id === normalized)?.className ?? avatarFrames[0].className;
+  return direct?.className ?? avatarFrames.find((frame) => frame.id === normalized)?.className ?? "border-transparent shadow-none";
 }
 
 export function getNicknameClass(styleId: string | undefined, statusId: BpStatusId) {

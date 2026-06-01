@@ -104,7 +104,7 @@ export function RegisterForm() {
       email: normalizedEmail,
       displayName: userDisplayName,
       avatarPreset: "raid-logo",
-      avatarFrame: "bronze",
+      avatarFrame: "none",
       avatarHiddenByAdmin: false,
       nicknameStyle: "plain",
       bpStatus: "bronze",

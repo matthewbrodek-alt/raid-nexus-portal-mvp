@@ -105,7 +105,7 @@ export function UserDashboardContent() {
   const [avatarStatus, setAvatarStatus] = useState("");
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [displayNameDraft, setDisplayNameDraft] = useState("");
-  const [selectedAvatarFrame, setSelectedAvatarFrame] = useState<AvatarFrameId>("bronze");
+  const [selectedAvatarFrame, setSelectedAvatarFrame] = useState<AvatarFrameId>("none");
   const [selectedNicknameStyle, setSelectedNicknameStyle] = useState<NicknameStyleId>("plain");
   const [cosmeticStatus, setCosmeticStatus] = useState("");
 
@@ -174,9 +174,10 @@ export function UserDashboardContent() {
   );
   const bpProgress = useMemo(() => getBpProgress(totalSpentRub), [totalSpentRub]);
   const avatarUrl = profile?.avatarUrl || "";
-  const availableAvatarFrames = useMemo(() => getAvailableAvatarFrames(bpProgress.status.id), [bpProgress.status.id]);
+  const canUseAdminFrame = profile?.role === "admin" || profile?.role === "owner";
+  const availableAvatarFrames = useMemo(() => getAvailableAvatarFrames(bpProgress.status.id, canUseAdminFrame), [bpProgress.status.id, canUseAdminFrame]);
   const availableNicknameStyles = useMemo(() => getAvailableNicknameStyles(bpProgress.status.id), [bpProgress.status.id]);
-  const activeAvatarFrame = normalizeAvatarFrame(profile?.avatarFrame ?? selectedAvatarFrame, bpProgress.status.id);
+  const activeAvatarFrame = normalizeAvatarFrame(profile?.avatarFrame ?? selectedAvatarFrame, bpProgress.status.id, canUseAdminFrame);
   const activeNicknameStyle = normalizeNicknameStyle(profile?.nicknameStyle ?? selectedNicknameStyle, bpProgress.status.id);
   const activeAvatarFrameClass = getAvatarFrameClass(activeAvatarFrame, bpProgress.status.id);
   const activeNicknameClass = getNicknameClass(activeNicknameStyle, bpProgress.status.id);
@@ -193,9 +194,9 @@ export function UserDashboardContent() {
     }
 
     setDisplayNameDraft(profile.displayName || profile.email || "");
-    setSelectedAvatarFrame(normalizeAvatarFrame(profile.avatarFrame, bpProgress.status.id));
+    setSelectedAvatarFrame(normalizeAvatarFrame(profile.avatarFrame, bpProgress.status.id, canUseAdminFrame));
     setSelectedNicknameStyle(normalizeNicknameStyle(profile.nicknameStyle, bpProgress.status.id));
-  }, [bpProgress.status.id, profile]);
+  }, [bpProgress.status.id, canUseAdminFrame, profile]);
 
   useEffect(() => {
     if (!user?.uid || !profile || referralCode) {
@@ -311,7 +312,7 @@ export function UserDashboardContent() {
       await updateDoc(doc(db, collections.users, user.uid), {
         avatarPreset: "custom",
         avatarUrl: nextAvatarUrl,
-        avatarFrame: normalizeAvatarFrame(selectedAvatarFrame, bpProgress.status.id),
+        avatarFrame: normalizeAvatarFrame(selectedAvatarFrame, bpProgress.status.id, canUseAdminFrame),
         bpStatus: bpProgress.status.id,
         totalSpentRub,
         updatedAt: new Date()
@@ -337,7 +338,7 @@ export function UserDashboardContent() {
       return;
     }
 
-    const nextFrame = normalizeAvatarFrame(selectedAvatarFrame, bpProgress.status.id);
+    const nextFrame = normalizeAvatarFrame(selectedAvatarFrame, bpProgress.status.id, canUseAdminFrame);
     const nextStyle = normalizeNicknameStyle(selectedNicknameStyle, bpProgress.status.id);
 
     try {
@@ -444,18 +445,24 @@ export function UserDashboardContent() {
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-relic">Подсветка ника</p>
             <div className="mt-2 grid gap-2 sm:grid-cols-2">
-              {availableNicknameStyles.map((style) => (
-                <button
-                  key={style.id}
-                  type="button"
-                  onClick={() => setSelectedNicknameStyle(style.id)}
-                  className={`rounded-xl border px-3 py-2 text-left text-sm font-black transition ${
-                    selectedNicknameStyle === style.id ? "border-relic bg-relic/15" : "border-white/10 bg-black/24 hover:border-relic/35"
-                  }`}
-                >
-                  <span className={style.className}>{style.label}</span>
-                </button>
-              ))}
+              {availableNicknameStyles.map((style) => {
+                const selected = selectedNicknameStyle === style.id;
+
+                return (
+                  <button
+                    key={style.id}
+                    type="button"
+                    onClick={() => setSelectedNicknameStyle(style.id)}
+                    className={`rounded-xl border px-3 py-2 text-left text-sm font-black transition ${
+                      selected
+                        ? "border-relic bg-relic/20 shadow-[0_0_24px_rgba(231,193,106,0.22)] ring-1 ring-relic/45"
+                        : "border-white/10 bg-black/45 opacity-55 saturate-50 hover:border-relic/35 hover:opacity-100 hover:saturate-100"
+                    }`}
+                  >
+                    <span className={selected ? style.className : "text-zinc-500"}>{style.label}</span>
+                  </button>
+                );
+              })}
             </div>
             {bpProgress.status.id === "bronze" || bpProgress.status.id === "silver" ? (
               <p className="mt-2 text-xs text-zinc-500">RGB-подсветка открывается с Gold BP.</p>
@@ -466,8 +473,9 @@ export function UserDashboardContent() {
         <div className="mt-5">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-relic">Рамка аватара</p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-            {avatarFrames.map((frame) => {
+            {avatarFrames.filter((frame) => !frame.adminOnly || canUseAdminFrame).map((frame) => {
               const unlocked = availableAvatarFrames.some((item) => item.id === frame.id);
+              const selected = selectedAvatarFrame === frame.id;
 
               return (
                 <button
@@ -476,13 +484,21 @@ export function UserDashboardContent() {
                   disabled={!unlocked}
                   onClick={() => setSelectedAvatarFrame(frame.id)}
                   className={`rounded-xl border p-3 text-left transition ${
-                    selectedAvatarFrame === frame.id ? "border-relic bg-relic/15" : "border-white/10 bg-black/24 hover:border-relic/35"
+                    selected
+                      ? "border-relic bg-relic/20 shadow-[0_0_26px_rgba(231,193,106,0.22)] ring-1 ring-relic/45"
+                      : unlocked
+                        ? "border-white/10 bg-black/45 opacity-55 saturate-50 hover:border-relic/35 hover:opacity-100 hover:saturate-100"
+                        : "border-white/10 bg-black/30 opacity-35 grayscale"
                   } disabled:cursor-not-allowed disabled:opacity-45`}
                 >
                   <span className="flex items-center gap-3">
-                    <span className={`grid h-11 w-11 place-items-center rounded-xl border-2 bg-gradient-to-br ${frame.previewClassName} ${frame.className}`} />
+                    <span
+                      className={`grid h-11 w-11 place-items-center rounded-xl border-2 bg-gradient-to-br transition ${
+                        selected ? "scale-105 shadow-[0_0_18px_rgba(231,193,106,0.35)]" : "scale-95"
+                      } ${frame.previewClassName} ${frame.className}`}
+                    />
                     <span>
-                      <span className="block text-sm font-black text-white">{frame.label}</span>
+                      <span className={`block text-sm font-black ${selected ? "text-white" : "text-zinc-500"}`}>{frame.label}</span>
                       <span className="text-xs text-zinc-500">{unlocked ? "Доступно" : `С ${frame.minStatus} BP`}</span>
                     </span>
                   </span>

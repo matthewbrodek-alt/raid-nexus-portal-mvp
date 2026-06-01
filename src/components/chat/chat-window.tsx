@@ -14,7 +14,8 @@ import {
   serverTimestamp,
   setDoc,
   Timestamp,
-  updateDoc
+  updateDoc,
+  where
 } from "firebase/firestore";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -91,11 +92,11 @@ function directThreadId(firstUid: string, secondUid: string) {
 }
 
 function getUserLabel(userProfile: Pick<UserProfile, "displayName" | "email">) {
-  return userProfile.displayName || userProfile.email || "User";
+  return userProfile.displayName || "User";
 }
 
-function getPublicUserMeta(userProfile: UserProfile, canViewEmail: boolean) {
-  return canViewEmail ? `${userProfile.role} · ${userProfile.email}` : userProfile.role;
+function getPublicUserMeta(userProfile: UserProfile) {
+  return userProfile.role;
 }
 
 function formatTime(message: ChatMessage) {
@@ -157,6 +158,7 @@ function shouldShowAvatar(ownerUid: string, currentUid?: string, hiddenByAdmin?:
 export function ChatWindow() {
   const { profile, user } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [directContactIds, setDirectContactIds] = useState<string[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [message, setMessage] = useState("");
@@ -176,13 +178,14 @@ export function ChatWindow() {
   const canModerate = profile?.role === "admin" || profile?.role === "owner";
 
   const activeThread = selectedUser && user ? directThreadId(user.uid, selectedUser.uid) : "global";
+  const directContactIdSet = useMemo(() => new Set(directContactIds), [directContactIds]);
   const filteredUsers = useMemo(
     () =>
       users.filter((item) => {
-        const haystack = `${item.displayName} ${canModerate ? item.email : ""}`.toLowerCase();
-        return item.uid !== user?.uid && haystack.includes(search.trim().toLowerCase());
+        const haystack = getUserLabel(item).toLowerCase();
+        return item.uid !== user?.uid && directContactIdSet.has(item.uid) && haystack.includes(search.trim().toLowerCase());
       }),
-    [canModerate, search, user?.uid, users]
+    [directContactIdSet, search, user?.uid, users]
   );
   const visibleMessages = useMemo(
     () => messages.filter((item) => item.uid === user?.uid || !personalBlockedUids.includes(item.uid)),
@@ -249,6 +252,33 @@ export function ChatWindow() {
         setUsers(snapshot.docs.map((item) => item.data() as UserProfile));
       },
       () => setUsers([])
+    );
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setDirectContactIds([]);
+      return;
+    }
+
+    const threadsQuery = query(collection(db, "directThreads"), where("participants", "array-contains", user.uid));
+    return onSnapshot(
+      threadsQuery,
+      (snapshot) => {
+        const nextContactIds = new Set<string>();
+
+        snapshot.docs.forEach((item) => {
+          const participants = (item.data().participants as string[] | undefined) ?? [];
+          participants.forEach((participantUid) => {
+            if (participantUid !== user.uid) {
+              nextContactIds.add(participantUid);
+            }
+          });
+        });
+
+        setDirectContactIds([...nextContactIds]);
+      },
+      () => setDirectContactIds([])
     );
   }, [user]);
 
@@ -334,7 +364,7 @@ export function ChatWindow() {
     setMemberMenu({
       uid: messageItem.uid,
       displayName: messageItem.displayName,
-      avatarFrame: author?.avatarFrame || messageItem.avatarFrame,
+      avatarFrame: author ? author.avatarFrame ?? "none" : messageItem.avatarFrame,
       bpStatus: author?.bpStatus ?? "bronze",
       avatarHiddenByAdmin: Boolean(author?.avatarHiddenByAdmin),
       nicknameStyle: author?.nicknameStyle || messageItem.nicknameStyle,
@@ -456,7 +486,7 @@ export function ChatWindow() {
         uid: user.uid,
         displayName: profile.displayName,
         avatarUrl: profile.avatarHiddenByAdmin ? "" : profile.avatarUrl ?? "",
-        avatarFrame: profile.avatarFrame ?? profile.bpStatus ?? "bronze",
+        avatarFrame: profile.avatarFrame ?? "none",
         nicknameStyle: profile.nicknameStyle ?? "plain",
         text,
         attachment: uploadedAttachment
@@ -559,7 +589,7 @@ export function ChatWindow() {
         <span className="min-w-0">
           <span className={`block truncate font-semibold ${nicknameClass}`}>{label}</span>
           <span className="block truncate text-xs text-zinc-500">
-            {getPublicUserMeta(item, canModerate)}
+            {getPublicUserMeta(item)}
           </span>
         </span>
       </button>
@@ -615,7 +645,9 @@ export function ChatWindow() {
             {filteredUsers.map((item) => renderUserButton(item))}
 
             {user && filteredUsers.length === 0 ? (
-              <p className="min-w-[220px] rounded-lg border border-white/10 bg-black/20 p-3 text-sm text-zinc-500 lg:min-w-0">Пользователи не найдены.</p>
+              <p className="min-w-[220px] rounded-lg border border-white/10 bg-black/20 p-3 text-sm text-zinc-500 lg:min-w-0">
+                Личных диалогов пока нет. Откройте личные сообщения через участника в общем чате.
+              </p>
             ) : null}
           </div>
         </aside>
@@ -635,7 +667,7 @@ export function ChatWindow() {
             </span>
             <div className="hidden min-w-0 lg:block">
               <h2 className="truncate text-lg font-bold text-white">{selectedUser ? getUserLabel(selectedUser) : "Общий чат"}</h2>
-              <p className="truncate text-sm text-zinc-500">{selectedUser ? (canModerate ? selectedUser.email : "Личный диалог") : "Открытая комната портала"}</p>
+              <p className="truncate text-sm text-zinc-500">{selectedUser ? "Личный диалог" : "Открытая комната портала"}</p>
             </div>
           </header>
 
@@ -655,7 +687,7 @@ export function ChatWindow() {
               const initials = (item.displayName || "U").slice(0, 2).toUpperCase();
               const authorProfile = users.find((userItem) => userItem.uid === item.uid);
               const authorStatusId = authorProfile?.bpStatus ?? "bronze";
-              const authorAvatarFrameClass = getAvatarFrameClass(authorProfile?.avatarFrame || item.avatarFrame, authorStatusId);
+              const authorAvatarFrameClass = getAvatarFrameClass(authorProfile ? authorProfile.avatarFrame ?? "none" : item.avatarFrame, authorStatusId);
               const authorNicknameClass = getNicknameClass(authorProfile?.nicknameStyle || item.nicknameStyle, authorStatusId);
               const messageAvatarUrl = shouldShowAvatar(item.uid, user?.uid, authorProfile?.avatarHiddenByAdmin)
                 ? authorProfile?.avatarUrl || item.avatarUrl
@@ -920,6 +952,12 @@ export function ChatWindow() {
               </button>
 
               {filteredUsers.map((item) => renderUserButton(item, true))}
+
+              {user && filteredUsers.length === 0 ? (
+                <p className="rounded-lg border border-white/10 bg-black/20 p-3 text-sm leading-5 text-zinc-500">
+                  Личных диалогов пока нет. Откройте личные сообщения через участника в общем чате.
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
