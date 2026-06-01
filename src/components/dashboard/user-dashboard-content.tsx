@@ -11,6 +11,17 @@ import { copyTextToClipboard } from "@/lib/browser/clipboard";
 import { getBpProgress, getOrderStage, isCompletedOrder, normalizeOrderStage, orderStages } from "@/lib/bp-status";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
+import {
+  avatarFrames,
+  getAvatarFrameClass,
+  getAvailableAvatarFrames,
+  getAvailableNicknameStyles,
+  getNicknameClass,
+  normalizeAvatarFrame,
+  normalizeNicknameStyle,
+  type AvatarFrameId,
+  type NicknameStyleId
+} from "@/lib/profile-cosmetics";
 import { makeReferralCode, makeReferralLink, normalizeReferralCode, REFERRAL_REWARD_RATE } from "@/lib/referrals";
 
 type TopupLead = {
@@ -93,6 +104,10 @@ export function UserDashboardContent() {
   const [referralNotice, setReferralNotice] = useState("");
   const [avatarStatus, setAvatarStatus] = useState("");
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [displayNameDraft, setDisplayNameDraft] = useState("");
+  const [selectedAvatarFrame, setSelectedAvatarFrame] = useState<AvatarFrameId>("bronze");
+  const [selectedNicknameStyle, setSelectedNicknameStyle] = useState<NicknameStyleId>("plain");
+  const [cosmeticStatus, setCosmeticStatus] = useState("");
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -159,12 +174,28 @@ export function UserDashboardContent() {
   );
   const bpProgress = useMemo(() => getBpProgress(totalSpentRub), [totalSpentRub]);
   const avatarUrl = profile?.avatarUrl || "";
+  const availableAvatarFrames = useMemo(() => getAvailableAvatarFrames(bpProgress.status.id), [bpProgress.status.id]);
+  const availableNicknameStyles = useMemo(() => getAvailableNicknameStyles(bpProgress.status.id), [bpProgress.status.id]);
+  const activeAvatarFrame = normalizeAvatarFrame(profile?.avatarFrame ?? selectedAvatarFrame, bpProgress.status.id);
+  const activeNicknameStyle = normalizeNicknameStyle(profile?.nicknameStyle ?? selectedNicknameStyle, bpProgress.status.id);
+  const activeAvatarFrameClass = getAvatarFrameClass(activeAvatarFrame, bpProgress.status.id);
+  const activeNicknameClass = getNicknameClass(activeNicknameStyle, bpProgress.status.id);
   const activityCount = profile?.activityStats?.messagesCount ?? directThreads.length;
   const completedCount = topupLeads.filter((lead) => isCompletedOrder(lead.status)).length;
   const referralCode = normalizeReferralCode(profile?.referralCode);
   const referralLink = makeReferralLink(origin, referralCode);
   const bumpyBalance = profile?.bumpyCoinsBalance ?? 0;
   const bumpyEarnedTotal = profile?.bumpyCoinsEarnedTotal ?? 0;
+
+  useEffect(() => {
+    if (!profile) {
+      return;
+    }
+
+    setDisplayNameDraft(profile.displayName || profile.email || "");
+    setSelectedAvatarFrame(normalizeAvatarFrame(profile.avatarFrame, bpProgress.status.id));
+    setSelectedNicknameStyle(normalizeNicknameStyle(profile.nicknameStyle, bpProgress.status.id));
+  }, [bpProgress.status.id, profile]);
 
   useEffect(() => {
     if (!user?.uid || !profile || referralCode) {
@@ -280,7 +311,7 @@ export function UserDashboardContent() {
       await updateDoc(doc(db, collections.users, user.uid), {
         avatarPreset: "custom",
         avatarUrl: nextAvatarUrl,
-        avatarFrame: bpProgress.status.id,
+        avatarFrame: normalizeAvatarFrame(selectedAvatarFrame, bpProgress.status.id),
         bpStatus: bpProgress.status.id,
         totalSpentRub,
         updatedAt: new Date()
@@ -291,6 +322,38 @@ export function UserDashboardContent() {
       setAvatarStatus(caughtError instanceof Error ? caughtError.message : "Не удалось обновить аватар.");
     } finally {
       setAvatarUploading(false);
+    }
+  }
+
+  async function saveProfileCosmetics() {
+    if (!user?.uid || !profile) {
+      return;
+    }
+
+    const nextDisplayName = displayNameDraft.trim().replace(/\s+/g, " ").slice(0, 28);
+
+    if (nextDisplayName.length < 2) {
+      setCosmeticStatus("Никнейм должен быть не короче 2 символов.");
+      return;
+    }
+
+    const nextFrame = normalizeAvatarFrame(selectedAvatarFrame, bpProgress.status.id);
+    const nextStyle = normalizeNicknameStyle(selectedNicknameStyle, bpProgress.status.id);
+
+    try {
+      await updateDoc(doc(db, collections.users, user.uid), {
+        displayName: nextDisplayName,
+        avatarFrame: nextFrame,
+        nicknameStyle: nextStyle,
+        bpStatus: bpProgress.status.id,
+        totalSpentRub,
+        updatedAt: serverTimestamp()
+      });
+      await refreshProfile();
+      setCosmeticStatus("Оформление профиля сохранено.");
+      window.setTimeout(() => setCosmeticStatus(""), 2400);
+    } catch {
+      setCosmeticStatus("Не удалось сохранить оформление профиля.");
     }
   }
 
@@ -309,7 +372,7 @@ export function UserDashboardContent() {
       <GlassPanel className="mb-6 overflow-hidden p-5 sm:p-6">
         <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div className="flex items-center gap-4">
-            <span className={`grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-2xl border-2 bg-relic/15 text-xl font-black text-relic ${bpProgress.status.frameClass}`}>
+            <span className={`grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-2xl border-2 bg-relic/15 text-xl font-black text-relic ${activeAvatarFrameClass}`}>
               {avatarUrl ? <img src={avatarUrl} alt={profile?.displayName ?? "Avatar"} className="h-full w-full object-cover" /> : avatarFallback(profile?.displayName)}
             </span>
             <div className="min-w-0">
@@ -317,7 +380,7 @@ export function UserDashboardContent() {
                 <BadgeCheck size={14} />
                 {bpProgress.status.label}
               </p>
-              <h2 className="mt-3 truncate text-2xl font-black text-white">{profile?.displayName ?? profile?.email}</h2>
+              <h2 className={`mt-3 truncate text-2xl font-black ${activeNicknameClass}`}>{profile?.displayName ?? profile?.email}</h2>
               {profile?.avatarHiddenByAdmin ? (
                 <p className="mt-3 rounded-lg border border-blood/35 bg-blood/10 px-3 py-2 text-sm font-semibold text-red-200">
                   Ваш аватар скрыт администратором и не отображается другим пользователям.
@@ -366,6 +429,83 @@ export function UserDashboardContent() {
           <span className="rounded-lg bg-relic px-4 py-2 text-center font-black text-black">{avatarUploading ? "Загрузка..." : "Выбрать файл"}</span>
           <input type="file" accept="image/*" className="hidden" disabled={avatarUploading} onChange={(event) => void uploadCustomAvatar(event.target.files?.[0])} />
         </label>
+        <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+          <label className="block">
+            <span className="text-xs font-bold uppercase tracking-[0.18em] text-relic">Никнейм</span>
+            <input
+              value={displayNameDraft}
+              onChange={(event) => setDisplayNameDraft(event.target.value)}
+              maxLength={28}
+              className="mt-2 w-full rounded-xl border-relic/20 bg-black/35 text-white placeholder:text-zinc-600 focus:border-relic focus:ring-relic"
+              placeholder="Ваш никнейм"
+            />
+          </label>
+
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-relic">Подсветка ника</p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              {availableNicknameStyles.map((style) => (
+                <button
+                  key={style.id}
+                  type="button"
+                  onClick={() => setSelectedNicknameStyle(style.id)}
+                  className={`rounded-xl border px-3 py-2 text-left text-sm font-black transition ${
+                    selectedNicknameStyle === style.id ? "border-relic bg-relic/15" : "border-white/10 bg-black/24 hover:border-relic/35"
+                  }`}
+                >
+                  <span className={style.className}>{style.label}</span>
+                </button>
+              ))}
+            </div>
+            {bpProgress.status.id === "bronze" || bpProgress.status.id === "silver" ? (
+              <p className="mt-2 text-xs text-zinc-500">RGB-подсветка открывается с Gold BP.</p>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="mt-5">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-relic">Рамка аватара</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {avatarFrames.map((frame) => {
+              const unlocked = availableAvatarFrames.some((item) => item.id === frame.id);
+
+              return (
+                <button
+                  key={frame.id}
+                  type="button"
+                  disabled={!unlocked}
+                  onClick={() => setSelectedAvatarFrame(frame.id)}
+                  className={`rounded-xl border p-3 text-left transition ${
+                    selectedAvatarFrame === frame.id ? "border-relic bg-relic/15" : "border-white/10 bg-black/24 hover:border-relic/35"
+                  } disabled:cursor-not-allowed disabled:opacity-45`}
+                >
+                  <span className="flex items-center gap-3">
+                    <span className={`grid h-11 w-11 place-items-center rounded-xl border-2 bg-gradient-to-br ${frame.previewClassName} ${frame.className}`} />
+                    <span>
+                      <span className="block text-sm font-black text-white">{frame.label}</span>
+                      <span className="text-xs text-zinc-500">{unlocked ? "Доступно" : `С ${frame.minStatus} BP`}</span>
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mt-5 flex flex-col gap-3 rounded-xl border border-relic/20 bg-black/24 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-bold text-white">Предпросмотр</p>
+            <p className={`mt-1 text-xl font-black ${getNicknameClass(selectedNicknameStyle, bpProgress.status.id)}`}>{displayNameDraft || profile?.displayName}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void saveProfileCosmetics()}
+            className="rounded-xl bg-relic px-5 py-3 font-black text-black transition hover:bg-[#f0c766]"
+          >
+            Сохранить оформление
+          </button>
+        </div>
+        {cosmeticStatus ? <p className="mt-3 text-sm text-relic">{cosmeticStatus}</p> : null}
         {avatarStatus ? <p className="mt-3 text-sm text-relic">{avatarStatus}</p> : null}
       </GlassPanel>
 

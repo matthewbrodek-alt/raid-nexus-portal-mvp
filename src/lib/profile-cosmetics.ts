@@ -1,0 +1,126 @@
+import type { BpStatusId } from "@/lib/bp-status";
+
+export type AvatarFrameId = "bronze" | "silver" | "gold" | "platinum" | "ember" | "void" | "rgb";
+export type NicknameStyleId = "plain" | "relic" | "ember" | "rgb";
+
+const statusRank: Record<BpStatusId, number> = {
+  bronze: 0,
+  silver: 1,
+  gold: 2,
+  platinum: 3
+};
+
+type Unlockable = {
+  minStatus: BpStatusId;
+};
+
+export const avatarFrames: Array<Unlockable & { id: AvatarFrameId; label: string; className: string; previewClassName: string }> = [
+  {
+    id: "bronze",
+    label: "Bronze",
+    minStatus: "bronze",
+    className: "border-[#a97142] shadow-[0_0_22px_rgba(169,113,66,0.24)]",
+    previewClassName: "from-[#3b2417] via-[#a97142] to-[#f1b37a]"
+  },
+  {
+    id: "silver",
+    label: "Silver",
+    minStatus: "silver",
+    className: "border-[#cfd8e3] shadow-[0_0_24px_rgba(207,216,227,0.3)]",
+    previewClassName: "from-[#5d6670] via-[#cfd8e3] to-[#ffffff]"
+  },
+  {
+    id: "gold",
+    label: "Gold",
+    minStatus: "gold",
+    className: "border-[#e7c16a] shadow-[0_0_30px_rgba(231,193,106,0.44)]",
+    previewClassName: "from-[#704611] via-[#e7c16a] to-[#fff0a8]"
+  },
+  {
+    id: "ember",
+    label: "Ember",
+    minStatus: "gold",
+    className: "border-[#ff7a2f] shadow-[0_0_30px_rgba(255,122,47,0.42)]",
+    previewClassName: "from-[#42110a] via-[#ff7a2f] to-[#ffd28b]"
+  },
+  {
+    id: "platinum",
+    label: "Platinum",
+    minStatus: "platinum",
+    className: "border-[#9ee7ff] shadow-[0_0_34px_rgba(158,231,255,0.4)]",
+    previewClassName: "from-[#1d3f55] via-[#9ee7ff] to-[#ffffff]"
+  },
+  {
+    id: "void",
+    label: "Void",
+    minStatus: "platinum",
+    className: "border-[#b589ff] shadow-[0_0_34px_rgba(181,137,255,0.42)]",
+    previewClassName: "from-[#1b102d] via-[#7c3aed] to-[#d8b4fe]"
+  },
+  {
+    id: "rgb",
+    label: "RGB",
+    minStatus: "gold",
+    className: "bp-avatar-rgb border-white/70",
+    previewClassName: "from-red-500 via-emerald-400 to-cyan-400"
+  }
+];
+
+export const nicknameStyles: Array<Unlockable & { id: NicknameStyleId; label: string; className: string }> = [
+  {
+    id: "plain",
+    label: "Classic",
+    minStatus: "bronze",
+    className: "text-white"
+  },
+  {
+    id: "relic",
+    label: "Relic Gold",
+    minStatus: "silver",
+    className: "text-relic drop-shadow-[0_0_12px_rgba(231,193,106,0.34)]"
+  },
+  {
+    id: "ember",
+    label: "Ember",
+    minStatus: "gold",
+    className: "text-[#ff9b54] drop-shadow-[0_0_12px_rgba(255,122,47,0.38)]"
+  },
+  {
+    id: "rgb",
+    label: "RGB Glow",
+    minStatus: "gold",
+    className: "bp-nick-rgb"
+  }
+];
+
+function canUse(minStatus: BpStatusId, statusId: BpStatusId) {
+  return statusRank[statusId] >= statusRank[minStatus];
+}
+
+export function getAvailableAvatarFrames(statusId: BpStatusId) {
+  return avatarFrames.filter((frame) => canUse(frame.minStatus, statusId));
+}
+
+export function getAvailableNicknameStyles(statusId: BpStatusId) {
+  return nicknameStyles.filter((style) => canUse(style.minStatus, statusId));
+}
+
+export function normalizeAvatarFrame(frameId: string | undefined, statusId: BpStatusId): AvatarFrameId {
+  const available = getAvailableAvatarFrames(statusId);
+  return (available.find((frame) => frame.id === frameId)?.id ?? available[0].id) as AvatarFrameId;
+}
+
+export function normalizeNicknameStyle(styleId: string | undefined, statusId: BpStatusId): NicknameStyleId {
+  const available = getAvailableNicknameStyles(statusId);
+  return (available.find((style) => style.id === styleId)?.id ?? available[0].id) as NicknameStyleId;
+}
+
+export function getAvatarFrameClass(frameId: string | undefined, statusId: BpStatusId) {
+  const normalized = normalizeAvatarFrame(frameId, statusId);
+  return avatarFrames.find((frame) => frame.id === normalized)?.className ?? avatarFrames[0].className;
+}
+
+export function getNicknameClass(styleId: string | undefined, statusId: BpStatusId) {
+  const normalized = normalizeNicknameStyle(styleId, statusId);
+  return nicknameStyles.find((style) => style.id === normalized)?.className ?? nicknameStyles[0].className;
+}

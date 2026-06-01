@@ -106,6 +106,7 @@ export function RegisterForm() {
       avatarPreset: "raid-logo",
       avatarFrame: "bronze",
       avatarHiddenByAdmin: false,
+      nicknameStyle: "plain",
       bpStatus: "bronze",
       totalSpentRub: 0,
       referralCode: ownReferralCode,

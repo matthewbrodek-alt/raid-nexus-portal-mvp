@@ -8,6 +8,7 @@ export type UserProfile = {
   avatarPreset?: string;
   avatarFrame?: string;
   avatarHiddenByAdmin?: boolean;
+  nicknameStyle?: "plain" | "relic" | "ember" | "rgb";
   bpStatus?: "bronze" | "silver" | "gold" | "platinum";
   totalSpentRub?: number;
   referralCode?: string;

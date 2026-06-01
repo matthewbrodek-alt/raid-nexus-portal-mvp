@@ -22,6 +22,7 @@ import type { UserProfile } from "@/lib/auth/types";
 import type { CloudinaryAsset } from "@/lib/cloudinary/types";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
+import { getAvatarFrameClass, getNicknameClass } from "@/lib/profile-cosmetics";
 
 type MentionedUser = {
   uid: string;
@@ -33,6 +34,8 @@ type ChatMessage = {
   uid: string;
   displayName: string;
   avatarUrl?: string;
+  avatarFrame?: string;
+  nicknameStyle?: string;
   text: string;
   attachment?: {
     secureUrl?: string;
@@ -57,6 +60,9 @@ type MemberMenu = {
   uid: string;
   displayName: string;
   avatarUrl?: string;
+  avatarFrame?: string;
+  nicknameStyle?: string;
+  bpStatus?: "bronze" | "silver" | "gold" | "platinum";
   avatarHiddenByAdmin?: boolean;
 };
 
@@ -328,7 +334,10 @@ export function ChatWindow() {
     setMemberMenu({
       uid: messageItem.uid,
       displayName: messageItem.displayName,
+      avatarFrame: author?.avatarFrame || messageItem.avatarFrame,
+      bpStatus: author?.bpStatus ?? "bronze",
       avatarHiddenByAdmin: Boolean(author?.avatarHiddenByAdmin),
+      nicknameStyle: author?.nicknameStyle || messageItem.nicknameStyle,
       avatarUrl: shouldShowAvatar(messageItem.uid, user?.uid, author?.avatarHiddenByAdmin) ? author?.avatarUrl || messageItem.avatarUrl : ""
     });
   }
@@ -447,6 +456,8 @@ export function ChatWindow() {
         uid: user.uid,
         displayName: profile.displayName,
         avatarUrl: profile.avatarHiddenByAdmin ? "" : profile.avatarUrl ?? "",
+        avatarFrame: profile.avatarFrame ?? profile.bpStatus ?? "bronze",
+        nicknameStyle: profile.nicknameStyle ?? "plain",
         text,
         attachment: uploadedAttachment
           ? {
@@ -526,6 +537,9 @@ export function ChatWindow() {
   function renderUserButton(item: UserProfile, compact = false) {
     const label = getUserLabel(item);
     const visibleAvatarUrl = shouldShowAvatar(item.uid, user?.uid, item.avatarHiddenByAdmin) ? item.avatarUrl : "";
+    const statusId = item.bpStatus ?? "bronze";
+    const avatarFrameClass = getAvatarFrameClass(item.avatarFrame, statusId);
+    const nicknameClass = getNicknameClass(item.nicknameStyle, statusId);
 
     return (
       <button
@@ -539,11 +553,11 @@ export function ChatWindow() {
           selectedUser?.uid === item.uid ? "border border-violet-400/45 bg-violet-500/15 text-white" : "border border-white/10 bg-white/[0.03] text-zinc-300 hover:bg-white/[0.06]"
         }`}
       >
-        <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-violet-500 to-cyan-600 text-xs font-black text-white">
+        <span className={`grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border-2 bg-gradient-to-br from-violet-500 to-cyan-600 text-xs font-black text-white ${avatarFrameClass}`}>
           {visibleAvatarUrl ? <img src={visibleAvatarUrl} alt={label} className="h-full w-full rounded-full object-cover" /> : label.slice(0, 2).toUpperCase()}
         </span>
         <span className="min-w-0">
-          <span className="block truncate font-semibold">{label}</span>
+          <span className={`block truncate font-semibold ${nicknameClass}`}>{label}</span>
           <span className="block truncate text-xs text-zinc-500">
             {getPublicUserMeta(item, canModerate)}
           </span>
@@ -640,6 +654,9 @@ export function ChatWindow() {
               const attachmentAlt = item.attachment?.alt ?? "Image";
               const initials = (item.displayName || "U").slice(0, 2).toUpperCase();
               const authorProfile = users.find((userItem) => userItem.uid === item.uid);
+              const authorStatusId = authorProfile?.bpStatus ?? "bronze";
+              const authorAvatarFrameClass = getAvatarFrameClass(authorProfile?.avatarFrame || item.avatarFrame, authorStatusId);
+              const authorNicknameClass = getNicknameClass(authorProfile?.nicknameStyle || item.nicknameStyle, authorStatusId);
               const messageAvatarUrl = shouldShowAvatar(item.uid, user?.uid, authorProfile?.avatarHiddenByAdmin)
                 ? authorProfile?.avatarUrl || item.avatarUrl
                 : "";
@@ -650,7 +667,7 @@ export function ChatWindow() {
                     <button
                       type="button"
                       onClick={() => openMemberMenu(item)}
-                      className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full border border-relic/25 bg-gradient-to-br from-violet-500 to-cyan-600 text-[11px] font-black text-white"
+                      className={`grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full border-2 bg-gradient-to-br from-violet-500 to-cyan-600 text-[11px] font-black text-white ${authorAvatarFrameClass}`}
                       title={item.displayName}
                     >
                       {messageAvatarUrl ? <img src={messageAvatarUrl} alt={item.displayName} className="h-full w-full object-cover" /> : initials}
@@ -664,7 +681,7 @@ export function ChatWindow() {
                     }`}
                   >
                     {!own ? (
-                      <button type="button" onClick={() => openMemberMenu(item)} className="mb-0.5 text-[11px] font-bold text-relic hover:text-white">
+                      <button type="button" onClick={() => openMemberMenu(item)} className={`mb-0.5 text-[11px] font-bold hover:text-white ${authorNicknameClass}`}>
                         {item.displayName}
                       </button>
                     ) : null}
@@ -912,11 +929,11 @@ export function ChatWindow() {
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
           <div className="w-full max-w-sm rounded-lg border border-relic/25 bg-[#0b101b] p-4 shadow-2xl">
             <div className="flex items-center gap-3">
-              <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full border border-relic/30 bg-gradient-to-br from-violet-500 to-cyan-600 text-sm font-black text-white">
+              <span className={`grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full border-2 bg-gradient-to-br from-violet-500 to-cyan-600 text-sm font-black text-white ${getAvatarFrameClass(memberMenu.avatarFrame, memberMenu.bpStatus ?? "bronze")}`}>
                 {memberMenu.avatarUrl ? <img src={memberMenu.avatarUrl} alt={memberMenu.displayName} className="h-full w-full object-cover" /> : memberMenu.displayName.slice(0, 2).toUpperCase()}
               </span>
               <div className="min-w-0">
-                <p className="truncate font-bold text-white">{memberMenu.displayName}</p>
+                <p className={`truncate font-bold ${getNicknameClass(memberMenu.nicknameStyle, memberMenu.bpStatus ?? "bronze")}`}>{memberMenu.displayName}</p>
                 <p className="text-xs text-zinc-500">Действия с участником</p>
               </div>
               <button type="button" onClick={() => setMemberMenu(null)} className="ml-auto grid h-9 w-9 place-items-center rounded-md border border-white/10 text-zinc-400 hover:text-white">

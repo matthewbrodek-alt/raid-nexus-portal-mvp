@@ -13,7 +13,7 @@ import { getNextRaffleInfo, getRaffleTimeLeft, RAFFLE_PRIZE, type RaffleInfo } f
 const CRY_LINES = ["Ай-ай-ай!", "Хнык...", "Не по пузику!", "Еще чуть-чуть...", "Мачеха терпит ради рубинов", "Уже почти участник!"];
 const REQUIRED_CLICKS = 100;
 const MACHEHA_WEBM_VIDEO_SRC = "/videos/raffle/macheha.webm";
-const MACHEHA_IOS_VIDEO_SRC = "/videos/raffle/macheha-ios.mp4";
+const MACHEHA_IOS_VIDEO_SRC = "/videos/raffle/macheha.mov";
 const MACHEHA_CRY_SOUND_SRC = "/sounds/macheha-cry.mp3";
 
 function getMachehaVideoSrc() {

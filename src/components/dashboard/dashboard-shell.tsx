@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Crown, Home, LogOut, Shield } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-provider";
+import { getAvatarFrameClass, getNicknameClass } from "@/lib/profile-cosmetics";
 import { useLanguage, type Language } from "@/lib/i18n/use-language";
 
 type LocalizedText = string | Record<Language, string>;
@@ -22,13 +23,16 @@ export function DashboardShell({ title, subtitle, mode, children }: DashboardShe
   const { profile, signOut } = useAuth();
   const { language, isRu } = useLanguage();
   const hasAdminAccess = profile?.role === "admin" || profile?.role === "owner";
+  const statusId = profile?.bpStatus ?? "bronze";
+  const avatarFrameClass = getAvatarFrameClass(profile?.avatarFrame, statusId);
+  const nicknameClass = getNicknameClass(profile?.nicknameStyle, statusId);
 
   return (
     <main className="min-h-screen bg-raid-radial text-pale">
       <header className="border-b border-white/10 bg-abyss/86 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
           <div className="flex items-center gap-3">
-            <span className="grid h-11 w-11 place-items-center overflow-hidden rounded-lg border border-relic/40 bg-relic/15 text-relic shadow-glow">
+            <span className={`grid h-11 w-11 place-items-center overflow-hidden rounded-lg border-2 bg-relic/15 text-relic shadow-glow ${avatarFrameClass}`}>
               {profile?.avatarUrl ? (
                 <img src={profile.avatarUrl} alt={profile.displayName} className="h-full w-full rounded-lg object-cover" />
               ) : mode === "admin" ? (
@@ -42,6 +46,7 @@ export function DashboardShell({ title, subtitle, mode, children }: DashboardShe
                 {mode === "admin" ? "Admin War Room" : "Player Sanctum"}
               </p>
               <h1 className="text-lg font-bold text-white sm:text-xl">{resolveText(title, language)}</h1>
+              {profile ? <p className={`max-w-[220px] truncate text-sm font-black ${nicknameClass}`}>{profile.displayName}</p> : null}
             </div>
           </div>
 

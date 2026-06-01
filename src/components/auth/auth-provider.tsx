@@ -31,7 +31,8 @@ async function loadOrCreateProfile(user: User): Promise<UserProfile> {
   if (existingProfile.exists()) {
     const profile = existingProfile.data() as UserProfile;
     let nextRole = profile.role;
-    const referralCode = profile.referralCode || makeReferralCode(displayName, user.uid);
+    const savedDisplayName = profile.displayName || displayName;
+    const referralCode = profile.referralCode || makeReferralCode(savedDisplayName, user.uid);
 
     if (profile.role === "user" && invitedAdmin?.exists() && invitedAdmin.data().status === "pending") {
       nextRole = "admin";
@@ -41,7 +42,7 @@ async function loadOrCreateProfile(user: User): Promise<UserProfile> {
       userRef,
       {
         email,
-        displayName,
+        displayName: savedDisplayName,
         role: nextRole,
         status: profile.status ?? "active",
         referralCode,
@@ -60,7 +61,7 @@ async function loadOrCreateProfile(user: User): Promise<UserProfile> {
           code: referralCode,
           ownerUid: user.uid,
           ownerEmail: email,
-          ownerDisplayName: displayName,
+          ownerDisplayName: savedDisplayName,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         },
@@ -80,7 +81,7 @@ async function loadOrCreateProfile(user: User): Promise<UserProfile> {
       ...profile,
       uid: user.uid,
       email,
-      displayName,
+      displayName: savedDisplayName,
       role: nextRole,
       status: profile.status ?? "active",
       referralCode,
@@ -99,6 +100,7 @@ async function loadOrCreateProfile(user: User): Promise<UserProfile> {
     avatarPreset: "raid-logo",
     avatarFrame: "bronze",
     avatarHiddenByAdmin: false,
+    nicknameStyle: "plain",
     bpStatus: "bronze",
     totalSpentRub: 0,
     referralCode,

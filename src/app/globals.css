@@ -58,6 +58,52 @@ body::after {
   color: #fff8df;
 }
 
+.bp-nick-rgb {
+  color: #fff;
+  background: linear-gradient(90deg, #ff4d6d, #e7c16a, #42f58d, #4cc9f0, #b589ff, #ff4d6d);
+  background-size: 260% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow: 0 0 14px rgba(231, 193, 106, 0.34), 0 0 24px rgba(76, 201, 240, 0.24);
+  -webkit-text-fill-color: transparent;
+  animation: bp-rgb-flow 4.8s linear infinite;
+}
+
+.bp-avatar-rgb {
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.35),
+    0 0 22px rgba(255, 77, 109, 0.32),
+    0 0 34px rgba(76, 201, 240, 0.28);
+  animation: bp-rgb-frame 4.2s linear infinite;
+}
+
+@keyframes bp-rgb-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 260% 50%;
+  }
+}
+
+@keyframes bp-rgb-frame {
+  0% {
+    border-color: #ff4d6d;
+  }
+  25% {
+    border-color: #e7c16a;
+  }
+  50% {
+    border-color: #42f58d;
+  }
+  75% {
+    border-color: #4cc9f0;
+  }
+  100% {
+    border-color: #ff4d6d;
+  }
+}
+
 .glass {
   min-width: 0;
   border: 1px solid rgba(216, 168, 71, 0.28);
