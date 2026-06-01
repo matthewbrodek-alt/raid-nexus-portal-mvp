@@ -21,6 +21,10 @@ export default function AdminDashboardPage() {
         }}
       >
         <div>
+          <AdminCrmPanel />
+        </div>
+
+        <div className="mt-6">
           <AdminUserManagement />
         </div>
 
@@ -42,10 +46,6 @@ export default function AdminDashboardPage() {
 
         <div className="mt-6">
           <AdminChatModeration />
-        </div>
-
-        <div className="mt-6">
-          <AdminCrmPanel />
         </div>
 
         <div className="mt-6">

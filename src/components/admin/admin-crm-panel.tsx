@@ -1,6 +1,6 @@
 "use client";
 
-import { BellRing, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, ClipboardCopy, FileSpreadsheet, MessageSquare, Save, Table2 } from "lucide-react";
+import { BellRing, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, ClipboardCopy, Download, FileSpreadsheet, MessageSquare, Save, Table2 } from "lucide-react";
 import { addDoc, collection, doc, getDoc, increment, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -419,16 +419,20 @@ export function AdminCrmPanel() {
   }
 
   return (
-    <GlassPanel className="p-5 sm:p-6">
-      <div className="mb-5 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+    <GlassPanel className="p-4 sm:p-6">
+      <div className="mb-5 rounded-2xl border border-relic/25 bg-[linear-gradient(135deg,rgba(200,154,61,0.13),rgba(4,8,14,0.72))] p-4 shadow-[0_0_34px_rgba(200,154,61,0.1)]">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex items-center gap-3">
-          <Table2 className="shrink-0 text-relic" />
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-relic/35 bg-black/35 text-relic">
+            <Table2 />
+          </span>
           <div>
             <p className="text-xs uppercase tracking-[0.22em] text-relic">Internal Order Desk</p>
             <h2 className="text-xl font-bold text-white sm:text-2xl">Панель заявок и монетизации</h2>
+            <p className="mt-1 text-sm leading-6 text-zinc-300">Выбери месяц и скачай операции в Excel или CSV. Это главный рабочий блок менеджера.</p>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 xl:justify-end">
           <div className="inline-flex items-center overflow-hidden rounded-md border border-white/10 bg-black/30">
             <button
               type="button"
@@ -456,18 +460,19 @@ export function AdminCrmPanel() {
               <ChevronRight size={17} />
             </button>
           </div>
-          <button type="button" onClick={() => void copyMonthText()} className="inline-flex items-center gap-2 rounded-md border border-relic/30 bg-relic/10 px-3 py-2 text-sm font-semibold text-relic">
+          <button type="button" onClick={() => void copyMonthText()} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/15 bg-black/35 px-4 py-2 text-sm font-bold text-white transition hover:border-relic/45 hover:text-relic">
             <ClipboardCopy size={16} />
-            Текст
+            Копировать текст
           </button>
-          <button type="button" onClick={downloadExcel} className="inline-flex items-center gap-2 rounded-md border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-sm font-semibold text-emerald-200">
+          <button type="button" onClick={downloadExcel} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-emerald-400/40 bg-emerald-400/15 px-4 py-2 text-sm font-black text-emerald-100 shadow-[0_0_20px_rgba(52,211,153,0.12)] transition hover:border-emerald-300 hover:bg-emerald-400/22">
+            <Download size={17} />
+            Скачать Excel
+          </button>
+          <button type="button" onClick={downloadCsv} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-relic/45 bg-relic px-4 py-2 text-sm font-black text-black shadow-[0_0_22px_rgba(200,154,61,0.24)] transition hover:bg-[#e7c16a]">
             <FileSpreadsheet size={16} />
-            Excel
+            Скачать CSV
           </button>
-          <button type="button" onClick={downloadCsv} className="inline-flex items-center gap-2 rounded-md border border-relic/30 bg-relic/10 px-3 py-2 text-sm font-semibold text-relic">
-            <FileSpreadsheet size={16} />
-            CSV
-          </button>
+        </div>
         </div>
       </div>
 
