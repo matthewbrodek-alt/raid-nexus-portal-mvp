@@ -94,18 +94,36 @@ body::after {
   --frame-dark: #3d2812;
   --frame-light: #ffe6a3;
   --frame-glow: rgba(200, 154, 61, 0.36);
+  --frame-gem: #46d7ff;
   position: relative;
+  overflow: visible !important;
+  isolation: isolate;
   border-color: transparent !important;
-  border-radius: 0.34rem !important;
+  border-radius: 0.42rem !important;
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.32)) padding-box,
-    linear-gradient(135deg, var(--frame-light), var(--frame-main) 35%, var(--frame-dark) 62%, var(--frame-light)) border-box;
+    linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.34)) padding-box,
+    linear-gradient(135deg, var(--frame-light), var(--frame-main) 28%, var(--frame-dark) 58%, var(--frame-light) 78%, var(--frame-main)) border-box;
   background-clip: padding-box, border-box;
   box-shadow:
-    inset 0 0 0 2px rgba(5, 7, 11, 0.95),
-    inset 0 0 0 5px color-mix(in srgb, var(--frame-main) 34%, transparent),
+    inset 0 0 0 2px rgba(5, 7, 11, 0.96),
+    inset 0 0 0 6px color-mix(in srgb, var(--frame-main) 30%, transparent),
+    inset 0 0 18px rgba(0, 0, 0, 0.52),
     0 0 0 1px rgba(0, 0, 0, 0.95),
-    0 0 24px var(--frame-glow);
+    0 0 20px var(--frame-glow),
+    0 12px 24px rgba(0, 0, 0, 0.34);
+}
+
+.bp-frame-bronze > img,
+.bp-frame-silver > img,
+.bp-frame-gold > img,
+.bp-frame-ember > img,
+.bp-frame-platinum > img,
+.bp-frame-void > img,
+.bp-frame-admin-blue > img,
+.bp-frame-rgb > img {
+  position: relative;
+  z-index: 1;
+  border-radius: 0.28rem !important;
 }
 
 .bp-frame-bronze::before,
@@ -126,9 +144,9 @@ body::after {
 .bp-frame-rgb::after {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: -10px;
   z-index: 2;
-  border-radius: inherit;
+  border-radius: 0.74rem;
   pointer-events: none;
 }
 
@@ -141,14 +159,19 @@ body::after {
 .bp-frame-admin-blue::before,
 .bp-frame-rgb::before {
   background:
-    linear-gradient(90deg, transparent 13px, var(--frame-light) 13px 24px, transparent 24px) top left / 42px 4px no-repeat,
-    linear-gradient(90deg, transparent 13px, var(--frame-light) 13px 24px, transparent 24px) top right / 42px 4px no-repeat,
-    linear-gradient(90deg, transparent 13px, var(--frame-light) 13px 24px, transparent 24px) bottom left / 42px 4px no-repeat,
-    linear-gradient(90deg, transparent 13px, var(--frame-light) 13px 24px, transparent 24px) bottom right / 42px 4px no-repeat,
-    linear-gradient(180deg, transparent 13px, var(--frame-main) 13px 24px, transparent 24px) top left / 4px 42px no-repeat,
-    linear-gradient(180deg, transparent 13px, var(--frame-main) 13px 24px, transparent 24px) top right / 4px 42px no-repeat,
-    linear-gradient(180deg, transparent 13px, var(--frame-main) 13px 24px, transparent 24px) bottom left / 4px 42px no-repeat,
-    linear-gradient(180deg, transparent 13px, var(--frame-main) 13px 24px, transparent 24px) bottom right / 4px 42px no-repeat;
+    linear-gradient(135deg, transparent 0 35%, var(--frame-light) 36% 48%, transparent 49%) top left / 28px 28px no-repeat,
+    linear-gradient(225deg, transparent 0 35%, var(--frame-light) 36% 48%, transparent 49%) top right / 28px 28px no-repeat,
+    linear-gradient(315deg, transparent 0 35%, var(--frame-main) 36% 48%, transparent 49%) bottom left / 28px 28px no-repeat,
+    linear-gradient(45deg, transparent 0 35%, var(--frame-main) 36% 48%, transparent 49%) bottom right / 28px 28px no-repeat,
+    linear-gradient(90deg, transparent 16px, var(--frame-light) 16px 34px, transparent 34px) top left / 64px 7px no-repeat,
+    linear-gradient(90deg, transparent 16px, var(--frame-light) 16px 34px, transparent 34px) top right / 64px 7px no-repeat,
+    linear-gradient(90deg, transparent 16px, var(--frame-main) 16px 34px, transparent 34px) bottom left / 64px 7px no-repeat,
+    linear-gradient(90deg, transparent 16px, var(--frame-main) 16px 34px, transparent 34px) bottom right / 64px 7px no-repeat,
+    linear-gradient(180deg, transparent 16px, var(--frame-main) 16px 34px, transparent 34px) top left / 7px 64px no-repeat,
+    linear-gradient(180deg, transparent 16px, var(--frame-main) 16px 34px, transparent 34px) top right / 7px 64px no-repeat,
+    linear-gradient(180deg, transparent 16px, var(--frame-dark) 16px 34px, transparent 34px) bottom left / 7px 64px no-repeat,
+    linear-gradient(180deg, transparent 16px, var(--frame-dark) 16px 34px, transparent 34px) bottom right / 7px 64px no-repeat;
+  filter: drop-shadow(0 0 8px var(--frame-glow)) drop-shadow(0 4px 4px rgba(0, 0, 0, 0.38));
 }
 
 .bp-frame-bronze::after,
@@ -160,14 +183,16 @@ body::after {
 .bp-frame-admin-blue::after,
 .bp-frame-rgb::after {
   background:
-    radial-gradient(circle at 10px 10px, var(--frame-light) 0 3px, var(--frame-main) 4px 7px, transparent 8px),
-    radial-gradient(circle at calc(100% - 10px) 10px, var(--frame-light) 0 3px, var(--frame-main) 4px 7px, transparent 8px),
-    radial-gradient(circle at 10px calc(100% - 10px), var(--frame-light) 0 3px, var(--frame-main) 4px 7px, transparent 8px),
-    radial-gradient(circle at calc(100% - 10px) calc(100% - 10px), var(--frame-light) 0 3px, var(--frame-main) 4px 7px, transparent 8px),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 35%, rgba(0, 0, 0, 0.24) 72%, rgba(255, 255, 255, 0.12));
+    radial-gradient(circle at 5px 5px, #fff9d9 0 2px, var(--frame-light) 3px 5px, var(--frame-main) 6px 9px, transparent 10px),
+    radial-gradient(circle at calc(100% - 5px) 5px, #fff9d9 0 2px, var(--frame-light) 3px 5px, var(--frame-main) 6px 9px, transparent 10px),
+    radial-gradient(circle at 5px calc(100% - 5px), #fff9d9 0 2px, var(--frame-light) 3px 5px, var(--frame-main) 6px 9px, transparent 10px),
+    radial-gradient(circle at calc(100% - 5px) calc(100% - 5px), #fff9d9 0 2px, var(--frame-light) 3px 5px, var(--frame-main) 6px 9px, transparent 10px),
+    linear-gradient(45deg, transparent 0 45%, var(--frame-gem) 46% 54%, transparent 55%) left 50% / 12px 22px no-repeat,
+    linear-gradient(135deg, transparent 0 45%, var(--frame-gem) 46% 54%, transparent 55%) right 50% / 12px 22px no-repeat,
+    linear-gradient(135deg, rgba(255, 255, 255, 0.22), transparent 35%, rgba(0, 0, 0, 0.22) 72%, rgba(255, 255, 255, 0.12));
   box-shadow:
     inset 0 0 0 1px rgba(0, 0, 0, 0.75),
-    inset 0 0 0 7px rgba(0, 0, 0, 0.14);
+    inset 0 0 0 7px rgba(0, 0, 0, 0.08);
 }
 
 .bp-frame-bronze {
@@ -175,6 +200,7 @@ body::after {
   --frame-dark: #3b2417;
   --frame-light: #f1b37a;
   --frame-glow: rgba(169, 113, 66, 0.32);
+  --frame-gem: #58c777;
 }
 
 .bp-frame-silver {
@@ -182,6 +208,7 @@ body::after {
   --frame-dark: #4d5865;
   --frame-light: #ffffff;
   --frame-glow: rgba(207, 216, 227, 0.38);
+  --frame-gem: #6fd8ff;
 }
 
 .bp-frame-gold {
@@ -189,6 +216,7 @@ body::after {
   --frame-dark: #704611;
   --frame-light: #fff0a8;
   --frame-glow: rgba(231, 193, 106, 0.5);
+  --frame-gem: #42d9ff;
 }
 
 .bp-frame-ember {
@@ -196,6 +224,7 @@ body::after {
   --frame-dark: #42110a;
   --frame-light: #ffd28b;
   --frame-glow: rgba(255, 122, 47, 0.46);
+  --frame-gem: #ff3f3f;
 }
 
 .bp-frame-platinum {
@@ -203,6 +232,7 @@ body::after {
   --frame-dark: #1d3f55;
   --frame-light: #ffffff;
   --frame-glow: rgba(158, 231, 255, 0.46);
+  --frame-gem: #7df4ff;
 }
 
 .bp-frame-void {
@@ -210,6 +240,7 @@ body::after {
   --frame-dark: #1b102d;
   --frame-light: #d8b4fe;
   --frame-glow: rgba(181, 137, 255, 0.46);
+  --frame-gem: #c960ff;
 }
 
 .bp-frame-admin-blue {
@@ -217,6 +248,7 @@ body::after {
   --frame-dark: #06111f;
   --frame-light: #5d93d8;
   --frame-glow: rgba(49, 95, 157, 0.46);
+  --frame-gem: #54b4ff;
 }
 
 .bp-frame-rgb {
@@ -225,6 +257,7 @@ body::after {
   --frame-dark: #7c3aed;
   --frame-light: #42f58d;
   --frame-glow: rgba(76, 201, 240, 0.42);
+  --frame-gem: #4cc9f0;
 }
 
 .bp-frame-bronze-iron {
@@ -264,26 +297,32 @@ body::after {
 
 .bp-frame-style-guard::before {
   background:
-    linear-gradient(90deg, var(--frame-light), var(--frame-main) 38%, transparent 39% 61%, var(--frame-main) 62%, var(--frame-light)) top / 100% 5px no-repeat,
-    linear-gradient(90deg, var(--frame-light), var(--frame-main) 38%, transparent 39% 61%, var(--frame-main) 62%, var(--frame-light)) bottom / 100% 5px no-repeat,
-    linear-gradient(180deg, var(--frame-light), var(--frame-main) 38%, transparent 39% 61%, var(--frame-main) 62%, var(--frame-light)) left / 5px 100% no-repeat,
-    linear-gradient(180deg, var(--frame-light), var(--frame-main) 38%, transparent 39% 61%, var(--frame-main) 62%, var(--frame-light)) right / 5px 100% no-repeat;
+    linear-gradient(90deg, var(--frame-light), var(--frame-main) 36%, transparent 37% 63%, var(--frame-main) 64%, var(--frame-light)) top / 100% 7px no-repeat,
+    linear-gradient(90deg, var(--frame-light), var(--frame-main) 36%, transparent 37% 63%, var(--frame-main) 64%, var(--frame-light)) bottom / 100% 7px no-repeat,
+    linear-gradient(180deg, var(--frame-light), var(--frame-main) 36%, transparent 37% 63%, var(--frame-main) 64%, var(--frame-light)) left / 7px 100% no-repeat,
+    linear-gradient(180deg, var(--frame-light), var(--frame-main) 36%, transparent 37% 63%, var(--frame-main) 64%, var(--frame-light)) right / 7px 100% no-repeat,
+    radial-gradient(circle at 50% -1px, var(--frame-light) 0 5px, var(--frame-main) 6px 11px, transparent 12px),
+    radial-gradient(circle at 50% calc(100% + 1px), var(--frame-light) 0 5px, var(--frame-main) 6px 11px, transparent 12px),
+    linear-gradient(45deg, transparent 0 42%, var(--frame-gem) 43% 57%, transparent 58%) left 50% / 14px 24px no-repeat,
+    linear-gradient(135deg, transparent 0 42%, var(--frame-gem) 43% 57%, transparent 58%) right 50% / 14px 24px no-repeat;
 }
 
 .bp-frame-style-spikes::before {
   background:
-    conic-gradient(from 45deg at 10px 10px, transparent 0 25%, var(--frame-light) 0 37%, var(--frame-main) 0 50%, transparent 0) top left / 22px 22px no-repeat,
-    conic-gradient(from 135deg at calc(100% - 10px) 10px, transparent 0 25%, var(--frame-light) 0 37%, var(--frame-main) 0 50%, transparent 0) top right / 22px 22px no-repeat,
-    conic-gradient(from 315deg at 10px calc(100% - 10px), transparent 0 25%, var(--frame-light) 0 37%, var(--frame-main) 0 50%, transparent 0) bottom left / 22px 22px no-repeat,
-    conic-gradient(from 225deg at calc(100% - 10px) calc(100% - 10px), transparent 0 25%, var(--frame-light) 0 37%, var(--frame-main) 0 50%, transparent 0) bottom right / 22px 22px no-repeat,
-    linear-gradient(90deg, transparent 12px, var(--frame-main) 12px 24px, transparent 24px) top left / 42px 4px no-repeat,
-    linear-gradient(90deg, transparent 12px, var(--frame-main) 12px 24px, transparent 24px) bottom right / 42px 4px no-repeat;
+    conic-gradient(from 45deg at 11px 11px, transparent 0 20%, var(--frame-light) 0 34%, var(--frame-main) 0 50%, transparent 0) top left / 29px 29px no-repeat,
+    conic-gradient(from 135deg at calc(100% - 11px) 11px, transparent 0 20%, var(--frame-light) 0 34%, var(--frame-main) 0 50%, transparent 0) top right / 29px 29px no-repeat,
+    conic-gradient(from 315deg at 11px calc(100% - 11px), transparent 0 20%, var(--frame-light) 0 34%, var(--frame-main) 0 50%, transparent 0) bottom left / 29px 29px no-repeat,
+    conic-gradient(from 225deg at calc(100% - 11px) calc(100% - 11px), transparent 0 20%, var(--frame-light) 0 34%, var(--frame-main) 0 50%, transparent 0) bottom right / 29px 29px no-repeat,
+    linear-gradient(90deg, transparent 12px, var(--frame-main) 12px 27px, transparent 27px) top left / 48px 6px no-repeat,
+    linear-gradient(90deg, transparent 12px, var(--frame-main) 12px 27px, transparent 27px) bottom right / 48px 6px no-repeat;
 }
 
 .bp-frame-style-crest::after {
   background:
-    radial-gradient(circle at 50% 8px, var(--frame-light) 0 3px, var(--frame-main) 4px 8px, transparent 9px),
-    radial-gradient(circle at 50% calc(100% - 8px), var(--frame-light) 0 3px, var(--frame-main) 4px 8px, transparent 9px),
+    radial-gradient(circle at 50% -1px, #fff9d9 0 3px, var(--frame-light) 4px 7px, var(--frame-main) 8px 13px, transparent 14px),
+    radial-gradient(circle at 50% calc(100% + 1px), #fff9d9 0 3px, var(--frame-light) 4px 7px, var(--frame-main) 8px 13px, transparent 14px),
+    linear-gradient(45deg, transparent 0 42%, var(--frame-gem) 43% 57%, transparent 58%) left 50% / 14px 24px no-repeat,
+    linear-gradient(135deg, transparent 0 42%, var(--frame-gem) 43% 57%, transparent 58%) right 50% / 14px 24px no-repeat,
     linear-gradient(135deg, rgba(255, 255, 255, 0.24), transparent 35%, rgba(0, 0, 0, 0.24) 72%, rgba(255, 255, 255, 0.14));
   box-shadow:
     inset 0 0 0 1px rgba(0, 0, 0, 0.75),
@@ -292,19 +331,22 @@ body::after {
 
 .bp-frame-style-crown::before {
   background:
-    linear-gradient(135deg, transparent 0 36%, var(--frame-light) 37% 45%, transparent 46%) top left / 22px 22px no-repeat,
-    linear-gradient(225deg, transparent 0 36%, var(--frame-light) 37% 45%, transparent 46%) top right / 22px 22px no-repeat,
-    linear-gradient(90deg, transparent 18%, var(--frame-light) 18% 27%, transparent 27% 39%, var(--frame-main) 39% 61%, transparent 61% 73%, var(--frame-light) 73% 82%, transparent 82%) top / 100% 7px no-repeat,
-    linear-gradient(90deg, transparent 13px, var(--frame-main) 13px 24px, transparent 24px) bottom left / 42px 4px no-repeat,
-    linear-gradient(90deg, transparent 13px, var(--frame-main) 13px 24px, transparent 24px) bottom right / 42px 4px no-repeat;
+    linear-gradient(135deg, transparent 0 34%, var(--frame-light) 35% 50%, transparent 51%) top left / 34px 34px no-repeat,
+    linear-gradient(225deg, transparent 0 34%, var(--frame-light) 35% 50%, transparent 51%) top right / 34px 34px no-repeat,
+    linear-gradient(90deg, transparent 13%, var(--frame-light) 13% 25%, transparent 25% 37%, var(--frame-main) 37% 63%, transparent 63% 75%, var(--frame-light) 75% 87%, transparent 87%) top / 100% 12px no-repeat,
+    radial-gradient(circle at 50% -3px, #fff9d9 0 3px, var(--frame-gem) 4px 7px, var(--frame-main) 8px 14px, transparent 15px),
+    linear-gradient(45deg, transparent 0 42%, var(--frame-gem) 43% 57%, transparent 58%) left 50% / 15px 26px no-repeat,
+    linear-gradient(135deg, transparent 0 42%, var(--frame-gem) 43% 57%, transparent 58%) right 50% / 15px 26px no-repeat,
+    linear-gradient(90deg, transparent 13px, var(--frame-main) 13px 28px, transparent 28px) bottom left / 48px 5px no-repeat,
+    linear-gradient(90deg, transparent 13px, var(--frame-main) 13px 28px, transparent 28px) bottom right / 48px 5px no-repeat;
 }
 
 .bp-frame-style-rune::after {
   background:
-    radial-gradient(circle at 12px 50%, var(--frame-light) 0 2px, transparent 3px),
-    radial-gradient(circle at calc(100% - 12px) 50%, var(--frame-light) 0 2px, transparent 3px),
-    radial-gradient(circle at 50% 12px, var(--frame-main) 0 2px, transparent 3px),
-    radial-gradient(circle at 50% calc(100% - 12px), var(--frame-main) 0 2px, transparent 3px),
+    radial-gradient(circle at 2px 50%, var(--frame-light) 0 3px, transparent 4px),
+    radial-gradient(circle at calc(100% - 2px) 50%, var(--frame-light) 0 3px, transparent 4px),
+    radial-gradient(circle at 50% 2px, var(--frame-main) 0 3px, transparent 4px),
+    radial-gradient(circle at 50% calc(100% - 2px), var(--frame-main) 0 3px, transparent 4px),
     linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 35%, rgba(0, 0, 0, 0.24) 72%, rgba(255, 255, 255, 0.12));
 }
 

@@ -954,9 +954,9 @@ export function ChatWindow() {
       {memberMenu ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
           <div className="w-full max-w-sm rounded-lg border border-relic/25 bg-[#0b101b] p-4 shadow-2xl">
-            <div className="flex items-center gap-3">
-              <span className={`grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl border-2 bg-gradient-to-br from-violet-500 to-cyan-600 text-sm font-black text-white ${getAvatarFrameClass(memberMenu.avatarFrame, memberMenu.bpStatus ?? "bronze")}`}>
-                {memberMenu.avatarUrl ? <img src={memberMenu.avatarUrl} alt={memberMenu.displayName} className="h-full w-full object-cover" /> : memberMenu.displayName.slice(0, 2).toUpperCase()}
+            <div className="flex items-center gap-5">
+              <span className={`grid h-24 w-24 shrink-0 place-items-center overflow-visible rounded-xl border-2 bg-gradient-to-br from-violet-500 to-cyan-600 text-2xl font-black text-white ${getAvatarFrameClass(memberMenu.avatarFrame, memberMenu.bpStatus ?? "bronze")}`}>
+                {memberMenu.avatarUrl ? <img src={memberMenu.avatarUrl} alt={memberMenu.displayName} className="h-full w-full rounded-lg object-cover" /> : memberMenu.displayName.slice(0, 2).toUpperCase()}
               </span>
               <div className="min-w-0">
                 <p className={`truncate font-bold ${getNicknameClass(memberMenu.nicknameStyle, memberMenu.bpStatus ?? "bronze")}`}>{memberMenu.displayName}</p>
