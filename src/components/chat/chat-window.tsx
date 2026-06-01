@@ -571,7 +571,7 @@ export function ChatWindow() {
           selectedUser?.uid === item.uid ? "border border-violet-400/45 bg-violet-500/15 text-white" : "border border-white/10 bg-white/[0.03] text-zinc-300 hover:bg-white/[0.06]"
         }`}
       >
-        <span className={`grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl border-2 bg-gradient-to-br from-violet-500 to-cyan-600 text-xs font-black text-white ${avatarFrameClass}`}>
+        <span className={`bp-avatar-chat grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl border bg-gradient-to-br from-violet-500 to-cyan-600 text-xs font-black text-white ${avatarFrameClass}`}>
           {visibleAvatarUrl ? <img src={visibleAvatarUrl} alt={label} className="h-full w-full rounded-lg object-cover" /> : label.slice(0, 2).toUpperCase()}
         </span>
         <span className="min-w-0">
@@ -687,7 +687,7 @@ export function ChatWindow() {
                     <button
                       type="button"
                       onClick={() => openMemberMenu(item)}
-                      className={`grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-lg border-2 bg-gradient-to-br from-violet-500 to-cyan-600 text-[11px] font-black text-white ${authorAvatarFrameClass}`}
+                      className={`bp-avatar-chat grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-lg border bg-gradient-to-br from-violet-500 to-cyan-600 text-[11px] font-black text-white ${authorAvatarFrameClass}`}
                       title={item.displayName}
                     >
                       {messageAvatarUrl ? <img src={messageAvatarUrl} alt={item.displayName} className="h-full w-full object-cover" /> : initials}
@@ -955,7 +955,7 @@ export function ChatWindow() {
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
           <div className="w-full max-w-sm rounded-lg border border-relic/25 bg-[#0b101b] p-4 shadow-2xl">
             <div className="flex items-center gap-5">
-              <span className={`grid h-24 w-24 shrink-0 place-items-center overflow-visible rounded-xl border-2 bg-gradient-to-br from-violet-500 to-cyan-600 text-2xl font-black text-white ${getAvatarFrameClass(memberMenu.avatarFrame, memberMenu.bpStatus ?? "bronze")}`}>
+              <span className={`bp-avatar-chat-preview grid h-24 w-24 shrink-0 place-items-center overflow-visible rounded-xl border bg-gradient-to-br from-violet-500 to-cyan-600 text-2xl font-black text-white ${getAvatarFrameClass(memberMenu.avatarFrame, memberMenu.bpStatus ?? "bronze")}`}>
                 {memberMenu.avatarUrl ? <img src={memberMenu.avatarUrl} alt={memberMenu.displayName} className="h-full w-full rounded-lg object-cover" /> : memberMenu.displayName.slice(0, 2).toUpperCase()}
               </span>
               <div className="min-w-0">
