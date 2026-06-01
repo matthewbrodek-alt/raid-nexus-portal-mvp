@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Camera, CreditCard, MessageCircle, Paperclip, Send, ShieldCheck, Timer, WalletCards, X } from "lucide-react";
 import { addDoc, collection, doc, getDocs, query, serverTimestamp, setDoc, where } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useDonationOffers } from "@/components/donate/use-donation-offers";
 import { GlassPanel } from "@/components/ui/glass-panel";
@@ -112,6 +112,7 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
   const [fileError, setFileError] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [activeManagerUid, setActiveManagerUid] = useState("");
+  const submittingRef = useRef(false);
   const managerTelegramUrl = process.env.NEXT_PUBLIC_MANAGER_TELEGRAM_URL ?? "";
 
   useEffect(() => {
@@ -189,6 +190,10 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
   async function submitLead(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (submittingRef.current) {
+      return;
+    }
+
     if (!user?.uid) {
       setStatus("error");
       return;
@@ -199,6 +204,7 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
       return;
     }
 
+    submittingRef.current = true;
     setStatus("sending");
 
     try {
@@ -275,6 +281,8 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
       router.push(`/orders/${topupRef.id}`);
     } catch {
       setStatus("error");
+    } finally {
+      submittingRef.current = false;
     }
   }
 
@@ -402,7 +410,7 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
         </div>
 
         <button
-          disabled={status === "sending" || !user || !selectedPackage}
+          disabled={status === "sending" || status === "sent" || !user || !selectedPackage}
           className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-semibold text-black transition hover:bg-[#f0c766] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Send size={18} />

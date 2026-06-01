@@ -173,6 +173,7 @@ export function ChatWindow() {
   const [chatMenuOpen, setChatMenuOpen] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [sending, setSending] = useState(false);
+  const sendingRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const canSend = Boolean(message.trim() || attachmentFile) && Boolean(user) && !sending;
@@ -460,12 +461,17 @@ export function ChatWindow() {
   }
 
   async function sendMessage() {
+    if (sendingRef.current) {
+      return;
+    }
+
     const text = message.trim();
 
     if ((!text && !attachmentFile) || !user || !profile) {
       return;
     }
 
+    sendingRef.current = true;
     setSending(true);
 
     try {
@@ -535,6 +541,7 @@ export function ChatWindow() {
       setAttachmentFile(null);
       setEmojiOpen(false);
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   }

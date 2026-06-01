@@ -188,6 +188,8 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
   const [managerDraft, setManagerDraft] = useState<ManagerDraft>(() => draftFromLead(null));
   const [managerStatus, setManagerStatus] = useState("");
   const [savingOrder, setSavingOrder] = useState(false);
+  const sendingRef = useRef(false);
+  const savingOrderRef = useRef(false);
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const canManageOrder = profile?.role === "admin" || profile?.role === "owner";
   const activeStage = normalizeOrderStage(lead?.status);
@@ -341,10 +343,15 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
   }
 
   async function saveOrderPanel() {
+    if (savingOrderRef.current) {
+      return;
+    }
+
     if (!lead || !canManageOrder || !user?.uid) {
       return;
     }
 
+    savingOrderRef.current = true;
     setSavingOrder(true);
     setManagerStatus("");
 
@@ -378,6 +385,7 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
 
       setManagerStatus(isRu ? "Заявка обновлена. Клиент увидит новый статус на этой странице." : "Request updated. Client will see the new status on this page.");
     } finally {
+      savingOrderRef.current = false;
       setSavingOrder(false);
     }
   }
@@ -385,11 +393,16 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
   async function sendMessage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (sendingRef.current) {
+      return;
+    }
+
     const text = message.trim();
     if ((!text && !attachmentFile) || !user?.uid || !profile || !lead) {
       return;
     }
 
+    sendingRef.current = true;
     setSending(true);
     setManagerStatus("");
 
@@ -435,6 +448,7 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
       setMessage("");
       setAttachmentFile(null);
     } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   }
