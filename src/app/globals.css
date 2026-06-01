@@ -90,82 +90,222 @@ body::after {
 .bp-frame-void,
 .bp-frame-admin-blue,
 .bp-frame-rgb {
-  border-style: solid;
-  border-width: 3px;
-  border-radius: 0.65rem !important;
-  background-clip: padding-box;
+  --frame-main: #c89a3d;
+  --frame-dark: #3d2812;
+  --frame-light: #ffe6a3;
+  --frame-glow: rgba(200, 154, 61, 0.36);
+  position: relative;
+  border-color: transparent !important;
+  border-radius: 0.34rem !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.32)) padding-box,
+    linear-gradient(135deg, var(--frame-light), var(--frame-main) 35%, var(--frame-dark) 62%, var(--frame-light)) border-box;
+  background-clip: padding-box, border-box;
   box-shadow:
-    inset 0 0 0 1px rgba(5, 7, 11, 0.9),
-    inset 0 0 0 4px rgba(255, 255, 255, 0.08),
-    0 0 0 1px rgba(0, 0, 0, 0.9),
-    0 0 22px rgba(0, 0, 0, 0.48);
+    inset 0 0 0 2px rgba(5, 7, 11, 0.95),
+    inset 0 0 0 5px color-mix(in srgb, var(--frame-main) 34%, transparent),
+    0 0 0 1px rgba(0, 0, 0, 0.95),
+    0 0 24px var(--frame-glow);
+}
+
+.bp-frame-bronze::before,
+.bp-frame-silver::before,
+.bp-frame-gold::before,
+.bp-frame-ember::before,
+.bp-frame-platinum::before,
+.bp-frame-void::before,
+.bp-frame-admin-blue::before,
+.bp-frame-rgb::before,
+.bp-frame-bronze::after,
+.bp-frame-silver::after,
+.bp-frame-gold::after,
+.bp-frame-ember::after,
+.bp-frame-platinum::after,
+.bp-frame-void::after,
+.bp-frame-admin-blue::after,
+.bp-frame-rgb::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.bp-frame-bronze::before,
+.bp-frame-silver::before,
+.bp-frame-gold::before,
+.bp-frame-ember::before,
+.bp-frame-platinum::before,
+.bp-frame-void::before,
+.bp-frame-admin-blue::before,
+.bp-frame-rgb::before {
+  background:
+    linear-gradient(90deg, transparent 13px, var(--frame-light) 13px 24px, transparent 24px) top left / 42px 4px no-repeat,
+    linear-gradient(90deg, transparent 13px, var(--frame-light) 13px 24px, transparent 24px) top right / 42px 4px no-repeat,
+    linear-gradient(90deg, transparent 13px, var(--frame-light) 13px 24px, transparent 24px) bottom left / 42px 4px no-repeat,
+    linear-gradient(90deg, transparent 13px, var(--frame-light) 13px 24px, transparent 24px) bottom right / 42px 4px no-repeat,
+    linear-gradient(180deg, transparent 13px, var(--frame-main) 13px 24px, transparent 24px) top left / 4px 42px no-repeat,
+    linear-gradient(180deg, transparent 13px, var(--frame-main) 13px 24px, transparent 24px) top right / 4px 42px no-repeat,
+    linear-gradient(180deg, transparent 13px, var(--frame-main) 13px 24px, transparent 24px) bottom left / 4px 42px no-repeat,
+    linear-gradient(180deg, transparent 13px, var(--frame-main) 13px 24px, transparent 24px) bottom right / 4px 42px no-repeat;
+}
+
+.bp-frame-bronze::after,
+.bp-frame-silver::after,
+.bp-frame-gold::after,
+.bp-frame-ember::after,
+.bp-frame-platinum::after,
+.bp-frame-void::after,
+.bp-frame-admin-blue::after,
+.bp-frame-rgb::after {
+  background:
+    radial-gradient(circle at 10px 10px, var(--frame-light) 0 3px, var(--frame-main) 4px 7px, transparent 8px),
+    radial-gradient(circle at calc(100% - 10px) 10px, var(--frame-light) 0 3px, var(--frame-main) 4px 7px, transparent 8px),
+    radial-gradient(circle at 10px calc(100% - 10px), var(--frame-light) 0 3px, var(--frame-main) 4px 7px, transparent 8px),
+    radial-gradient(circle at calc(100% - 10px) calc(100% - 10px), var(--frame-light) 0 3px, var(--frame-main) 4px 7px, transparent 8px),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 35%, rgba(0, 0, 0, 0.24) 72%, rgba(255, 255, 255, 0.12));
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.75),
+    inset 0 0 0 7px rgba(0, 0, 0, 0.14);
 }
 
 .bp-frame-bronze {
-  border-color: #9f6a35 !important;
-  box-shadow:
-    inset 0 0 0 1px rgba(40, 23, 12, 0.95),
-    inset 0 0 0 4px rgba(241, 179, 122, 0.16),
-    0 0 0 1px rgba(38, 22, 12, 0.92),
-    0 0 22px rgba(169, 113, 66, 0.28);
+  --frame-main: #9f6a35;
+  --frame-dark: #3b2417;
+  --frame-light: #f1b37a;
+  --frame-glow: rgba(169, 113, 66, 0.32);
 }
 
 .bp-frame-silver {
-  border-color: #cfd8e3 !important;
-  box-shadow:
-    inset 0 0 0 1px rgba(30, 37, 46, 0.95),
-    inset 0 0 0 4px rgba(255, 255, 255, 0.2),
-    0 0 0 1px rgba(8, 14, 24, 0.95),
-    0 0 24px rgba(207, 216, 227, 0.36);
+  --frame-main: #cfd8e3;
+  --frame-dark: #4d5865;
+  --frame-light: #ffffff;
+  --frame-glow: rgba(207, 216, 227, 0.38);
 }
 
 .bp-frame-gold {
-  border-color: #e7c16a !important;
-  box-shadow:
-    inset 0 0 0 1px rgba(56, 35, 8, 0.95),
-    inset 0 0 0 4px rgba(255, 240, 168, 0.22),
-    0 0 0 1px rgba(58, 37, 9, 0.95),
-    0 0 28px rgba(231, 193, 106, 0.46);
+  --frame-main: #e7c16a;
+  --frame-dark: #704611;
+  --frame-light: #fff0a8;
+  --frame-glow: rgba(231, 193, 106, 0.5);
 }
 
 .bp-frame-ember {
-  border-color: #ff7a2f !important;
-  box-shadow:
-    inset 0 0 0 1px rgba(68, 18, 10, 0.95),
-    inset 0 0 0 4px rgba(255, 180, 105, 0.2),
-    0 0 0 1px rgba(58, 16, 8, 0.95),
-    0 0 30px rgba(255, 122, 47, 0.42);
+  --frame-main: #ff7a2f;
+  --frame-dark: #42110a;
+  --frame-light: #ffd28b;
+  --frame-glow: rgba(255, 122, 47, 0.46);
 }
 
 .bp-frame-platinum {
-  border-color: #9ee7ff !important;
-  box-shadow:
-    inset 0 0 0 1px rgba(14, 43, 58, 0.95),
-    inset 0 0 0 4px rgba(255, 255, 255, 0.24),
-    0 0 0 1px rgba(5, 20, 30, 0.95),
-    0 0 34px rgba(158, 231, 255, 0.44);
+  --frame-main: #9ee7ff;
+  --frame-dark: #1d3f55;
+  --frame-light: #ffffff;
+  --frame-glow: rgba(158, 231, 255, 0.46);
 }
 
 .bp-frame-void {
-  border-color: #b589ff !important;
-  box-shadow:
-    inset 0 0 0 1px rgba(30, 16, 54, 0.95),
-    inset 0 0 0 4px rgba(216, 180, 254, 0.18),
-    0 0 0 1px rgba(24, 13, 43, 0.95),
-    0 0 34px rgba(181, 137, 255, 0.42);
+  --frame-main: #b589ff;
+  --frame-dark: #1b102d;
+  --frame-light: #d8b4fe;
+  --frame-glow: rgba(181, 137, 255, 0.46);
 }
 
 .bp-frame-admin-blue {
-  border-color: #315f9d !important;
-  box-shadow:
-    inset 0 0 0 1px rgba(5, 17, 31, 0.95),
-    inset 0 0 0 4px rgba(93, 147, 216, 0.18),
-    0 0 0 1px rgba(5, 17, 31, 0.95),
-    0 0 30px rgba(49, 95, 157, 0.42);
+  --frame-main: #315f9d;
+  --frame-dark: #06111f;
+  --frame-light: #5d93d8;
+  --frame-glow: rgba(49, 95, 157, 0.46);
 }
 
 .bp-frame-rgb {
   border-width: 3px;
+  --frame-main: #e7c16a;
+  --frame-dark: #7c3aed;
+  --frame-light: #42f58d;
+  --frame-glow: rgba(76, 201, 240, 0.42);
+}
+
+.bp-frame-bronze-iron {
+  --frame-main: #78614a;
+  --frame-dark: #1d1712;
+  --frame-light: #c08a54;
+  --frame-glow: rgba(120, 97, 74, 0.34);
+}
+
+.bp-frame-bronze-spikes {
+  --frame-main: #b65b28;
+  --frame-dark: #241008;
+  --frame-light: #f1b37a;
+  --frame-glow: rgba(182, 91, 40, 0.38);
+}
+
+.bp-frame-silver-moon {
+  --frame-main: #9db9d8;
+  --frame-dark: #172238;
+  --frame-light: #ffffff;
+  --frame-glow: rgba(157, 185, 216, 0.42);
+}
+
+.bp-frame-silver-guard {
+  --frame-main: #b7c2cf;
+  --frame-dark: #202833;
+  --frame-light: #e8f4ff;
+  --frame-glow: rgba(183, 194, 207, 0.38);
+}
+
+.bp-frame-gold-royal {
+  --frame-main: #f0c766;
+  --frame-dark: #4b2507;
+  --frame-light: #fff3b0;
+  --frame-glow: rgba(240, 199, 102, 0.54);
+}
+
+.bp-frame-style-guard::before {
+  background:
+    linear-gradient(90deg, var(--frame-light), var(--frame-main) 38%, transparent 39% 61%, var(--frame-main) 62%, var(--frame-light)) top / 100% 5px no-repeat,
+    linear-gradient(90deg, var(--frame-light), var(--frame-main) 38%, transparent 39% 61%, var(--frame-main) 62%, var(--frame-light)) bottom / 100% 5px no-repeat,
+    linear-gradient(180deg, var(--frame-light), var(--frame-main) 38%, transparent 39% 61%, var(--frame-main) 62%, var(--frame-light)) left / 5px 100% no-repeat,
+    linear-gradient(180deg, var(--frame-light), var(--frame-main) 38%, transparent 39% 61%, var(--frame-main) 62%, var(--frame-light)) right / 5px 100% no-repeat;
+}
+
+.bp-frame-style-spikes::before {
+  background:
+    conic-gradient(from 45deg at 10px 10px, transparent 0 25%, var(--frame-light) 0 37%, var(--frame-main) 0 50%, transparent 0) top left / 22px 22px no-repeat,
+    conic-gradient(from 135deg at calc(100% - 10px) 10px, transparent 0 25%, var(--frame-light) 0 37%, var(--frame-main) 0 50%, transparent 0) top right / 22px 22px no-repeat,
+    conic-gradient(from 315deg at 10px calc(100% - 10px), transparent 0 25%, var(--frame-light) 0 37%, var(--frame-main) 0 50%, transparent 0) bottom left / 22px 22px no-repeat,
+    conic-gradient(from 225deg at calc(100% - 10px) calc(100% - 10px), transparent 0 25%, var(--frame-light) 0 37%, var(--frame-main) 0 50%, transparent 0) bottom right / 22px 22px no-repeat,
+    linear-gradient(90deg, transparent 12px, var(--frame-main) 12px 24px, transparent 24px) top left / 42px 4px no-repeat,
+    linear-gradient(90deg, transparent 12px, var(--frame-main) 12px 24px, transparent 24px) bottom right / 42px 4px no-repeat;
+}
+
+.bp-frame-style-crest::after {
+  background:
+    radial-gradient(circle at 50% 8px, var(--frame-light) 0 3px, var(--frame-main) 4px 8px, transparent 9px),
+    radial-gradient(circle at 50% calc(100% - 8px), var(--frame-light) 0 3px, var(--frame-main) 4px 8px, transparent 9px),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.24), transparent 35%, rgba(0, 0, 0, 0.24) 72%, rgba(255, 255, 255, 0.14));
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.75),
+    inset 0 0 0 7px rgba(0, 0, 0, 0.12);
+}
+
+.bp-frame-style-crown::before {
+  background:
+    linear-gradient(135deg, transparent 0 36%, var(--frame-light) 37% 45%, transparent 46%) top left / 22px 22px no-repeat,
+    linear-gradient(225deg, transparent 0 36%, var(--frame-light) 37% 45%, transparent 46%) top right / 22px 22px no-repeat,
+    linear-gradient(90deg, transparent 18%, var(--frame-light) 18% 27%, transparent 27% 39%, var(--frame-main) 39% 61%, transparent 61% 73%, var(--frame-light) 73% 82%, transparent 82%) top / 100% 7px no-repeat,
+    linear-gradient(90deg, transparent 13px, var(--frame-main) 13px 24px, transparent 24px) bottom left / 42px 4px no-repeat,
+    linear-gradient(90deg, transparent 13px, var(--frame-main) 13px 24px, transparent 24px) bottom right / 42px 4px no-repeat;
+}
+
+.bp-frame-style-rune::after {
+  background:
+    radial-gradient(circle at 12px 50%, var(--frame-light) 0 2px, transparent 3px),
+    radial-gradient(circle at calc(100% - 12px) 50%, var(--frame-light) 0 2px, transparent 3px),
+    radial-gradient(circle at 50% 12px, var(--frame-main) 0 2px, transparent 3px),
+    radial-gradient(circle at 50% calc(100% - 12px), var(--frame-main) 0 2px, transparent 3px),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 35%, rgba(0, 0, 0, 0.24) 72%, rgba(255, 255, 255, 0.12));
 }
 
 @keyframes bp-rgb-flow {

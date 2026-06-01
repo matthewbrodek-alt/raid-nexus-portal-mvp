@@ -498,7 +498,7 @@ export function UserDashboardContent() {
                       } ${frame.previewClassName} ${frame.className}`}
                     >
                       {selected ? (
-                        <span className="absolute -bottom-1 -left-1 grid h-5 w-5 place-items-center rounded-md border border-[#b8ff7a]/70 bg-[#133d12] text-[#7dff54] shadow-[0_0_14px_rgba(70,255,84,0.42)]">
+                        <span className="absolute -bottom-1 -left-1 z-10 grid h-5 w-5 place-items-center rounded-md border border-[#b8ff7a]/70 bg-[#133d12] text-[#7dff54] shadow-[0_0_14px_rgba(70,255,84,0.42)]">
                           <Check size={13} strokeWidth={3} />
                         </span>
                       ) : null}
