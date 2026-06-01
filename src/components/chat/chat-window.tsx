@@ -773,7 +773,9 @@ export function ChatWindow() {
           <button
             type="button"
             onClick={scrollToBottom}
-            className="absolute bottom-24 right-5 z-10 grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-[#111827]/90 text-relic shadow-lg transition hover:bg-relic hover:text-black"
+            className={`absolute right-5 z-10 grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-[#111827]/90 text-relic shadow-lg transition hover:bg-relic hover:text-black ${
+              replyTo && attachmentFile ? "bottom-56" : replyTo || attachmentFile ? "bottom-40" : "bottom-24"
+            }`}
             aria-label="Прокрутить вниз"
           >
             <ChevronDown size={20} />

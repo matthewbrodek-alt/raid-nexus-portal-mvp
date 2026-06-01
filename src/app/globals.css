@@ -408,10 +408,10 @@ body::after {
 
 .bp-frame-style-spikes::before {
   background:
-    conic-gradient(from 45deg at 9px 9px, transparent 0 24%, var(--frame-light) 0 34%, var(--frame-main) 0 46%, transparent 0) top left / 22px 22px no-repeat,
-    conic-gradient(from 135deg at calc(100% - 9px) 9px, transparent 0 24%, var(--frame-light) 0 34%, var(--frame-main) 0 46%, transparent 0) top right / 22px 22px no-repeat,
-    conic-gradient(from 315deg at 9px calc(100% - 9px), transparent 0 24%, var(--frame-light) 0 34%, var(--frame-main) 0 46%, transparent 0) bottom left / 22px 22px no-repeat,
-    conic-gradient(from 225deg at calc(100% - 9px) calc(100% - 9px), transparent 0 24%, var(--frame-light) 0 34%, var(--frame-main) 0 46%, transparent 0) bottom right / 22px 22px no-repeat,
+    radial-gradient(ellipse at 9px 9px, var(--frame-light) 0 2px, var(--frame-main) 3px 6px, transparent 7px) top left / 22px 22px no-repeat,
+    radial-gradient(ellipse at calc(100% - 9px) 9px, var(--frame-light) 0 2px, var(--frame-main) 3px 6px, transparent 7px) top right / 22px 22px no-repeat,
+    radial-gradient(ellipse at 9px calc(100% - 9px), var(--frame-light) 0 2px, var(--frame-main) 3px 6px, transparent 7px) bottom left / 22px 22px no-repeat,
+    radial-gradient(ellipse at calc(100% - 9px) calc(100% - 9px), var(--frame-light) 0 2px, var(--frame-main) 3px 6px, transparent 7px) bottom right / 22px 22px no-repeat,
     linear-gradient(90deg, transparent 10px, var(--frame-main) 10px 22px, transparent 22px) top left / 38px 4px no-repeat,
     linear-gradient(90deg, transparent 10px, var(--frame-main) 10px 22px, transparent 22px) bottom right / 38px 4px no-repeat;
 }
@@ -509,10 +509,10 @@ body::after {
     radial-gradient(circle at 50% 100%, var(--frame-light) 0 2px, var(--frame-main) 3px 8px, transparent 9px),
     linear-gradient(45deg, transparent 0 39%, var(--frame-gem) 40% 60%, transparent 61%) left 50% / 11px 22px no-repeat,
     linear-gradient(135deg, transparent 0 39%, var(--frame-gem) 40% 60%, transparent 61%) right 50% / 11px 22px no-repeat,
-    conic-gradient(from 45deg at 11px 11px, transparent 0 22%, var(--frame-light) 23% 31%, var(--frame-main) 32% 45%, var(--frame-dark) 46% 56%, transparent 57%) top left / 26px 26px no-repeat,
-    conic-gradient(from 135deg at calc(100% - 11px) 11px, transparent 0 22%, var(--frame-light) 23% 31%, var(--frame-main) 32% 45%, var(--frame-dark) 46% 56%, transparent 57%) top right / 26px 26px no-repeat,
-    conic-gradient(from 315deg at 11px calc(100% - 11px), transparent 0 22%, var(--frame-light) 23% 31%, var(--frame-main) 32% 45%, var(--frame-dark) 46% 56%, transparent 57%) bottom left / 26px 26px no-repeat,
-    conic-gradient(from 225deg at calc(100% - 11px) calc(100% - 11px), transparent 0 22%, var(--frame-light) 23% 31%, var(--frame-main) 32% 45%, var(--frame-dark) 46% 56%, transparent 57%) bottom right / 26px 26px no-repeat,
+    radial-gradient(ellipse at 11px 11px, var(--frame-light) 0 2px, var(--frame-main) 3px 7px, transparent 8px) top left / 26px 26px no-repeat,
+    radial-gradient(ellipse at calc(100% - 11px) 11px, var(--frame-light) 0 2px, var(--frame-main) 3px 7px, transparent 8px) top right / 26px 26px no-repeat,
+    radial-gradient(ellipse at 11px calc(100% - 11px), var(--frame-main) 0 2px, var(--frame-dark) 3px 7px, transparent 8px) bottom left / 26px 26px no-repeat,
+    radial-gradient(ellipse at calc(100% - 11px) calc(100% - 11px), var(--frame-main) 0 2px, var(--frame-dark) 3px 7px, transparent 8px) bottom right / 26px 26px no-repeat,
     linear-gradient(135deg, rgba(255, 255, 255, 0.28), transparent 28%, rgba(0, 0, 0, 0.32) 74%, rgba(255, 255, 255, 0.14));
   box-shadow:
     inset 0 0 0 1px rgba(0, 0, 0, 0.86),
@@ -530,10 +530,10 @@ body::after {
 
 .bp-frame-style-spikes:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::after {
   background:
-    conic-gradient(from 45deg at 12px 12px, transparent 0 20%, var(--frame-light) 21% 32%, var(--frame-main) 33% 48%, transparent 49%) top left / 30px 30px no-repeat,
-    conic-gradient(from 135deg at calc(100% - 12px) 12px, transparent 0 20%, var(--frame-light) 21% 32%, var(--frame-main) 33% 48%, transparent 49%) top right / 30px 30px no-repeat,
-    conic-gradient(from 315deg at 12px calc(100% - 12px), transparent 0 20%, var(--frame-main) 21% 34%, var(--frame-dark) 35% 50%, transparent 51%) bottom left / 30px 30px no-repeat,
-    conic-gradient(from 225deg at calc(100% - 12px) calc(100% - 12px), transparent 0 20%, var(--frame-main) 21% 34%, var(--frame-dark) 35% 50%, transparent 51%) bottom right / 30px 30px no-repeat,
+    radial-gradient(ellipse at 12px 12px, var(--frame-light) 0 2px, var(--frame-main) 3px 7px, transparent 8px) top left / 30px 30px no-repeat,
+    radial-gradient(ellipse at calc(100% - 12px) 12px, var(--frame-light) 0 2px, var(--frame-main) 3px 7px, transparent 8px) top right / 30px 30px no-repeat,
+    radial-gradient(ellipse at 12px calc(100% - 12px), var(--frame-main) 0 2px, var(--frame-dark) 3px 7px, transparent 8px) bottom left / 30px 30px no-repeat,
+    radial-gradient(ellipse at calc(100% - 12px) calc(100% - 12px), var(--frame-main) 0 2px, var(--frame-dark) 3px 7px, transparent 8px) bottom right / 30px 30px no-repeat,
     linear-gradient(45deg, transparent 0 40%, var(--frame-gem) 41% 59%, transparent 60%) left 50% / 12px 24px no-repeat,
     linear-gradient(135deg, transparent 0 40%, var(--frame-gem) 41% 59%, transparent 60%) right 50% / 12px 24px no-repeat;
 }
@@ -650,6 +650,100 @@ body::after {
 .bp-avatar-chat-preview.bp-frame-rgb::after {
   inset: -4px;
   opacity: 0.68;
+}
+
+.bp-frame-bronze:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::before,
+.bp-frame-silver:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::before,
+.bp-frame-gold:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::before,
+.bp-frame-ember:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::before,
+.bp-frame-platinum:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::before,
+.bp-frame-void:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::before,
+.bp-frame-admin-blue:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::before,
+.bp-frame-rgb:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::before {
+  inset: -9px;
+  border-radius: 1.1rem;
+  background:
+    radial-gradient(ellipse at 50% -2px, #fff7c5 0 2px, var(--frame-light) 3px 6px, transparent 7px),
+    radial-gradient(ellipse at 50% calc(100% + 2px), var(--frame-light) 0 2px, var(--frame-main) 3px 7px, transparent 8px),
+    radial-gradient(ellipse at -2px 50%, var(--frame-light) 0 2px, var(--frame-main) 3px 7px, transparent 8px),
+    radial-gradient(ellipse at calc(100% + 2px) 50%, var(--frame-light) 0 2px, var(--frame-main) 3px 7px, transparent 8px),
+    linear-gradient(90deg, transparent 8%, var(--frame-dark) 12%, var(--frame-main) 22%, transparent 38%, transparent 62%, var(--frame-main) 78%, var(--frame-dark) 88%, transparent 92%) top / 100% 8px no-repeat,
+    linear-gradient(90deg, transparent 10%, var(--frame-dark) 18%, var(--frame-main) 30%, transparent 42%, transparent 58%, var(--frame-main) 70%, var(--frame-dark) 82%, transparent 90%) bottom / 100% 8px no-repeat,
+    linear-gradient(180deg, transparent 8%, var(--frame-dark) 15%, var(--frame-main) 28%, transparent 40%, transparent 60%, var(--frame-main) 72%, var(--frame-dark) 85%, transparent 92%) left / 8px 100% no-repeat,
+    linear-gradient(180deg, transparent 8%, var(--frame-dark) 15%, var(--frame-main) 28%, transparent 40%, transparent 60%, var(--frame-main) 72%, var(--frame-dark) 85%, transparent 92%) right / 8px 100% no-repeat;
+  filter: drop-shadow(0 0 7px var(--frame-glow)) drop-shadow(0 4px 5px rgba(0, 0, 0, 0.45));
+}
+
+.bp-frame-bronze:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::after,
+.bp-frame-silver:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::after,
+.bp-frame-gold:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::after,
+.bp-frame-ember:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::after,
+.bp-frame-platinum:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::after,
+.bp-frame-void:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::after,
+.bp-frame-admin-blue:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::after,
+.bp-frame-rgb:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::after {
+  inset: -12px;
+  border-radius: 1.18rem;
+  background:
+    radial-gradient(ellipse at 50% 2px, var(--frame-gem) 0 2px, var(--frame-light) 3px 8px, transparent 9px),
+    radial-gradient(ellipse at 50% calc(100% - 2px), var(--frame-light) 0 2px, var(--frame-main) 3px 8px, transparent 9px),
+    linear-gradient(26deg, transparent 0 45%, var(--frame-light) 46% 52%, transparent 53%) left 14% top 8% / 20px 34px no-repeat,
+    linear-gradient(154deg, transparent 0 45%, var(--frame-light) 46% 52%, transparent 53%) right 14% top 8% / 20px 34px no-repeat,
+    linear-gradient(330deg, transparent 0 45%, var(--frame-main) 46% 52%, transparent 53%) left 12% bottom 7% / 22px 30px no-repeat,
+    linear-gradient(210deg, transparent 0 45%, var(--frame-main) 46% 52%, transparent 53%) right 12% bottom 7% / 22px 30px no-repeat,
+    radial-gradient(ellipse at 18% 50%, var(--frame-dark) 0 2px, transparent 4px),
+    radial-gradient(ellipse at 82% 50%, var(--frame-dark) 0 2px, transparent 4px);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.82),
+    inset 0 0 0 4px rgba(255, 255, 255, 0.025);
+}
+
+.bp-frame-style-spikes:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::after {
+  background:
+    linear-gradient(28deg, transparent 0 44%, var(--frame-light) 45% 52%, transparent 53%) left 8% top 6% / 20px 34px no-repeat,
+    linear-gradient(152deg, transparent 0 44%, var(--frame-light) 45% 52%, transparent 53%) right 8% top 6% / 20px 34px no-repeat,
+    linear-gradient(335deg, transparent 0 44%, var(--frame-main) 45% 52%, transparent 53%) left 8% bottom 6% / 22px 34px no-repeat,
+    linear-gradient(205deg, transparent 0 44%, var(--frame-main) 45% 52%, transparent 53%) right 8% bottom 6% / 22px 34px no-repeat,
+    radial-gradient(ellipse at 50% 0, var(--frame-gem) 0 3px, transparent 7px);
+}
+
+.bp-frame-style-guard:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::before {
+  background:
+    linear-gradient(90deg, transparent 6%, var(--frame-light) 12%, var(--frame-main) 28%, transparent 40%, transparent 60%, var(--frame-main) 72%, var(--frame-light) 88%, transparent 94%) top / 100% 8px no-repeat,
+    linear-gradient(90deg, transparent 9%, var(--frame-dark) 18%, var(--frame-main) 32%, transparent 44%, transparent 56%, var(--frame-main) 68%, var(--frame-dark) 82%, transparent 91%) bottom / 100% 8px no-repeat,
+    linear-gradient(180deg, transparent 8%, var(--frame-light) 16%, var(--frame-main) 32%, transparent 44%, transparent 56%, var(--frame-main) 68%, var(--frame-light) 84%, transparent 92%) left / 8px 100% no-repeat,
+    linear-gradient(180deg, transparent 8%, var(--frame-light) 16%, var(--frame-main) 32%, transparent 44%, transparent 56%, var(--frame-main) 68%, var(--frame-light) 84%, transparent 92%) right / 8px 100% no-repeat,
+    radial-gradient(ellipse at 50% -2px, #fff7c5 0 2px, var(--frame-gem) 3px 7px, transparent 8px);
+}
+
+.bp-avatar-chat.bp-frame-bronze::before,
+.bp-avatar-chat.bp-frame-silver::before,
+.bp-avatar-chat.bp-frame-gold::before,
+.bp-avatar-chat.bp-frame-ember::before,
+.bp-avatar-chat.bp-frame-platinum::before,
+.bp-avatar-chat.bp-frame-void::before,
+.bp-avatar-chat.bp-frame-admin-blue::before,
+.bp-avatar-chat.bp-frame-rgb::before {
+  opacity: 0.5;
+  background:
+    radial-gradient(circle at 50% 1px, var(--frame-light) 0 1px, transparent 3px),
+    radial-gradient(circle at 50% calc(100% - 1px), var(--frame-main) 0 1px, transparent 3px),
+    linear-gradient(90deg, transparent 12%, var(--frame-main) 30%, transparent 48% 52%, var(--frame-main) 70%, transparent 88%) top / 100% 2px no-repeat,
+    linear-gradient(90deg, transparent 12%, var(--frame-main) 30%, transparent 48% 52%, var(--frame-main) 70%, transparent 88%) bottom / 100% 2px no-repeat;
+}
+
+.bp-avatar-chat.bp-frame-bronze::after,
+.bp-avatar-chat.bp-frame-silver::after,
+.bp-avatar-chat.bp-frame-gold::after,
+.bp-avatar-chat.bp-frame-ember::after,
+.bp-avatar-chat.bp-frame-platinum::after,
+.bp-avatar-chat.bp-frame-void::after,
+.bp-avatar-chat.bp-frame-admin-blue::after,
+.bp-avatar-chat.bp-frame-rgb::after {
+  opacity: 0.34;
+  background:
+    radial-gradient(circle at 2px 50%, var(--frame-light) 0 1px, transparent 3px),
+    radial-gradient(circle at calc(100% - 2px) 50%, var(--frame-light) 0 1px, transparent 3px);
 }
 
 @keyframes bp-rgb-flow {

@@ -21,6 +21,8 @@ import {
   type NotificationSeenState
 } from "@/lib/notifications/seen-state";
 
+type NotificationStep = "messages" | "orders";
+
 type FirestoreTime = {
   seconds?: number;
 };
@@ -68,6 +70,18 @@ function formatDate(seconds?: number, isRu = true) {
   }).format(new Date(seconds * 1000));
 }
 
+const finishedOrderStatuses = new Set(["completed", "processed", "cancelled", "canceled", "done", "closed"]);
+
+function isActiveOrderNotification(status?: string) {
+  const normalized = (status ?? "new").toLowerCase();
+  return normalized !== "new" && !finishedOrderStatuses.has(normalized);
+}
+
+function isProfitableOffer(offer: { tag?: string; comment?: string; description?: string; status?: string }) {
+  const marker = `${offer.tag ?? ""} ${offer.comment ?? ""} ${offer.description ?? ""}`.toLowerCase();
+  return (offer.status ?? "published") === "published" && (marker.includes("выгод") || marker.includes("hot") || marker.includes("deal") || marker.includes("best"));
+}
+
 export function NotificationCenter() {
   const { isRu } = useLanguage();
   const { user } = useAuth();
@@ -75,6 +89,7 @@ export function NotificationCenter() {
   const [threads, setThreads] = useState<DirectThread[]>([]);
   const [topupLeads, setTopupLeads] = useState<TopupLead[]>([]);
   const [seenState, setSeenState] = useState<NotificationSeenState>({});
+  const [activeStep, setActiveStep] = useState<NotificationStep>("messages");
   const seenUid = user?.uid ?? "guest";
 
   useEffect(() => {
@@ -157,36 +172,29 @@ export function NotificationCenter() {
       .filter((lead) => {
         const status = lead.status ?? "new";
         const seconds = getSeconds(lead.updatedAt) || getSeconds(lead.createdAt);
-        return status !== "new" && seconds > 0 && (seenState.topupById?.[lead.id] ?? 0) < seconds;
+        return isActiveOrderNotification(status) && seconds > 0 && (seenState.topupById?.[lead.id] ?? 0) < seconds;
       })
       .sort((a, b) => (getSeconds(b.updatedAt) || getSeconds(b.createdAt)) - (getSeconds(a.updatedAt) || getSeconds(a.createdAt)));
   }, [seenState.topupById, topupLeads, user?.uid]);
 
-  const hotOffers = useMemo(() => offers.slice(0, 5), [offers]);
+  const hotOffers = useMemo(() => offers.filter(isProfitableOffer).slice(0, 5), [offers]);
 
-  useEffect(() => {
-    if (!user?.uid || hotOffers.length === 0) {
-      return;
-    }
+  const unreadHotOfferCount = useMemo(
+    () =>
+      hotOffers.filter((offer) => {
+        const seconds = getSeconds(offer.updatedAt) || getSeconds(offer.createdAt) || 1;
+        return (seenState.offerById?.[offer.id] ?? 0) < seconds;
+      }).length,
+    [hotOffers, seenState.offerById]
+  );
 
-    const offerById = { ...(seenState.offerById ?? {}) };
-    let changed = false;
-
-    for (const offer of hotOffers) {
-      const seconds = getSeconds(offer.updatedAt) || getSeconds(offer.createdAt) || 1;
-
-      if ((offerById[offer.id] ?? 0) < seconds) {
-        offerById[offer.id] = seconds;
-        changed = true;
-      }
-    }
-
-    if (changed) {
-      const next = { ...seenState, offerById };
-      writeNotificationSeenState(seenUid, next);
-      setSeenState(next);
-    }
-  }, [hotOffers, seenState, seenUid, user?.uid]);
+  const stepButtons = useMemo(
+    () => [
+      { id: "messages" as const, label: isRu ? "1. Сообщения" : "1. Messages", count: unreadThreads.length },
+      { id: "orders" as const, label: isRu ? "2. Заявки" : "2. Requests", count: updatedOrders.length }
+    ],
+    [isRu, unreadThreads.length, updatedOrders.length]
+  );
 
   function markAllSeen() {
     const threadById = { ...(seenState.threadById ?? {}) };
@@ -238,14 +246,40 @@ export function NotificationCenter() {
           </button>
         </div>
 
-        <div className="mt-5 grid gap-3">
+        <div className="mt-5 grid gap-2 sm:grid-cols-2">
+          {stepButtons.map((step) => (
+            <button
+              key={step.id}
+              type="button"
+              onClick={() => setActiveStep(step.id)}
+              className={`rounded-2xl border px-4 py-3 text-left transition ${
+                activeStep === step.id
+                  ? "border-relic bg-relic/15 text-white shadow-[0_0_20px_rgba(200,154,61,0.16)]"
+                  : "border-white/10 bg-black/25 text-zinc-400 hover:border-relic/35 hover:text-white"
+              }`}
+            >
+              <span className="block text-xs font-bold uppercase tracking-[0.18em] text-relic">{step.label}</span>
+              <span className="mt-1 block text-sm">{isRu ? "Новых" : "Unread"}: {step.count}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-5 max-h-[520px] space-y-3 overflow-y-auto pr-1">
           {unreadThreads.length === 0 && updatedOrders.length === 0 ? (
             <div className="rounded-2xl border border-white/10 bg-black/25 p-5 text-sm leading-6 text-zinc-400">
               {isRu ? "Новых личных уведомлений пока нет. Выгодные предложения доступны справа." : "No new personal notifications yet. Best deals are available on the right."}
             </div>
           ) : null}
 
-          {unreadThreads.map((thread) => {
+          {activeStep === "messages" && unreadThreads.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-5 text-sm text-zinc-500">{isRu ? "Новых личных сообщений нет." : "No unread private messages."}</div>
+          ) : null}
+
+          {activeStep === "orders" && updatedOrders.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-5 text-sm text-zinc-500">{isRu ? "Новых изменений по заявкам нет." : "No new request updates."}</div>
+          ) : null}
+
+          {activeStep === "messages" && unreadThreads.map((thread) => {
             const otherUid = thread.participants?.find((uid) => uid !== user?.uid);
 
             return (
@@ -272,7 +306,7 @@ export function NotificationCenter() {
             );
           })}
 
-          {updatedOrders.map((lead) => {
+          {activeStep === "orders" && updatedOrders.map((lead) => {
             const status = lead.status ?? "new";
             const label = stageLabels[status]?.[isRu ? "ru" : "en"] ?? status;
             const seconds = getSeconds(lead.updatedAt) || getSeconds(lead.createdAt);
@@ -314,7 +348,13 @@ export function NotificationCenter() {
           </div>
         </div>
 
-        <div className="grid gap-3">
+        <div className="max-h-[520px] space-y-3 overflow-y-auto pr-1">
+          {hotOffers.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-black/25 p-5 text-sm leading-6 text-zinc-400">
+              {isRu ? "Сейчас нет опубликованных предложений с тегом «выгодно»." : "No published offers tagged as best deal yet."}
+            </div>
+          ) : null}
+
           {hotOffers.map((offer) => {
             const imageUrl = getDonationOfferImageUrl(offer);
 
@@ -343,6 +383,9 @@ export function NotificationCenter() {
             );
           })}
         </div>
+        {unreadHotOfferCount > 0 ? (
+          <p className="mt-4 text-xs text-zinc-500">{isRu ? "Красная точка исчезнет после открытия предложения." : "The red dot disappears after opening an offer."}</p>
+        ) : null}
       </GlassPanel>
     </div>
   );

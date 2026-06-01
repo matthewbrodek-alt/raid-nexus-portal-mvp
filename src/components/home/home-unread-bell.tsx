@@ -36,6 +36,10 @@ type TopupLead = {
 
 type HotOffer = {
   id: string;
+  tag?: string;
+  comment?: string;
+  description?: string;
+  status?: string;
   createdAt?: FirestoreTime;
   updatedAt?: FirestoreTime;
 };
@@ -46,6 +50,18 @@ function getSeconds(value?: FirestoreTime) {
 
 function formatNotificationCount(count: number) {
   return count > 99 ? "99+" : String(count);
+}
+
+const finishedOrderStatuses = new Set(["completed", "processed", "cancelled", "canceled", "done", "closed"]);
+
+function isActiveOrderNotification(status?: string) {
+  const normalized = (status ?? "new").toLowerCase();
+  return normalized !== "new" && !finishedOrderStatuses.has(normalized);
+}
+
+function isProfitableOffer(offer: HotOffer) {
+  const marker = `${offer.tag ?? ""} ${offer.comment ?? ""} ${offer.description ?? ""}`.toLowerCase();
+  return (offer.status ?? "published") === "published" && (marker.includes("выгод") || marker.includes("hot") || marker.includes("deal") || marker.includes("best"));
 }
 
 export function HomeUnreadBell({ label }: { label: string }) {
@@ -126,11 +142,11 @@ export function HomeUnreadBell({ label }: { label: string }) {
 
     async function loadHotOffers() {
       try {
-        const offersQuery = query(collection(db, collections.donationOffers), where("status", "==", "published"), limit(5));
+        const offersQuery = query(collection(db, collections.donationOffers), where("status", "==", "published"), limit(12));
         const snapshot = await getDocs(offersQuery);
 
         if (!cancelled) {
-          setHotOffers(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<HotOffer, "id">) })));
+          setHotOffers(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<HotOffer, "id">) })).filter(isProfitableOffer).slice(0, 5));
           setSeenState(readNotificationSeenState(seenUid));
         }
       } catch {
@@ -166,7 +182,7 @@ export function HomeUnreadBell({ label }: { label: string }) {
     return topupLeads.filter((lead) => {
       const status = lead.status ?? "new";
       const seconds = getSeconds(lead.updatedAt) || getSeconds(lead.createdAt);
-      return status !== "new" && seconds > 0 && (seenState.topupById?.[lead.id] ?? 0) < seconds;
+      return isActiveOrderNotification(status) && seconds > 0 && (seenState.topupById?.[lead.id] ?? 0) < seconds;
     }).length;
   }, [seenState.topupById, topupLeads, user?.uid]);
 

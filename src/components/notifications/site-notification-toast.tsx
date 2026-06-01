@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, MessageCircle, ShoppingBag, X } from "lucide-react";
+import { MessageCircle, ShoppingBag, X } from "lucide-react";
 import { collection, limit, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -50,6 +50,13 @@ type Toast = {
 
 function getSeconds(value?: FirestoreTime) {
   return value?.seconds ?? 0;
+}
+
+const finishedOrderStatuses = new Set(["completed", "processed", "cancelled", "canceled", "done", "closed"]);
+
+function isActiveOrderNotification(status?: string) {
+  const normalized = (status ?? "new").toLowerCase();
+  return normalized !== "new" && !finishedOrderStatuses.has(normalized);
 }
 
 export function SiteNotificationToast() {
@@ -204,7 +211,7 @@ export function SiteNotificationToast() {
           return status === "new" || status === "pending";
         }
 
-        return lead.uid === uid && status !== "new";
+        return lead.uid === uid && isActiveOrderNotification(status);
       })
       .sort((a, b) => (getSeconds(b.updatedAt) || getSeconds(b.createdAt)) - (getSeconds(a.updatedAt) || getSeconds(a.createdAt)))[0];
 
