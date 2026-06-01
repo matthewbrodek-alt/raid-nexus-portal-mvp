@@ -449,6 +449,209 @@ body::after {
     linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 35%, rgba(0, 0, 0, 0.24) 72%, rgba(255, 255, 255, 0.12));
 }
 
+.bp-frame-bronze:not(.bp-avatar-chat):not(.bp-avatar-chat-preview),
+.bp-frame-silver:not(.bp-avatar-chat):not(.bp-avatar-chat-preview),
+.bp-frame-gold:not(.bp-avatar-chat):not(.bp-avatar-chat-preview),
+.bp-frame-ember:not(.bp-avatar-chat):not(.bp-avatar-chat-preview),
+.bp-frame-platinum:not(.bp-avatar-chat):not(.bp-avatar-chat-preview),
+.bp-frame-void:not(.bp-avatar-chat):not(.bp-avatar-chat-preview),
+.bp-frame-admin-blue:not(.bp-avatar-chat):not(.bp-avatar-chat-preview),
+.bp-frame-rgb:not(.bp-avatar-chat):not(.bp-avatar-chat-preview) {
+  border-radius: 0.58rem !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(5, 7, 11, 0.98),
+    inset 0 0 0 2px color-mix(in srgb, var(--frame-main) 38%, transparent),
+    inset 0 0 18px rgba(0, 0, 0, 0.48),
+    0 0 0 1px rgba(0, 0, 0, 0.96),
+    0 0 24px var(--frame-glow),
+    0 14px 30px rgba(0, 0, 0, 0.42);
+}
+
+.bp-frame-bronze:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::before,
+.bp-frame-silver:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::before,
+.bp-frame-gold:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::before,
+.bp-frame-ember:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::before,
+.bp-frame-platinum:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::before,
+.bp-frame-void:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::before,
+.bp-frame-admin-blue:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::before,
+.bp-frame-rgb:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::before {
+  inset: -10px;
+  border-radius: 1rem;
+  opacity: 0.98;
+  background:
+    radial-gradient(circle at 50% -3px, #fff9d9 0 2px, var(--frame-gem) 3px 5px, var(--frame-main) 6px 11px, transparent 12px),
+    linear-gradient(125deg, transparent 0 28%, var(--frame-light) 29% 36%, var(--frame-main) 37% 52%, var(--frame-dark) 53% 62%, transparent 63%) top left / 30px 30px no-repeat,
+    linear-gradient(235deg, transparent 0 28%, var(--frame-light) 29% 36%, var(--frame-main) 37% 52%, var(--frame-dark) 53% 62%, transparent 63%) top right / 30px 30px no-repeat,
+    linear-gradient(55deg, transparent 0 28%, var(--frame-dark) 29% 38%, var(--frame-main) 39% 56%, var(--frame-light) 57% 64%, transparent 65%) bottom left / 30px 30px no-repeat,
+    linear-gradient(305deg, transparent 0 28%, var(--frame-dark) 29% 38%, var(--frame-main) 39% 56%, var(--frame-light) 57% 64%, transparent 65%) bottom right / 30px 30px no-repeat,
+    linear-gradient(90deg, transparent 0 11%, var(--frame-dark) 12% 16%, var(--frame-main) 17% 31%, transparent 32% 68%, var(--frame-main) 69% 83%, var(--frame-dark) 84% 88%, transparent 89%) top / 100% 9px no-repeat,
+    linear-gradient(90deg, transparent 0 12%, var(--frame-dark) 13% 19%, var(--frame-main) 20% 34%, transparent 35% 65%, var(--frame-main) 66% 80%, var(--frame-dark) 81% 87%, transparent 88%) bottom / 100% 9px no-repeat,
+    linear-gradient(180deg, transparent 0 10%, var(--frame-dark) 11% 17%, var(--frame-main) 18% 34%, transparent 35% 65%, var(--frame-main) 66% 82%, var(--frame-dark) 83% 89%, transparent 90%) left / 9px 100% no-repeat,
+    linear-gradient(180deg, transparent 0 10%, var(--frame-dark) 11% 17%, var(--frame-main) 18% 34%, transparent 35% 65%, var(--frame-main) 66% 82%, var(--frame-dark) 83% 89%, transparent 90%) right / 9px 100% no-repeat;
+  filter:
+    drop-shadow(0 0 6px var(--frame-glow))
+    drop-shadow(0 5px 4px rgba(0, 0, 0, 0.46));
+}
+
+.bp-frame-bronze:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::after,
+.bp-frame-silver:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::after,
+.bp-frame-gold:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::after,
+.bp-frame-ember:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::after,
+.bp-frame-platinum:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::after,
+.bp-frame-void:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::after,
+.bp-frame-admin-blue:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::after,
+.bp-frame-rgb:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::after {
+  inset: -12px;
+  border-radius: 1.04rem;
+  opacity: 0.95;
+  background:
+    radial-gradient(circle at 50% 0, #fff7c5 0 2px, var(--frame-light) 3px 6px, var(--frame-main) 7px 12px, transparent 13px),
+    radial-gradient(circle at 50% 100%, var(--frame-light) 0 2px, var(--frame-main) 3px 8px, transparent 9px),
+    linear-gradient(45deg, transparent 0 39%, var(--frame-gem) 40% 60%, transparent 61%) left 50% / 11px 22px no-repeat,
+    linear-gradient(135deg, transparent 0 39%, var(--frame-gem) 40% 60%, transparent 61%) right 50% / 11px 22px no-repeat,
+    conic-gradient(from 45deg at 11px 11px, transparent 0 22%, var(--frame-light) 23% 31%, var(--frame-main) 32% 45%, var(--frame-dark) 46% 56%, transparent 57%) top left / 26px 26px no-repeat,
+    conic-gradient(from 135deg at calc(100% - 11px) 11px, transparent 0 22%, var(--frame-light) 23% 31%, var(--frame-main) 32% 45%, var(--frame-dark) 46% 56%, transparent 57%) top right / 26px 26px no-repeat,
+    conic-gradient(from 315deg at 11px calc(100% - 11px), transparent 0 22%, var(--frame-light) 23% 31%, var(--frame-main) 32% 45%, var(--frame-dark) 46% 56%, transparent 57%) bottom left / 26px 26px no-repeat,
+    conic-gradient(from 225deg at calc(100% - 11px) calc(100% - 11px), transparent 0 22%, var(--frame-light) 23% 31%, var(--frame-main) 32% 45%, var(--frame-dark) 46% 56%, transparent 57%) bottom right / 26px 26px no-repeat,
+    linear-gradient(135deg, rgba(255, 255, 255, 0.28), transparent 28%, rgba(0, 0, 0, 0.32) 74%, rgba(255, 255, 255, 0.14));
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.86),
+    inset 0 0 0 5px rgba(255, 255, 255, 0.035);
+}
+
+.bp-frame-style-guard:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::before {
+  background:
+    linear-gradient(90deg, var(--frame-light), var(--frame-main) 18%, var(--frame-dark) 19% 26%, transparent 27% 73%, var(--frame-dark) 74% 81%, var(--frame-main) 82%, var(--frame-light)) top / 100% 10px no-repeat,
+    linear-gradient(90deg, var(--frame-dark), var(--frame-main) 18%, var(--frame-light) 19% 28%, transparent 29% 71%, var(--frame-light) 72% 81%, var(--frame-main) 82%, var(--frame-dark)) bottom / 100% 10px no-repeat,
+    linear-gradient(180deg, var(--frame-light), var(--frame-main) 20%, transparent 21% 79%, var(--frame-main) 80%, var(--frame-dark)) left / 10px 100% no-repeat,
+    linear-gradient(180deg, var(--frame-light), var(--frame-main) 20%, transparent 21% 79%, var(--frame-main) 80%, var(--frame-dark)) right / 10px 100% no-repeat,
+    radial-gradient(circle at 50% -3px, #fff9d9 0 2px, var(--frame-gem) 3px 6px, var(--frame-main) 7px 12px, transparent 13px);
+}
+
+.bp-frame-style-spikes:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::after {
+  background:
+    conic-gradient(from 45deg at 12px 12px, transparent 0 20%, var(--frame-light) 21% 32%, var(--frame-main) 33% 48%, transparent 49%) top left / 30px 30px no-repeat,
+    conic-gradient(from 135deg at calc(100% - 12px) 12px, transparent 0 20%, var(--frame-light) 21% 32%, var(--frame-main) 33% 48%, transparent 49%) top right / 30px 30px no-repeat,
+    conic-gradient(from 315deg at 12px calc(100% - 12px), transparent 0 20%, var(--frame-main) 21% 34%, var(--frame-dark) 35% 50%, transparent 51%) bottom left / 30px 30px no-repeat,
+    conic-gradient(from 225deg at calc(100% - 12px) calc(100% - 12px), transparent 0 20%, var(--frame-main) 21% 34%, var(--frame-dark) 35% 50%, transparent 51%) bottom right / 30px 30px no-repeat,
+    linear-gradient(45deg, transparent 0 40%, var(--frame-gem) 41% 59%, transparent 60%) left 50% / 12px 24px no-repeat,
+    linear-gradient(135deg, transparent 0 40%, var(--frame-gem) 41% 59%, transparent 60%) right 50% / 12px 24px no-repeat;
+}
+
+.bp-frame-style-crown:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::before {
+  background:
+    radial-gradient(circle at 50% -4px, #fff7c5 0 3px, var(--frame-gem) 4px 7px, var(--frame-main) 8px 14px, transparent 15px),
+    linear-gradient(112deg, transparent 0 34%, var(--frame-light) 35% 45%, transparent 46%) top left / 34px 28px no-repeat,
+    linear-gradient(248deg, transparent 0 34%, var(--frame-light) 35% 45%, transparent 46%) top right / 34px 28px no-repeat,
+    linear-gradient(90deg, transparent 8%, var(--frame-light) 9% 17%, transparent 18% 34%, var(--frame-main) 35% 65%, transparent 66% 82%, var(--frame-light) 83% 91%, transparent 92%) top / 100% 14px no-repeat,
+    linear-gradient(90deg, transparent 11%, var(--frame-main) 12% 27%, transparent 28% 72%, var(--frame-main) 73% 88%, transparent 89%) bottom / 100% 8px no-repeat,
+    linear-gradient(180deg, transparent 8%, var(--frame-main) 9% 28%, transparent 29% 71%, var(--frame-main) 72% 91%, transparent 92%) left / 8px 100% no-repeat,
+    linear-gradient(180deg, transparent 8%, var(--frame-main) 9% 28%, transparent 29% 71%, var(--frame-main) 72% 91%, transparent 92%) right / 8px 100% no-repeat;
+}
+
+.bp-frame-style-rune:not(.bp-avatar-chat):not(.bp-avatar-chat-preview)::after {
+  background:
+    radial-gradient(circle at 50% -2px, var(--frame-light) 0 2px, var(--frame-gem) 3px 7px, transparent 8px),
+    radial-gradient(circle at 50% calc(100% + 2px), var(--frame-light) 0 2px, var(--frame-gem) 3px 7px, transparent 8px),
+    radial-gradient(circle at 0 50%, var(--frame-light) 0 2px, var(--frame-gem) 3px 7px, transparent 8px),
+    radial-gradient(circle at 100% 50%, var(--frame-light) 0 2px, var(--frame-gem) 3px 7px, transparent 8px),
+    linear-gradient(45deg, transparent 0 40%, var(--frame-main) 41% 56%, transparent 57%) top left / 24px 24px no-repeat,
+    linear-gradient(135deg, transparent 0 40%, var(--frame-main) 41% 56%, transparent 57%) top right / 24px 24px no-repeat,
+    linear-gradient(315deg, transparent 0 40%, var(--frame-main) 41% 56%, transparent 57%) bottom left / 24px 24px no-repeat,
+    linear-gradient(225deg, transparent 0 40%, var(--frame-main) 41% 56%, transparent 57%) bottom right / 24px 24px no-repeat,
+    linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 35%, rgba(0, 0, 0, 0.28) 72%, rgba(255, 255, 255, 0.12));
+}
+
+.bp-avatar-chat.bp-frame-bronze,
+.bp-avatar-chat.bp-frame-silver,
+.bp-avatar-chat.bp-frame-gold,
+.bp-avatar-chat.bp-frame-ember,
+.bp-avatar-chat.bp-frame-platinum,
+.bp-avatar-chat.bp-frame-void,
+.bp-avatar-chat.bp-frame-admin-blue,
+.bp-avatar-chat.bp-frame-rgb {
+  border-width: 1px !important;
+  border-color: color-mix(in srgb, var(--frame-main) 62%, rgba(255, 255, 255, 0.12)) !important;
+  border-radius: 0.48rem !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(5, 7, 11, 0.82),
+    0 0 8px var(--frame-glow) !important;
+}
+
+.bp-avatar-chat.bp-frame-bronze::before,
+.bp-avatar-chat.bp-frame-silver::before,
+.bp-avatar-chat.bp-frame-gold::before,
+.bp-avatar-chat.bp-frame-ember::before,
+.bp-avatar-chat.bp-frame-platinum::before,
+.bp-avatar-chat.bp-frame-void::before,
+.bp-avatar-chat.bp-frame-admin-blue::before,
+.bp-avatar-chat.bp-frame-rgb::before,
+.bp-avatar-chat.bp-frame-bronze::after,
+.bp-avatar-chat.bp-frame-silver::after,
+.bp-avatar-chat.bp-frame-gold::after,
+.bp-avatar-chat.bp-frame-ember::after,
+.bp-avatar-chat.bp-frame-platinum::after,
+.bp-avatar-chat.bp-frame-void::after,
+.bp-avatar-chat.bp-frame-admin-blue::after,
+.bp-avatar-chat.bp-frame-rgb::after {
+  inset: -2px;
+  border-radius: 0.56rem;
+}
+
+.bp-avatar-chat.bp-frame-bronze::before,
+.bp-avatar-chat.bp-frame-silver::before,
+.bp-avatar-chat.bp-frame-gold::before,
+.bp-avatar-chat.bp-frame-ember::before,
+.bp-avatar-chat.bp-frame-platinum::before,
+.bp-avatar-chat.bp-frame-void::before,
+.bp-avatar-chat.bp-frame-admin-blue::before,
+.bp-avatar-chat.bp-frame-rgb::before {
+  opacity: 0.62;
+  background:
+    linear-gradient(135deg, transparent 0 40%, var(--frame-light) 41% 48%, transparent 49%) top left / 10px 10px no-repeat,
+    linear-gradient(225deg, transparent 0 40%, var(--frame-light) 41% 48%, transparent 49%) top right / 10px 10px no-repeat,
+    linear-gradient(315deg, transparent 0 40%, var(--frame-main) 41% 48%, transparent 49%) bottom left / 10px 10px no-repeat,
+    linear-gradient(45deg, transparent 0 40%, var(--frame-main) 41% 48%, transparent 49%) bottom right / 10px 10px no-repeat;
+  filter: drop-shadow(0 0 2px var(--frame-glow));
+}
+
+.bp-avatar-chat.bp-frame-bronze::after,
+.bp-avatar-chat.bp-frame-silver::after,
+.bp-avatar-chat.bp-frame-gold::after,
+.bp-avatar-chat.bp-frame-ember::after,
+.bp-avatar-chat.bp-frame-platinum::after,
+.bp-avatar-chat.bp-frame-void::after,
+.bp-avatar-chat.bp-frame-admin-blue::after,
+.bp-avatar-chat.bp-frame-rgb::after {
+  opacity: 0.42;
+  background:
+    radial-gradient(circle at 2px 2px, var(--frame-light) 0 1px, var(--frame-main) 1px 2px, transparent 3px),
+    radial-gradient(circle at calc(100% - 2px) 2px, var(--frame-light) 0 1px, var(--frame-main) 1px 2px, transparent 3px),
+    radial-gradient(circle at 2px calc(100% - 2px), var(--frame-light) 0 1px, var(--frame-main) 1px 2px, transparent 3px),
+    radial-gradient(circle at calc(100% - 2px) calc(100% - 2px), var(--frame-light) 0 1px, var(--frame-main) 1px 2px, transparent 3px);
+  box-shadow: none;
+}
+
+.bp-avatar-chat-preview.bp-frame-bronze::before,
+.bp-avatar-chat-preview.bp-frame-silver::before,
+.bp-avatar-chat-preview.bp-frame-gold::before,
+.bp-avatar-chat-preview.bp-frame-ember::before,
+.bp-avatar-chat-preview.bp-frame-platinum::before,
+.bp-avatar-chat-preview.bp-frame-void::before,
+.bp-avatar-chat-preview.bp-frame-admin-blue::before,
+.bp-avatar-chat-preview.bp-frame-rgb::before,
+.bp-avatar-chat-preview.bp-frame-bronze::after,
+.bp-avatar-chat-preview.bp-frame-silver::after,
+.bp-avatar-chat-preview.bp-frame-gold::after,
+.bp-avatar-chat-preview.bp-frame-ember::after,
+.bp-avatar-chat-preview.bp-frame-platinum::after,
+.bp-avatar-chat-preview.bp-frame-void::after,
+.bp-avatar-chat-preview.bp-frame-admin-blue::after,
+.bp-avatar-chat-preview.bp-frame-rgb::after {
+  inset: -4px;
+  opacity: 0.68;
+}
+
 @keyframes bp-rgb-flow {
   0% {
     background-position: 0% 50%;

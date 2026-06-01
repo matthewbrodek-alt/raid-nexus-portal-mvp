@@ -629,7 +629,7 @@ export function AdminCrmPanel() {
                           className="inline-flex items-center justify-center gap-2 rounded-md border border-relic/30 bg-relic/10 px-3 py-2 font-semibold text-relic"
                         >
                           <MessageSquare size={15} />
-                          Ответить
+                          Статус и чат
                         </button>
                       ) : (
                         <span className="text-xs text-zinc-500">Без аккаунта на сайте</span>
