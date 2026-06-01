@@ -274,6 +274,7 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
     }
 
     void ensureManagerThread();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- adding ensureManagerThread would recreate the effect on each render.
   }, [canManageOrder, lead?.managerUid, lead?.threadId, lead?.uid, user?.uid]);
 
   async function ensureManagerThread() {

@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageCircle, ShoppingBag, X } from "lucide-react";
+import { Bell, MessageCircle, ShoppingBag, X } from "lucide-react";
 import { collection, limit, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
