@@ -746,6 +746,56 @@ body::after {
     radial-gradient(circle at calc(100% - 2px) 50%, var(--frame-light) 0 1px, transparent 3px);
 }
 
+:is(.bp-frame-bronze, .bp-frame-silver, .bp-frame-gold, .bp-frame-ember, .bp-frame-platinum, .bp-frame-void, .bp-frame-admin-blue, .bp-frame-rgb).bp-avatar-safe {
+  --bp-avatar-frame-pad: 2px;
+  overflow: visible !important;
+  padding: var(--bp-avatar-frame-pad);
+}
+
+.bp-avatar-safe .bp-avatar-crop {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+:is(.bp-frame-bronze, .bp-frame-silver, .bp-frame-gold, .bp-frame-ember, .bp-frame-platinum, .bp-frame-void, .bp-frame-admin-blue, .bp-frame-rgb).bp-avatar-safe::before,
+:is(.bp-frame-bronze, .bp-frame-silver, .bp-frame-gold, .bp-frame-ember, .bp-frame-platinum, .bp-frame-void, .bp-frame-admin-blue, .bp-frame-rgb).bp-avatar-safe::after {
+  z-index: 0;
+  pointer-events: none;
+}
+
+:is(.bp-frame-bronze, .bp-frame-silver, .bp-frame-gold, .bp-frame-ember, .bp-frame-platinum, .bp-frame-void, .bp-frame-admin-blue, .bp-frame-rgb).bp-avatar-safe.bp-avatar-chat {
+  --bp-avatar-frame-pad: 1px;
+}
+
+:is(.bp-frame-bronze, .bp-frame-silver, .bp-frame-gold, .bp-frame-ember, .bp-frame-platinum, .bp-frame-void, .bp-frame-admin-blue, .bp-frame-rgb).bp-avatar-safe.bp-avatar-chat::before,
+:is(.bp-frame-bronze, .bp-frame-silver, .bp-frame-gold, .bp-frame-ember, .bp-frame-platinum, .bp-frame-void, .bp-frame-admin-blue, .bp-frame-rgb).bp-avatar-safe.bp-avatar-chat::after {
+  inset: -3px;
+  opacity: 0.38;
+}
+
+:is(.bp-frame-bronze, .bp-frame-silver, .bp-frame-gold, .bp-frame-ember, .bp-frame-platinum, .bp-frame-void, .bp-frame-admin-blue, .bp-frame-rgb).bp-avatar-safe.bp-avatar-chat-preview {
+  --bp-avatar-frame-pad: 4px;
+}
+
+:is(.bp-frame-bronze, .bp-frame-silver, .bp-frame-gold, .bp-frame-ember, .bp-frame-platinum, .bp-frame-void, .bp-frame-admin-blue, .bp-frame-rgb).bp-avatar-safe.bp-avatar-chat-preview::before,
+:is(.bp-frame-bronze, .bp-frame-silver, .bp-frame-gold, .bp-frame-ember, .bp-frame-platinum, .bp-frame-void, .bp-frame-admin-blue, .bp-frame-rgb).bp-avatar-safe.bp-avatar-chat-preview::after {
+  inset: -5px;
+  opacity: 0.5;
+}
+
+.bp-avatar-safe img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 @keyframes bp-rgb-flow {
   0% {
     background-position: 0% 50%;

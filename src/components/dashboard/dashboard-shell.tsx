@@ -32,14 +32,16 @@ export function DashboardShell({ title, subtitle, mode, children }: DashboardShe
       <header className="border-b border-white/10 bg-abyss/86 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
           <div className="flex items-center gap-3">
-            <span className={`grid h-11 w-11 place-items-center overflow-hidden rounded-xl border-2 bg-relic/15 text-relic shadow-glow ${avatarFrameClass}`}>
-              {profile?.avatarUrl ? (
-                <img src={profile.avatarUrl} alt={profile.displayName} className="h-full w-full rounded-lg object-cover" />
-              ) : mode === "admin" ? (
-                <Shield />
-              ) : (
-                <Crown />
-              )}
+            <span className={`bp-avatar-safe grid h-11 w-11 place-items-center overflow-visible rounded-xl border-2 bg-relic/15 text-relic shadow-glow ${avatarFrameClass}`}>
+              <span className="bp-avatar-crop rounded-lg">
+                {profile?.avatarUrl ? (
+                  <img src={profile.avatarUrl} alt={profile.displayName} className="h-full w-full object-cover" />
+                ) : mode === "admin" ? (
+                  <Shield />
+                ) : (
+                  <Crown />
+                )}
+              </span>
             </span>
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-relic">
