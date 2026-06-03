@@ -1,7 +1,7 @@
 "use client";
 
 import { ExternalLink, X } from "lucide-react";
-import { collection, deleteDoc, doc, onSnapshot, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
+import { collection, deleteDoc, doc, limit, onSnapshot, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { HeroCard } from "@/components/heroes/hero-card";
@@ -225,7 +225,7 @@ export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", r
   const canManageHeroes = profile?.role === "admin" || profile?.role === "owner";
 
   useEffect(() => {
-    const heroesQuery = query(collection(db, collections.heroes), where("isPublished", "==", true));
+    const heroesQuery = query(collection(db, collections.heroes), where("isPublished", "==", true), limit(120));
 
     return onSnapshot(
       heroesQuery,

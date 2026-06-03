@@ -1,7 +1,7 @@
 "use client";
 
 import { Clock3, X } from "lucide-react";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, limit, onSnapshot, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
@@ -120,7 +120,7 @@ export function LatestNewsRail() {
   const visibleNews = news.slice(0, 10);
 
   useEffect(() => {
-    const newsQuery = query(collection(db, collections.news), where("status", "==", "published"));
+    const newsQuery = query(collection(db, collections.news), where("status", "==", "published"), limit(40));
 
     return onSnapshot(
       newsQuery,
@@ -152,7 +152,7 @@ export function LatestNewsRail() {
             aria-label={`${labels.openNewsLabel}: ${getNewsTitle(item, language)}`}
           >
             <span className="block h-16 overflow-hidden rounded-[14px] border border-relic/22 bg-black/40">
-              <img src={getNewsImage(item)} alt="" className="h-full w-full object-contain" />
+              <img src={getNewsImage(item)} alt="" loading="lazy" decoding="async" className="h-full w-full object-contain" />
             </span>
             <span className="min-w-0">
               <span className="block truncate font-[var(--font-cinzel)] text-lg font-black uppercase tracking-[0.04em] text-white transition group-hover:text-[#ffe1a0] sm:text-xl">
@@ -231,7 +231,7 @@ export function LatestNewsRail() {
           <div className="flex min-h-full items-center justify-center">
             <div className="raid-ornate-panel mx-auto max-h-[calc(100dvh-40px)] w-full max-w-5xl overflow-y-auto bg-[#071019]">
               <div className="relative bg-black">
-                <img src={getNewsImage(selectedNews)} alt="" className="max-h-[58vh] w-full object-contain" />
+                <img src={getNewsImage(selectedNews)} alt="" loading="eager" decoding="async" className="max-h-[58vh] w-full object-contain" />
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#071019] via-transparent to-black/35" />
                 <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-4 p-4 sm:p-6">
                   <div className="min-w-0">

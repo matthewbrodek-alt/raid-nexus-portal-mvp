@@ -114,7 +114,7 @@ export function SiteNotificationToast() {
     }
 
     const uid = userUid;
-    const threadsQuery = query(collection(db, "directThreads"), where("participants", "array-contains", uid));
+    const threadsQuery = query(collection(db, "directThreads"), where("participants", "array-contains", uid), limit(50));
     return onSnapshot(
       threadsQuery,
       (snapshot) => {
@@ -132,7 +132,7 @@ export function SiteNotificationToast() {
     const uid = userUid;
     const topupQuery = isAdmin
       ? query(collection(db, collections.topupLeads), orderBy("createdAt", "desc"), limit(20))
-      : query(collection(db, collections.topupLeads), where("uid", "==", uid));
+      : query(collection(db, collections.topupLeads), where("uid", "==", uid), limit(20));
 
     return onSnapshot(
       topupQuery,

@@ -1,7 +1,7 @@
 "use client";
 
 import { Eye, Filter, MessageSquare, Search, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, limit, onSnapshot, query, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { db } from "@/lib/firebase/client";
@@ -168,7 +168,7 @@ export function MarketplaceBoard() {
   const [previewImage, setPreviewImage] = useState("");
 
   useEffect(() => {
-    const accountsQuery = query(collection(db, collections.marketplaceAccounts), where("status", "in", ["available", "reserved"]));
+    const accountsQuery = query(collection(db, collections.marketplaceAccounts), where("status", "in", ["available", "reserved"]), limit(160));
 
     return onSnapshot(accountsQuery, (snapshot) => {
       const items = snapshot.docs

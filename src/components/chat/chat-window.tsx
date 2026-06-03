@@ -247,7 +247,7 @@ export function ChatWindow() {
       return;
     }
 
-    const usersQuery = query(collection(db, collections.users), orderBy("displayName"));
+    const usersQuery = query(collection(db, collections.users), orderBy("displayName"), limit(120));
     return onSnapshot(
       usersQuery,
       (snapshot) => {
@@ -263,7 +263,7 @@ export function ChatWindow() {
       return;
     }
 
-    const threadsQuery = query(collection(db, "directThreads"), where("participants", "array-contains", user.uid));
+    const threadsQuery = query(collection(db, "directThreads"), where("participants", "array-contains", user.uid), limit(80));
     return onSnapshot(
       threadsQuery,
       (snapshot) => {
@@ -340,8 +340,16 @@ export function ChatWindow() {
     scrollToBottom();
   }, [activeThread, messages.length]);
 
-  function scrollToBottom() {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  function scrollToBottom(behavior: ScrollBehavior = "auto") {
+    const node = scrollRef.current;
+
+    if (!node) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      node.scrollTo({ top: node.scrollHeight, behavior });
+    });
   }
 
   function openMemberMenu(messageItem: ChatMessage) {
@@ -580,7 +588,7 @@ export function ChatWindow() {
         }`}
       >
         <span className={`bp-avatar-chat grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl border bg-gradient-to-br from-violet-500 to-cyan-600 text-xs font-black text-white ${avatarFrameClass}`}>
-          {visibleAvatarUrl ? <img src={visibleAvatarUrl} alt={label} className="h-full w-full rounded-lg object-cover" /> : label.slice(0, 2).toUpperCase()}
+          {visibleAvatarUrl ? <img src={visibleAvatarUrl} alt={label} loading="lazy" decoding="async" className="h-full w-full rounded-lg object-cover" /> : label.slice(0, 2).toUpperCase()}
         </span>
         <span className="min-w-0">
           <span className={`block truncate font-semibold ${nicknameClass}`}>{label}</span>
@@ -698,7 +706,7 @@ export function ChatWindow() {
                       className={`bp-avatar-chat grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-lg border bg-gradient-to-br from-violet-500 to-cyan-600 text-[11px] font-black text-white ${authorAvatarFrameClass}`}
                       title={item.displayName}
                     >
-                      {messageAvatarUrl ? <img src={messageAvatarUrl} alt={item.displayName} className="h-full w-full object-cover" /> : initials}
+                      {messageAvatarUrl ? <img src={messageAvatarUrl} alt={item.displayName} loading="lazy" decoding="async" className="h-full w-full object-cover" /> : initials}
                     </button>
                   ) : null}
                   <article
@@ -725,7 +733,7 @@ export function ChatWindow() {
                         onClick={() => setImagePreview({ url: attachmentUrl, alt: attachmentAlt })}
                         className="mb-1.5 block overflow-hidden rounded-md border border-white/10"
                       >
-                        <img src={attachmentUrl} alt={attachmentAlt} className="max-h-44 object-cover" />
+                        <img src={attachmentUrl} alt={attachmentAlt} loading="lazy" decoding="async" className="max-h-44 object-cover" />
                       </button>
                     ) : null}
                     {item.text ? <p className="break-words text-[13px] leading-5">{renderMessageText(item.text, item.mentions)}</p> : null}
@@ -780,7 +788,7 @@ export function ChatWindow() {
 
           <button
             type="button"
-            onClick={scrollToBottom}
+            onClick={() => scrollToBottom("smooth")}
             className={`absolute right-5 z-10 grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-[#111827]/90 text-relic shadow-lg transition hover:bg-relic hover:text-black ${
               replyTo && attachmentFile ? "bottom-56" : replyTo || attachmentFile ? "bottom-40" : "bottom-24"
             }`}
@@ -806,7 +814,7 @@ export function ChatWindow() {
               {attachmentFile ? (
                 <div className="mb-2 flex items-center gap-3 rounded-xl border border-relic/20 bg-black/35 p-2 text-xs text-zinc-300">
                   {attachmentPreviewUrl ? (
-                    <img src={attachmentPreviewUrl} alt={attachmentFile.name} className="h-16 w-16 rounded-lg object-cover" />
+                    <img src={attachmentPreviewUrl} alt={attachmentFile.name} loading="lazy" decoding="async" className="h-16 w-16 rounded-lg object-cover" />
                   ) : null}
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-white">{attachmentFile.name}</p>
@@ -862,7 +870,7 @@ export function ChatWindow() {
                         >
                           <span className="grid h-7 w-7 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-violet-500 to-cyan-600 text-[10px] font-black text-white">
                             {shouldShowAvatar(item.uid, user?.uid, item.avatarHiddenByAdmin) && item.avatarUrl ? (
-                              <img src={item.avatarUrl} alt={getUserLabel(item)} className="h-full w-full object-cover" />
+                              <img src={item.avatarUrl} alt={getUserLabel(item)} loading="lazy" decoding="async" className="h-full w-full object-cover" />
                             ) : (
                               getUserLabel(item).slice(0, 2).toUpperCase()
                             )}
@@ -967,7 +975,7 @@ export function ChatWindow() {
             <div className="relative flex min-h-[136px] items-center gap-5 rounded-lg border border-white/10 bg-black/20 p-4">
               <span className={`bp-avatar-chat-preview grid h-24 w-24 shrink-0 place-items-center rounded-xl border bg-gradient-to-br from-violet-500 to-cyan-600 p-[3px] text-2xl font-black text-white ${getAvatarFrameClass(memberMenu.avatarFrame, memberMenu.bpStatus ?? "bronze")}`}>
                 <span className="relative z-[1] grid h-full w-full place-items-center overflow-hidden rounded-lg">
-                  {memberMenu.avatarUrl ? <img src={memberMenu.avatarUrl} alt={memberMenu.displayName} className="h-full w-full object-cover" /> : memberMenu.displayName.slice(0, 2).toUpperCase()}
+                  {memberMenu.avatarUrl ? <img src={memberMenu.avatarUrl} alt={memberMenu.displayName} loading="lazy" decoding="async" className="h-full w-full object-cover" /> : memberMenu.displayName.slice(0, 2).toUpperCase()}
                 </span>
               </span>
               <div className="min-w-0">
@@ -1033,7 +1041,7 @@ export function ChatWindow() {
             >
               <X size={18} />
             </button>
-            <img src={imagePreview.url} alt={imagePreview.alt} className="max-h-[92vh] w-full object-contain" />
+            <img src={imagePreview.url} alt={imagePreview.alt} loading="eager" decoding="async" className="max-h-[92vh] w-full object-contain" />
           </div>
         </div>
       ) : null}

@@ -104,7 +104,7 @@ export function HomeUnreadBell({ label }: { label: string }) {
 
     setSeenState(readNotificationSeenState(user.uid));
 
-    const threadsQuery = query(collection(db, "directThreads"), where("participants", "array-contains", user.uid));
+    const threadsQuery = query(collection(db, "directThreads"), where("participants", "array-contains", user.uid), limit(50));
     return onSnapshot(
       threadsQuery,
       (snapshot) => {
@@ -120,7 +120,7 @@ export function HomeUnreadBell({ label }: { label: string }) {
       return;
     }
 
-    const topupQuery = query(collection(db, collections.topupLeads), where("uid", "==", user.uid));
+    const topupQuery = query(collection(db, collections.topupLeads), where("uid", "==", user.uid), limit(30));
 
     return onSnapshot(
       topupQuery,

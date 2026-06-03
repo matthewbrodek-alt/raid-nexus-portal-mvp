@@ -251,7 +251,15 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
   }, [attachmentFile]);
 
   useEffect(() => {
-    messagesRef.current?.scrollTo({ top: messagesRef.current.scrollHeight, behavior: "smooth" });
+    const node = messagesRef.current;
+
+    if (!node) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      node.scrollTo({ top: node.scrollHeight, behavior: "auto" });
+    });
   }, [messages.length]);
 
   useEffect(() => {
@@ -671,7 +679,7 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
                             onClick={() => setImagePreview({ url: attachmentUrl, alt: attachmentAlt })}
                             className="mt-2 block overflow-hidden rounded-xl border border-white/10"
                           >
-                            <img src={attachmentUrl} alt={attachmentAlt} className="max-h-52 w-full object-cover" />
+                            <img src={attachmentUrl} alt={attachmentAlt} loading="lazy" decoding="async" className="max-h-52 w-full object-cover" />
                           </button>
                         ) : null}
                         {item.text ? <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-white">{item.text}</p> : null}
@@ -689,7 +697,7 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
 
               {attachmentFile ? (
                 <div className="mt-3 flex items-center gap-3 rounded-2xl border border-relic/20 bg-black/35 p-3 text-xs text-zinc-300">
-                  {attachmentPreviewUrl ? <img src={attachmentPreviewUrl} alt={attachmentFile.name} className="h-16 w-16 rounded-xl object-cover" /> : null}
+                  {attachmentPreviewUrl ? <img src={attachmentPreviewUrl} alt={attachmentFile.name} loading="lazy" decoding="async" className="h-16 w-16 rounded-xl object-cover" /> : null}
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-white">{attachmentFile.name}</p>
                     <p className="text-zinc-500">{isRu ? "Скриншот будет отправлен вместе с сообщением." : "Screenshot will be sent with the message."}</p>
@@ -737,7 +745,7 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
             >
               <X size={18} />
             </button>
-            <img src={imagePreview.url} alt={imagePreview.alt} className="max-h-[92vh] w-full object-contain" />
+            <img src={imagePreview.url} alt={imagePreview.alt} loading="eager" decoding="async" className="max-h-[92vh] w-full object-contain" />
           </div>
         </div>
       ) : null}

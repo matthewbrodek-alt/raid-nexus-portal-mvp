@@ -124,7 +124,7 @@ export function NotificationCenter() {
 
     setSeenState(readNotificationSeenState(seenUid));
 
-    const threadsQuery = query(collection(db, "directThreads"), where("participants", "array-contains", user.uid));
+    const threadsQuery = query(collection(db, "directThreads"), where("participants", "array-contains", user.uid), limit(80));
     const unsubscribeThreads = onSnapshot(
       threadsQuery,
       (snapshot) => {

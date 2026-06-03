@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { BadgeCheck, Check, ClipboardCopy, Coins, FileText, MessageSquare, Palette, ScrollText, Send, Swords, Users } from "lucide-react";
-import { collection, doc, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
+import { collection, doc, limit, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -118,10 +118,10 @@ export function UserDashboardContent() {
       return;
     }
 
-    const topupQuery = query(collection(db, collections.topupLeads), where("uid", "==", user.uid));
-    const forumQuery = query(collection(db, collections.forumThreads), where("authorId", "==", user.uid));
-    const directQuery = query(collection(db, "directThreads"), where("participants", "array-contains", user.uid));
-    const bonusQuery = query(collection(db, collections.bonusTransactions), where("uid", "==", user.uid));
+    const topupQuery = query(collection(db, collections.topupLeads), where("uid", "==", user.uid), limit(120));
+    const forumQuery = query(collection(db, collections.forumThreads), where("authorId", "==", user.uid), limit(60));
+    const directQuery = query(collection(db, "directThreads"), where("participants", "array-contains", user.uid), limit(80));
+    const bonusQuery = query(collection(db, collections.bonusTransactions), where("uid", "==", user.uid), limit(120));
 
     const unsubTopups = onSnapshot(
       topupQuery,
