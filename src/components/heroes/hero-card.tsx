@@ -116,9 +116,9 @@ export function HeroCard({ hero }: HeroCardProps) {
                 {language === "ru" ? "Аура" : "Aura"}: {hero.aura}
               </span>
             ) : null}
-            <span className="flex items-center gap-2">
+            <span className={`flex items-center gap-2 ${hero.rating > 0 ? "" : "hidden"}`}>
               <Star size={15} className="text-relic" />
-              {hero.source === "gestal" ? (language === "ru" ? "Данные Gestal" : "Gestal data") : hero.rating}
+              {hero.rating}
             </span>
           </div>
         </div>

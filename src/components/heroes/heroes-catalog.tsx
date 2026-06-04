@@ -1,7 +1,7 @@
 "use client";
 
-import { ExternalLink, X } from "lucide-react";
-import { collection, deleteDoc, doc, limit, onSnapshot, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
+import { ExternalLink, Pencil, X } from "lucide-react";
+import { collection, deleteDoc, doc, limit, onSnapshot, query, serverTimestamp, setDoc, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { HeroCard } from "@/components/heroes/hero-card";
@@ -15,14 +15,28 @@ import type { HeroProfile } from "@/lib/types";
 
 type FirestoreHero = {
   slug?: string;
+  gestalId?: number;
+  shortName?: string;
   name?: string;
   nameRu?: string;
   faction?: string;
   rarity?: string;
+  rarityColor?: string;
+  affinity?: string;
+  aura?: string;
   role?: string;
+  roles?: string[];
+  rating?: number;
   avatar?: { secureUrl?: string; url?: string };
+  avatarUrl?: string;
+  portraitUrl?: string;
+  borderUrl?: string;
   gallery?: Array<{ secureUrl?: string; url?: string }>;
+  galleryUrls?: string[];
   markdownComment?: string;
+  comment?: string;
+  youtubeVideoId?: string;
+  youtubeTitle?: string;
 };
 
 type HeroesCatalogProps = {
@@ -209,6 +223,31 @@ function formatRarity(rarity: string, language: "ru" | "en") {
   return rarities[rarity.toLowerCase()] ?? rarity;
 }
 
+function listFromText(value: string) {
+  return value
+    .split(/[\n,]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function numberFromText(value: string, fallback = 0) {
+  const parsed = Number(value.replace(",", "."));
+
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function getHeroDocumentId(hero: HeroProfile) {
+  if (hero.source === "firestore") {
+    return hero.id;
+  }
+
+  if (hero.gestalId) {
+    return `gestal-${hero.gestalId}`;
+  }
+
+  return hero.slug ? `gestal-${hero.slug}` : hero.id;
+}
+
 export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", rarityFilter = "all", roleFilter = "all", searchQuery = "" }: HeroesCatalogProps) {
   const { profile } = useAuth();
   const { language } = useLanguage();
@@ -217,10 +256,25 @@ export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", r
   const [selectedScreenshot, setSelectedScreenshot] = useState("");
   const [editName, setEditName] = useState("");
   const [editNameRu, setEditNameRu] = useState("");
+  const [editSlug, setEditSlug] = useState("");
+  const [editShortName, setEditShortName] = useState("");
+  const [editGestalId, setEditGestalId] = useState("");
   const [editFaction, setEditFaction] = useState("");
   const [editRarity, setEditRarity] = useState<HeroProfile["rarity"]>("Legendary");
+  const [editRarityColor, setEditRarityColor] = useState("");
+  const [editAffinity, setEditAffinity] = useState("");
   const [editRole, setEditRole] = useState("support");
+  const [editRoles, setEditRoles] = useState("");
+  const [editAura, setEditAura] = useState("");
+  const [editRating, setEditRating] = useState("0");
+  const [editAvatarUrl, setEditAvatarUrl] = useState("");
+  const [editPortraitUrl, setEditPortraitUrl] = useState("");
+  const [editBorderUrl, setEditBorderUrl] = useState("");
+  const [editGalleryUrls, setEditGalleryUrls] = useState("");
+  const [editYoutubeVideoId, setEditYoutubeVideoId] = useState("");
+  const [editYoutubeTitle, setEditYoutubeTitle] = useState("");
   const [editComment, setEditComment] = useState("");
+  const [isEditingHero, setIsEditingHero] = useState(false);
   const [visibleCount, setVisibleCount] = useState(heroesPageSize);
   const canManageHeroes = profile?.role === "admin" || profile?.role === "owner";
 
@@ -238,16 +292,24 @@ export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", r
               id: item.id,
               source: "firestore",
               slug: data.slug ?? item.id,
+              gestalId: data.gestalId,
+              shortName: data.shortName,
               name: data.name ?? "Unknown Hero",
               nameRu: data.nameRu,
               faction: data.faction ?? "Unknown",
               rarity: normalizeRarity(data.rarity),
+              rarityColor: data.rarityColor,
+              affinity: data.affinity,
+              aura: data.aura,
               role: data.role ?? "support",
-              roles: [data.role ?? "support"],
-              rating: 0,
-              avatarUrl: data.avatar?.secureUrl ?? data.avatar?.url,
-              portraitUrl: data.avatar?.secureUrl ?? data.avatar?.url,
-              galleryUrls: data.gallery?.map((asset) => asset.secureUrl ?? asset.url ?? "").filter(Boolean) ?? [],
+              roles: data.roles?.length ? data.roles : [data.role ?? "support"],
+              rating: data.rating ?? 0,
+              avatarUrl: data.avatarUrl ?? data.avatar?.secureUrl ?? data.avatar?.url,
+              portraitUrl: data.portraitUrl ?? data.avatarUrl ?? data.avatar?.secureUrl ?? data.avatar?.url,
+              borderUrl: data.borderUrl,
+              galleryUrls: data.galleryUrls?.length ? data.galleryUrls : data.gallery?.map((asset) => asset.secureUrl ?? asset.url ?? "").filter(Boolean) ?? [],
+              youtubeVideoId: data.youtubeVideoId,
+              youtubeTitle: data.youtubeTitle,
               comment: data.markdownComment ?? "Описание пока не заполнено."
             };
           })
@@ -264,30 +326,107 @@ export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", r
     return [...firestoreHeroes, ...officialHeroes.filter((hero) => !customSlugs.has(hero.slug))].sort(sortHeroes);
   }, [firestoreHeroes]);
 
-  function openHero(hero: HeroProfile) {
-    setSelectedHero(hero);
+  function hydrateHeroEditForm(hero: HeroProfile) {
     setEditName(hero.name);
     setEditNameRu(hero.nameRu ?? getChampionRussianNameByEnglish(hero.name));
+    setEditSlug(hero.slug ?? "");
+    setEditShortName(hero.shortName ?? "");
+    setEditGestalId(hero.gestalId ? String(hero.gestalId) : "");
     setEditFaction(hero.faction);
     setEditRarity(hero.rarity);
+    setEditRarityColor(hero.rarityColor ?? "");
+    setEditAffinity(hero.affinity ?? "");
     setEditRole(raidRoles.some((role) => role.value === hero.role) ? hero.role : "support");
+    setEditRoles((hero.roles?.length ? hero.roles : [hero.role]).filter(Boolean).join(", "));
+    setEditAura(hero.aura ?? "");
+    setEditRating(String(hero.rating ?? 0));
+    setEditAvatarUrl(hero.avatarUrl ?? "");
+    setEditPortraitUrl(hero.portraitUrl ?? "");
+    setEditBorderUrl(hero.borderUrl ?? "");
+    setEditGalleryUrls(hero.galleryUrls.join("\n"));
+    setEditYoutubeVideoId(hero.youtubeVideoId ?? "");
+    setEditYoutubeTitle(hero.youtubeTitle ?? "");
     setEditComment(hero.comment);
   }
 
+  function openHero(hero: HeroProfile) {
+    setSelectedHero(hero);
+    setIsEditingHero(false);
+    hydrateHeroEditForm(hero);
+  }
+
+  function openHeroEditor(hero: HeroProfile) {
+    setSelectedHero(hero);
+    setIsEditingHero(true);
+    hydrateHeroEditForm(hero);
+  }
+
   async function saveSelectedHero() {
-    if (!selectedHero || selectedHero.source !== "firestore") {
+    if (!selectedHero || !canManageHeroes) {
       return;
     }
 
-    await updateDoc(doc(db, collections.heroes, selectedHero.id), {
+    const targetId = getHeroDocumentId(selectedHero);
+    const roles = listFromText(editRoles);
+    const nextSlug = selectedHero.source === "firestore" ? editSlug.trim() || selectedHero.slug || targetId : selectedHero.slug || editSlug.trim() || targetId;
+    const nextGestalId = editGestalId.trim() ? numberFromText(editGestalId) : selectedHero.gestalId;
+    const payload: Record<string, unknown> = {
       name: editName.trim(),
       nameRu: editNameRu.trim(),
-      faction: editFaction || "Unknown",
+      slug: nextSlug,
+      gestalId: nextGestalId ?? null,
+      shortName: editShortName.trim(),
+      faction: editFaction.trim() || "Unknown",
       rarity: editRarity.toLowerCase(),
+      rarityColor: editRarityColor.trim(),
+      affinity: editAffinity.trim(),
+      aura: editAura.trim(),
       role: editRole,
+      roles: roles.length ? roles : [editRole],
+      rating: numberFromText(editRating),
+      avatarUrl: editAvatarUrl.trim(),
+      portraitUrl: editPortraitUrl.trim(),
+      borderUrl: editBorderUrl.trim(),
+      galleryUrls: listFromText(editGalleryUrls).slice(0, 5),
+      youtubeVideoId: editYoutubeVideoId.trim(),
+      youtubeTitle: editYoutubeTitle.trim(),
+      comment: editComment.trim(),
       markdownComment: editComment.trim(),
+      isPublished: true,
       updatedAt: serverTimestamp()
+    };
+
+    if (selectedHero.source !== "firestore") {
+      payload.createdAt = serverTimestamp();
+    }
+
+    await setDoc(doc(db, collections.heroes, targetId), payload, { merge: true });
+    setSelectedHero({
+      ...selectedHero,
+      id: targetId,
+      source: "firestore",
+      slug: nextSlug,
+      gestalId: nextGestalId,
+      shortName: editShortName.trim(),
+      name: editName.trim(),
+      nameRu: editNameRu.trim(),
+      faction: editFaction.trim() || "Unknown",
+      rarity: editRarity,
+      rarityColor: editRarityColor.trim(),
+      affinity: editAffinity.trim(),
+      aura: editAura.trim(),
+      role: editRole,
+      roles: roles.length ? roles : [editRole],
+      rating: numberFromText(editRating),
+      avatarUrl: editAvatarUrl.trim(),
+      portraitUrl: editPortraitUrl.trim(),
+      borderUrl: editBorderUrl.trim(),
+      galleryUrls: listFromText(editGalleryUrls).slice(0, 5),
+      youtubeVideoId: editYoutubeVideoId.trim(),
+      youtubeTitle: editYoutubeTitle.trim(),
+      comment: editComment.trim()
     });
+    setIsEditingHero(false);
   }
 
   const filteredHeroes = useMemo(() => {
@@ -358,6 +497,7 @@ export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", r
     }
 
     await deleteDoc(doc(db, collections.heroes, selectedHero.id));
+    setIsEditingHero(false);
     setSelectedHero(null);
   }
 
@@ -369,13 +509,28 @@ export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", r
             <span>
               {language === "ru" ? "Найдено героев" : "Champions found"}: <strong className="text-relic">{filteredHeroes.length}</strong>
             </span>
-            <span className="text-xs uppercase tracking-[0.18em] text-zinc-500">Gestal CDN</span>
+            <span className="text-xs uppercase tracking-[0.18em] text-zinc-500">{language === "ru" ? "База героев" : "Hero database"}</span>
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {visibleHeroes.map((hero) => (
-              <button key={hero.id} type="button" onClick={() => openHero(hero)} className="block text-left transition hover:-translate-y-1">
-                <HeroCard hero={hero} />
-              </button>
+              <div key={hero.id} className="group/card relative">
+                <button type="button" onClick={() => openHero(hero)} className="block w-full text-left transition hover:-translate-y-1">
+                  <HeroCard hero={hero} />
+                </button>
+                {canManageHeroes ? (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      openHeroEditor(hero);
+                    }}
+                    className="absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-xl border border-relic/40 bg-black/75 text-relic opacity-100 shadow-[0_0_24px_rgba(0,0,0,0.45)] backdrop-blur transition hover:bg-relic hover:text-black lg:opacity-0 lg:group-hover/card:opacity-100"
+                    aria-label={language === "ru" ? "Редактировать героя" : "Edit champion"}
+                  >
+                    <Pencil size={16} />
+                  </button>
+                ) : null}
+              </div>
             ))}
           </div>
           {visibleCount < filteredHeroes.length ? (
@@ -458,18 +613,8 @@ export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", r
                 <div>
                   <h3 className="text-2xl font-black text-white">Описание</h3>
                   <p className="mt-3 text-sm leading-7 text-zinc-300">
-                    {selectedHero.source === "gestal"
-                      ? language === "ru"
-                        ? "Карточка героя из открытых данных Gestal: аватар, крупный портрет, фракция, редкость, стихия, роль и аура. Скиллы не импортируются."
-                        : "Champion card from public Gestal data: avatar, large portrait, faction, rarity, affinity, role and aura. Skills are not imported."
-                      : selectedHero.comment}
+                    {selectedHero.comment}
                   </p>
-                  {selectedHero.source === "gestal" ? (
-                    <div className="mt-4 grid gap-2 text-sm text-zinc-300 sm:grid-cols-2">
-                      <span className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">ID: {selectedHero.gestalId}</span>
-                      <span className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">{language === "ru" ? "Аура" : "Aura"}: {selectedHero.aura || (language === "ru" ? "нет" : "none")}</span>
-                    </div>
-                  ) : null}
                 </div>
                 <button type="button" onClick={() => setSelectedHero(null)} className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-white/10 text-zinc-400 hover:text-white">
                   <X size={18} />
@@ -515,7 +660,93 @@ export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", r
                 )}
               </div>
 
-              {canManageHeroes && selectedHero.source === "firestore" ? (
+              {canManageHeroes ? (
+                <div className="space-y-3 rounded-[18px] border border-relic/20 bg-relic/[0.06] p-5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <h3 className="text-xl font-black text-white">Админ-редактор героя</h3>
+                    {!isEditingHero ? (
+                      <button type="button" onClick={() => setIsEditingHero(true)} className="inline-flex items-center justify-center gap-2 rounded-md border border-relic/30 bg-black/30 px-4 py-2 text-sm font-bold text-relic hover:bg-relic hover:text-black">
+                        <Pencil size={15} />
+                        Редактировать
+                      </button>
+                    ) : null}
+                  </div>
+
+                  {isEditingHero ? (
+                    <>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <input value={editName} onChange={(event) => setEditName(event.target.value)} placeholder="English name" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+                        <input value={editNameRu} onChange={(event) => setEditNameRu(event.target.value)} placeholder="Русское имя" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+                        <input value={editSlug} onChange={(event) => setEditSlug(event.target.value)} placeholder="slug" disabled={selectedHero.source !== "firestore"} className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 disabled:opacity-50 focus:border-relic focus:ring-relic" />
+                        <input value={editShortName} onChange={(event) => setEditShortName(event.target.value)} placeholder="Short name" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+                        <input value={editGestalId} onChange={(event) => setEditGestalId(event.target.value)} placeholder="Internal ID" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+                        <input value={editRarityColor} onChange={(event) => setEditRarityColor(event.target.value)} placeholder="Rarity color, например #f2c66d" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <select value={editFaction} onChange={(event) => setEditFaction(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
+                          <option value="">Фракция</option>
+                          {raidFactions.map((faction) => (
+                            <option key={faction} value={faction}>
+                              {faction}
+                            </option>
+                          ))}
+                        </select>
+                        <select value={editRarity} onChange={(event) => setEditRarity(event.target.value as HeroProfile["rarity"])} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
+                          {heroRarities.map((rarity) => (
+                            <option key={rarity.value} value={rarity.value}>
+                              {rarity.label}
+                            </option>
+                          ))}
+                        </select>
+                        <select value={editRole} onChange={(event) => setEditRole(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
+                          {raidRoles.map((role) => (
+                            <option key={role.value} value={role.value}>
+                              {role.label}
+                            </option>
+                          ))}
+                        </select>
+                        <input value={editAffinity} onChange={(event) => setEditAffinity(event.target.value)} placeholder="Affinity: magic / force / spirit / void" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+                        <input value={editAura} onChange={(event) => setEditAura(event.target.value)} placeholder="Аура" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+                        <input value={editRating} onChange={(event) => setEditRating(event.target.value)} placeholder="Рейтинг" inputMode="decimal" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+                      </div>
+
+                      <input value={editRoles} onChange={(event) => setEditRoles(event.target.value)} placeholder="Роли через запятую: attack, support" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <input value={editAvatarUrl} onChange={(event) => setEditAvatarUrl(event.target.value)} placeholder="Avatar URL" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+                        <input value={editPortraitUrl} onChange={(event) => setEditPortraitUrl(event.target.value)} placeholder="Portrait / model URL" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+                        <input value={editBorderUrl} onChange={(event) => setEditBorderUrl(event.target.value)} placeholder="Border URL" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+                        <input value={editYoutubeVideoId} onChange={(event) => setEditYoutubeVideoId(event.target.value)} placeholder="YouTube video ID" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+                        <input value={editYoutubeTitle} onChange={(event) => setEditYoutubeTitle(event.target.value)} placeholder="YouTube title" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic sm:col-span-2" />
+                      </div>
+
+                      <textarea value={editGalleryUrls} onChange={(event) => setEditGalleryUrls(event.target.value)} rows={4} placeholder="До 5 ссылок на сборки героя, каждая с новой строки" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+                      <textarea value={editComment} onChange={(event) => setEditComment(event.target.value)} rows={5} placeholder="Описание героя" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+
+                      <div className="grid gap-2 sm:grid-cols-3">
+                        <button type="button" onClick={() => void saveSelectedHero()} className="rounded-md bg-relic px-4 py-2 font-bold text-black">
+                          Сохранить
+                        </button>
+                        <button type="button" onClick={() => setIsEditingHero(false)} className="rounded-md border border-white/10 bg-white/[0.04] px-4 py-2 font-bold text-zinc-200">
+                          Отмена
+                        </button>
+                        {selectedHero.source === "firestore" ? (
+                          <button type="button" onClick={() => void deleteSelectedHero()} className="rounded-md border border-blood/30 bg-blood/10 px-4 py-2 font-bold text-ember">
+                            Удалить
+                          </button>
+                        ) : null}
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm leading-6 text-zinc-400">
+                      Нажми «Редактировать» или карандаш на карточке, чтобы изменить все параметры героя. Для базовых героев будет создана админская версия без дубля карточки.
+                    </p>
+                  )}
+                </div>
+              ) : null}
+
+              {canManageHeroes && selectedHero.id === "__legacy_disabled__" ? (
                 <div className="space-y-3 rounded-[18px] border border-relic/20 bg-relic/[0.06] p-5">
                   <h3 className="text-xl font-black text-white">Админ-правка</h3>
                   <input value={editName} onChange={(event) => setEditName(event.target.value)} placeholder="English name" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
@@ -564,13 +795,7 @@ export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", r
                   ))}
                   {selectedHero.galleryUrls.length === 0 ? (
                     <p className="col-span-full rounded-lg border border-white/10 bg-black/20 p-4 text-sm text-zinc-400">
-                      {selectedHero.source === "gestal"
-                        ? language === "ru"
-                          ? "Скиллы не импортируются. Используется только карточка, аватар и портрет героя."
-                          : "Skills are not imported. Only the card, avatar and champion portrait are used."
-                        : language === "ru"
-                          ? "Сборка героя пока не заполнена."
-                          : "Hero build is not filled yet."}
+                      {language === "ru" ? "Сборка героя пока не заполнена." : "Hero build is not filled yet."}
                     </p>
                   ) : null}
                 </div>
