@@ -708,7 +708,7 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
                 </div>
               ) : null}
 
-              <form onSubmit={sendMessage} onPaste={handlePasteImage} className="mt-4 flex gap-2">
+              <form onSubmit={sendMessage} onPaste={handlePasteImage} className="mt-4 flex items-center gap-2">
                 <label className="grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-xl border border-white/10 bg-black/35 text-relic transition hover:border-relic/35 hover:bg-relic/10">
                   <ImagePlus size={18} />
                   <input type="file" accept="image/*" className="hidden" onChange={(event) => applySelectedFile(event.target.files?.[0])} />
@@ -716,8 +716,8 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
                 <input
                   value={message}
                   onChange={(event) => setMessage(event.target.value)}
-                  placeholder={isRu ? "Сообщение по заявке..." : "Request message..."}
-                  className="min-w-0 flex-1 rounded-xl border-white/10 bg-black/35 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+                  placeholder={isRu ? "Написать сообщение" : "Write a message"}
+                  className="h-11 min-w-0 flex-1 rounded-xl border-white/10 bg-black/35 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
                 />
                 <button
                   disabled={!canSend}

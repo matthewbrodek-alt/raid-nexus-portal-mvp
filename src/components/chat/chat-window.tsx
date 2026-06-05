@@ -830,7 +830,7 @@ export function ChatWindow() {
                 </div>
               ) : null}
 
-              <div className="flex items-end gap-2">
+              <div className="flex items-center gap-2">
                 <label className="grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-md border border-white/10 bg-black/30 text-relic transition hover:bg-white/[0.06]">
                   <ImagePlus size={18} />
                   <input type="file" accept="image/*" className="hidden" onChange={(event) => applySelectedFile(event.target.files?.[0])} />
@@ -896,8 +896,8 @@ export function ChatWindow() {
                       }
                     }}
                     rows={1}
-                    placeholder={selectedUser ? "Личное сообщение..." : "Сообщение в общий чат... используйте @имя"}
-                    className="max-h-28 min-h-11 w-full resize-none rounded-md border-white/10 bg-black/30 text-sm text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+                    placeholder="Написать сообщение"
+                    className="h-11 max-h-28 min-h-11 w-full resize-none rounded-md border-white/10 bg-black/30 py-2.5 text-sm leading-5 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
                   />
                 </div>
                 <button disabled={!canSend} className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-relic text-black transition hover:bg-[#f0c766] disabled:cursor-not-allowed disabled:opacity-50">

@@ -16,6 +16,7 @@ export const collections = {
   bonusTransactions: "bonusTransactions",
   chatRooms: "chatRooms",
   chatMessages: "chatMessages",
+  userGroups: "userGroups",
   clanAnnouncements: "clanAnnouncements",
   forumThreads: "forumThreads",
   crmTables: "crmTables",

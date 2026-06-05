@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import type { CloudinaryAsset } from "@/lib/cloudinary/types";
+import type { ChampionDamageSkill } from "@/lib/data/champion-multipliers";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 
@@ -51,6 +52,16 @@ const heroRarities = [
   { value: "rare", label: "Редкий" }
 ];
 
+type SkillFormValue = "Base Form" | "Alternate Form" | "Default";
+
+type EditableDamageSkill = {
+  id: string;
+  slot: string;
+  name: string;
+  multiplier: string;
+  form: SkillFormValue;
+};
+
 type ManagedHero = {
   id: string;
   name?: string;
@@ -61,6 +72,7 @@ type ManagedHero = {
   avatar?: CloudinaryAsset | null;
   gallery?: Array<CloudinaryAsset & { sortOrder?: number }>;
   markdownComment?: string;
+  damageSkills?: ChampionDamageSkill[];
   isPublished?: boolean;
 };
 
@@ -92,6 +104,43 @@ async function uploadImage(file: File, publicId: string, folder = "heroes") {
   return (await response.json()) as CloudinaryAsset;
 }
 
+function makeSkillRow(skill?: Partial<ChampionDamageSkill>, index = 0): EditableDamageSkill {
+  return {
+    id: `${Date.now()}-${index}-${Math.random().toString(36).slice(2, 8)}`,
+    slot: skill?.slot ?? `A${index + 1}`,
+    name: skill?.name ?? "",
+    multiplier: skill?.multiplier ?? "",
+    form: skill?.form ?? "Default"
+  };
+}
+
+function skillsToRows(skills: ChampionDamageSkill[] = []) {
+  return skills.map((skill, index) => makeSkillRow(skill, index));
+}
+
+function rowsToSkills(rows: EditableDamageSkill[], rarity: string): ChampionDamageSkill[] {
+  const isMythical = rarity.toLowerCase() === "mythical";
+
+  return rows
+    .map((row, index) => {
+      const slot = row.slot.trim() || `A${index + 1}`;
+      const name = row.name.trim();
+      const multiplier = row.multiplier.trim();
+
+      if (!name && !multiplier) {
+        return null;
+      }
+
+      return {
+        slot,
+        name: name || slot,
+        multiplier: multiplier || "?",
+        ...(isMythical ? { form: row.form } : {})
+      };
+    })
+    .filter((skill): skill is ChampionDamageSkill => Boolean(skill));
+}
+
 export function AdminContentForge() {
   const { profile } = useAuth();
   const [newsTitle, setNewsTitle] = useState("");
@@ -104,6 +153,7 @@ export function AdminContentForge() {
   const [heroRarity, setHeroRarity] = useState("legendary");
   const [heroRole, setHeroRole] = useState("support");
   const [heroDescription, setHeroDescription] = useState("");
+  const [heroDamageSkills, setHeroDamageSkills] = useState<EditableDamageSkill[]>([]);
   const [avatar, setAvatar] = useState<File | null>(null);
   const [gallery, setGallery] = useState<FileList | null>(null);
   const [managedHeroes, setManagedHeroes] = useState<ManagedHero[]>([]);
@@ -114,6 +164,7 @@ export function AdminContentForge() {
   const [editHeroRarity, setEditHeroRarity] = useState("legendary");
   const [editHeroRole, setEditHeroRole] = useState("");
   const [editHeroDescription, setEditHeroDescription] = useState("");
+  const [editHeroDamageSkills, setEditHeroDamageSkills] = useState<EditableDamageSkill[]>([]);
   const [editHeroAvatar, setEditHeroAvatar] = useState<File | null>(null);
   const [editHeroGallery, setEditHeroGallery] = useState<FileList | null>(null);
   const [broadcastTitle, setBroadcastTitle] = useState("");
@@ -136,6 +187,79 @@ export function AdminContentForge() {
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
   const crmUrl = process.env.NEXT_PUBLIC_CRM_URL ?? "#";
+
+  function renderDamageSkillEditor(
+    rows: EditableDamageSkill[],
+    setRows: (updater: (current: EditableDamageSkill[]) => EditableDamageSkill[]) => void,
+    rarity: string
+  ) {
+    const isMythical = rarity.toLowerCase() === "mythical";
+
+    return (
+      <div className="space-y-3 rounded-[16px] border border-relic/15 bg-black/20 p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-relic">Damage skills</p>
+            <h4 className="text-base font-black text-white">Навыки и множители</h4>
+            <p className="text-xs text-zinc-500">Форма доступна только для мифических героев.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setRows((current) => [...current, makeSkillRow(undefined, current.length)])}
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-relic/30 bg-relic/10 px-3 py-2 text-sm font-bold text-relic hover:bg-relic hover:text-black"
+          >
+            <Plus size={15} />
+            Добавить навык
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          {rows.map((skill, index) => (
+            <div key={skill.id} className="grid gap-2 rounded-xl border border-white/10 bg-black/25 p-3 sm:grid-cols-[74px_1fr_120px_150px_42px] sm:items-center">
+              <input
+                value={skill.slot}
+                onChange={(event) => setRows((current) => current.map((item) => (item.id === skill.id ? { ...item, slot: event.target.value } : item)))}
+                placeholder={`A${index + 1}`}
+                className="w-full rounded-md border-white/10 bg-black/30 text-sm text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+              />
+              <input
+                value={skill.name}
+                onChange={(event) => setRows((current) => current.map((item) => (item.id === skill.id ? { ...item, name: event.target.value } : item)))}
+                placeholder="Название навыка"
+                className="w-full rounded-md border-white/10 bg-black/30 text-sm text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+              />
+              <input
+                value={skill.multiplier}
+                onChange={(event) => setRows((current) => current.map((item) => (item.id === skill.id ? { ...item, multiplier: event.target.value } : item)))}
+                placeholder="4.2 ATK"
+                className="w-full rounded-md border-white/10 bg-black/30 text-sm text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+              />
+              <select
+                value={skill.form}
+                disabled={!isMythical}
+                onChange={(event) => setRows((current) => current.map((item) => (item.id === skill.id ? { ...item, form: event.target.value as SkillFormValue } : item)))}
+                className="w-full rounded-md border-white/10 bg-black/30 text-sm text-white disabled:cursor-not-allowed disabled:opacity-45 focus:border-relic focus:ring-relic"
+              >
+                <option value="Default">Обычная форма</option>
+                <option value="Base Form">Base Form</option>
+                <option value="Alternate Form">Alternate Form</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => setRows((current) => current.filter((item) => item.id !== skill.id))}
+                className="grid h-10 w-10 place-items-center rounded-md border border-blood/30 text-ember hover:bg-blood/15"
+                aria-label="Удалить навык"
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {rows.length === 0 ? <p className="rounded-xl border border-white/10 bg-black/20 p-3 text-sm text-zinc-500">Навыки пока не добавлены.</p> : null}
+      </div>
+    );
+  }
 
   useEffect(() => {
     const heroesQuery = query(collection(db, collections.heroes), orderBy("createdAt", "desc"), limit(12));
@@ -436,6 +560,7 @@ export function AdminContentForge() {
     setEditHeroRarity(heroRarities.some((rarity) => rarity.value === hero.rarity) ? hero.rarity ?? "legendary" : "legendary");
     setEditHeroRole(raidRoles.some((role) => role.value === hero.role) ? hero.role ?? "support" : "support");
     setEditHeroDescription(hero.markdownComment ?? "");
+    setEditHeroDamageSkills(skillsToRows(hero.damageSkills ?? []));
     setEditHeroAvatar(null);
     setEditHeroGallery(null);
   }
@@ -459,6 +584,7 @@ export function AdminContentForge() {
         rarity: editHeroRarity,
         role: editHeroRole,
         markdownComment: editHeroDescription.trim(),
+        damageSkills: rowsToSkills(editHeroDamageSkills, editHeroRarity),
         updatedAt: serverTimestamp()
       };
 
@@ -487,6 +613,7 @@ export function AdminContentForge() {
 
       await updateDoc(doc(db, collections.heroes, editingHeroId), payload);
       setEditingHeroId("");
+      setEditHeroDamageSkills([]);
       setEditHeroAvatar(null);
       setEditHeroGallery(null);
       setStatus("Герой обновлен.");
@@ -546,6 +673,7 @@ export function AdminContentForge() {
           sortOrder: index + 1
         })),
         markdownComment: heroDescription.trim(),
+        damageSkills: rowsToSkills(heroDamageSkills, heroRarity),
         ratings: {
           arena: 0,
           clanBoss: 0,
@@ -565,6 +693,7 @@ export function AdminContentForge() {
       setHeroRarity("legendary");
       setHeroRole("support");
       setHeroDescription("");
+      setHeroDamageSkills([]);
       setAvatar(null);
       setGallery(null);
       setStatus("Герой добавлен в heroes.");
@@ -804,6 +933,7 @@ export function AdminContentForge() {
               </option>
             ))}
           </select>
+          {renderDamageSkillEditor(heroDamageSkills, setHeroDamageSkills, heroRarity)}
           <label className="block text-sm text-zinc-300">
             Главное фото
             <input type="file" accept="image/*" onChange={(event) => setAvatar(event.target.files?.[0] ?? null)} required className="mt-2 block w-full text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-relic file:px-3 file:py-2 file:font-bold file:text-black" />
@@ -865,6 +995,7 @@ export function AdminContentForge() {
                 </option>
               ))}
             </select>
+            {renderDamageSkillEditor(editHeroDamageSkills, setEditHeroDamageSkills, editHeroRarity)}
             <textarea value={editHeroDescription} onChange={(event) => setEditHeroDescription(event.target.value)} rows={5} placeholder="Описание" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="block text-sm text-zinc-300">

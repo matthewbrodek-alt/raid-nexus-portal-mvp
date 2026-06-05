@@ -192,6 +192,21 @@ service cloud.firestore {
       }
     }
 
+    match /userGroups/{uid} {
+      allow read: if true;
+      allow create: if activeUser()
+        && uid == request.auth.uid
+        && request.resource.data.ownerUid == request.auth.uid;
+      allow update: if isAdmin()
+        || (
+          activeUser()
+          && uid == request.auth.uid
+          && resource.data.ownerUid == request.auth.uid
+          && request.resource.data.ownerUid == request.auth.uid
+        );
+      allow delete: if signedIn() && (isAdmin() || uid == request.auth.uid);
+    }
+
     match /directThreads/{threadId} {
       allow read: if signedIn() && request.auth.uid in resource.data.participants;
       allow create, update: if activeUser() && request.auth.uid in request.resource.data.participants;

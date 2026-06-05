@@ -1,11 +1,11 @@
 "use client";
 
-import { ExternalLink, Pencil, X } from "lucide-react";
+import { ExternalLink, Pencil, Plus, Trash2, X } from "lucide-react";
 import { collection, deleteDoc, doc, limit, onSnapshot, query, serverTimestamp, setDoc, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { HeroCard } from "@/components/heroes/hero-card";
-import { championMultipliers } from "@/lib/data/champion-multipliers";
+import { championMultipliers, type ChampionDamageSkill } from "@/lib/data/champion-multipliers";
 import { getChampionRussianNameByEnglish, normalizeChampionSearch, transliterateChampionName } from "@/lib/data/champion-localization";
 import { gestalChampions, type GestalChampion } from "@/lib/data/gestal-champions";
 import { db } from "@/lib/firebase/client";
@@ -37,6 +37,17 @@ type FirestoreHero = {
   comment?: string;
   youtubeVideoId?: string;
   youtubeTitle?: string;
+  damageSkills?: ChampionDamageSkill[];
+};
+
+type SkillFormValue = "Base Form" | "Alternate Form" | "Default";
+
+type EditableDamageSkill = {
+  id: string;
+  slot: string;
+  name: string;
+  multiplier: string;
+  form: SkillFormValue;
 };
 
 type HeroesCatalogProps = {
@@ -236,6 +247,48 @@ function numberFromText(value: string, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function findHeroMultiplier(hero: Pick<HeroProfile, "name">) {
+  const selectedName = normalizeChampionSearch(hero.name);
+  const entry = championMultipliers.find((item) => normalizeChampionSearch(item.nameEn) === selectedName);
+
+  return entry ? { sourceUrl: entry.sourceUrl, skills: entry.skills as ChampionDamageSkill[] } : null;
+}
+
+function makeSkillRow(skill?: Partial<ChampionDamageSkill>, index = 0): EditableDamageSkill {
+  return {
+    id: `${Date.now()}-${index}-${Math.random().toString(36).slice(2, 8)}`,
+    slot: skill?.slot ?? `A${index + 1}`,
+    name: skill?.name ?? "",
+    multiplier: skill?.multiplier ?? "",
+    form: skill?.form ?? "Default"
+  };
+}
+
+function skillsToRows(skills: ChampionDamageSkill[]) {
+  return skills.map((skill, index) => makeSkillRow(skill, index));
+}
+
+function rowsToSkills(rows: EditableDamageSkill[], rarity: HeroProfile["rarity"]): ChampionDamageSkill[] {
+  return rows
+    .map((row, index) => {
+      const slot = row.slot.trim() || `A${index + 1}`;
+      const name = row.name.trim();
+      const multiplier = row.multiplier.trim();
+
+      if (!name && !multiplier) {
+        return null;
+      }
+
+      return {
+        slot,
+        name: name || slot,
+        multiplier: multiplier || "?",
+        ...(rarity === "Mythical" ? { form: row.form } : {})
+      };
+    })
+    .filter((skill): skill is ChampionDamageSkill => Boolean(skill));
+}
+
 function getHeroDocumentId(hero: HeroProfile) {
   if (hero.source === "firestore") {
     return hero.id;
@@ -274,6 +327,7 @@ export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", r
   const [editYoutubeVideoId, setEditYoutubeVideoId] = useState("");
   const [editYoutubeTitle, setEditYoutubeTitle] = useState("");
   const [editComment, setEditComment] = useState("");
+  const [editDamageSkills, setEditDamageSkills] = useState<EditableDamageSkill[]>([]);
   const [isEditingHero, setIsEditingHero] = useState(false);
   const [visibleCount, setVisibleCount] = useState(heroesPageSize);
   const canManageHeroes = profile?.role === "admin" || profile?.role === "owner";
@@ -310,6 +364,7 @@ export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", r
               galleryUrls: data.galleryUrls?.length ? data.galleryUrls : data.gallery?.map((asset) => asset.secureUrl ?? asset.url ?? "").filter(Boolean) ?? [],
               youtubeVideoId: data.youtubeVideoId,
               youtubeTitle: data.youtubeTitle,
+              damageSkills: data.damageSkills ?? [],
               comment: data.markdownComment ?? "Описание пока не заполнено."
             };
           })
@@ -347,6 +402,7 @@ export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", r
     setEditYoutubeVideoId(hero.youtubeVideoId ?? "");
     setEditYoutubeTitle(hero.youtubeTitle ?? "");
     setEditComment(hero.comment);
+    setEditDamageSkills(skillsToRows(hero.damageSkills?.length ? hero.damageSkills : findHeroMultiplier(hero)?.skills ?? []));
   }
 
   function openHero(hero: HeroProfile) {
@@ -370,6 +426,7 @@ export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", r
     const roles = listFromText(editRoles);
     const nextSlug = selectedHero.source === "firestore" ? editSlug.trim() || selectedHero.slug || targetId : selectedHero.slug || editSlug.trim() || targetId;
     const nextGestalId = editGestalId.trim() ? numberFromText(editGestalId) : selectedHero.gestalId;
+    const damageSkills = rowsToSkills(editDamageSkills, editRarity);
     const payload: Record<string, unknown> = {
       name: editName.trim(),
       nameRu: editNameRu.trim(),
@@ -392,6 +449,7 @@ export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", r
       youtubeTitle: editYoutubeTitle.trim(),
       comment: editComment.trim(),
       markdownComment: editComment.trim(),
+      damageSkills,
       isPublished: true,
       updatedAt: serverTimestamp()
     };
@@ -424,7 +482,8 @@ export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", r
       galleryUrls: listFromText(editGalleryUrls).slice(0, 5),
       youtubeVideoId: editYoutubeVideoId.trim(),
       youtubeTitle: editYoutubeTitle.trim(),
-      comment: editComment.trim()
+      comment: editComment.trim(),
+      damageSkills
     });
     setIsEditingHero(false);
   }
@@ -481,14 +540,16 @@ export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", r
     return hero.roles?.length ? hero.roles.map((role) => formatRole(role, language)).join(" / ") : formatRole(hero.role, language);
   }
 
-  const selectedHeroMultiplier = useMemo(() => {
+  const selectedHeroMultiplier = useMemo<{ sourceUrl?: string; skills: ChampionDamageSkill[] } | null>(() => {
     if (!selectedHero) {
       return null;
     }
 
-    const selectedName = normalizeChampionSearch(selectedHero.name);
+    if (selectedHero.damageSkills?.length) {
+      return { skills: selectedHero.damageSkills };
+    }
 
-    return championMultipliers.find((entry) => normalizeChampionSearch(entry.nameEn) === selectedName) ?? null;
+    return findHeroMultiplier(selectedHero);
   }, [selectedHero]);
 
   async function deleteSelectedHero() {
@@ -712,6 +773,86 @@ export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", r
                       </div>
 
                       <input value={editRoles} onChange={(event) => setEditRoles(event.target.value)} placeholder="Роли через запятую: attack, support" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+
+                      <div className="space-y-3 rounded-[16px] border border-relic/15 bg-black/20 p-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <p className="text-xs font-bold uppercase tracking-[0.18em] text-relic">Damage skills</p>
+                            <h4 className="text-lg font-black text-white">Навыки и множители</h4>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setEditDamageSkills((current) => [...current, makeSkillRow(undefined, current.length)])}
+                            className="inline-flex items-center justify-center gap-2 rounded-md border border-relic/30 bg-relic/10 px-3 py-2 text-sm font-bold text-relic hover:bg-relic hover:text-black"
+                          >
+                            <Plus size={15} />
+                            Добавить навык
+                          </button>
+                        </div>
+
+                        <div className="space-y-2">
+                          {editDamageSkills.map((skill, index) => (
+                            <div key={skill.id} className="grid gap-2 rounded-xl border border-white/10 bg-black/25 p-3 sm:grid-cols-[74px_1fr_120px_150px_42px] sm:items-center">
+                              <input
+                                value={skill.slot}
+                                onChange={(event) =>
+                                  setEditDamageSkills((current) =>
+                                    current.map((item) => (item.id === skill.id ? { ...item, slot: event.target.value } : item))
+                                  )
+                                }
+                                placeholder={`A${index + 1}`}
+                                className="w-full rounded-md border-white/10 bg-black/30 text-sm text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+                              />
+                              <input
+                                value={skill.name}
+                                onChange={(event) =>
+                                  setEditDamageSkills((current) =>
+                                    current.map((item) => (item.id === skill.id ? { ...item, name: event.target.value } : item))
+                                  )
+                                }
+                                placeholder="Название навыка"
+                                className="w-full rounded-md border-white/10 bg-black/30 text-sm text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+                              />
+                              <input
+                                value={skill.multiplier}
+                                onChange={(event) =>
+                                  setEditDamageSkills((current) =>
+                                    current.map((item) => (item.id === skill.id ? { ...item, multiplier: event.target.value } : item))
+                                  )
+                                }
+                                placeholder="4.2 ATK"
+                                className="w-full rounded-md border-white/10 bg-black/30 text-sm text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+                              />
+                              <select
+                                value={skill.form}
+                                disabled={editRarity !== "Mythical"}
+                                onChange={(event) =>
+                                  setEditDamageSkills((current) =>
+                                    current.map((item) => (item.id === skill.id ? { ...item, form: event.target.value as SkillFormValue } : item))
+                                  )
+                                }
+                                className="w-full rounded-md border-white/10 bg-black/30 text-sm text-white disabled:cursor-not-allowed disabled:opacity-45 focus:border-relic focus:ring-relic"
+                              >
+                                <option value="Default">Обычная форма</option>
+                                <option value="Base Form">Base Form</option>
+                                <option value="Alternate Form">Alternate Form</option>
+                              </select>
+                              <button
+                                type="button"
+                                onClick={() => setEditDamageSkills((current) => current.filter((item) => item.id !== skill.id))}
+                                className="grid h-10 w-10 place-items-center rounded-md border border-blood/30 text-ember hover:bg-blood/15"
+                                aria-label="Удалить навык"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+
+                        {editDamageSkills.length === 0 ? (
+                          <p className="rounded-xl border border-white/10 bg-black/20 p-3 text-sm text-zinc-500">Навыки пока не добавлены.</p>
+                        ) : null}
+                      </div>
 
                       <div className="grid gap-3 sm:grid-cols-2">
                         <input value={editAvatarUrl} onChange={(event) => setEditAvatarUrl(event.target.value)} placeholder="Avatar URL" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />

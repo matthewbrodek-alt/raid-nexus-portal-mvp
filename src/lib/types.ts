@@ -57,6 +57,12 @@ export type HeroProfile = {
   comment: string;
   youtubeVideoId?: string;
   youtubeTitle?: string;
+  damageSkills?: Array<{
+    slot: string;
+    name: string;
+    multiplier: string;
+    form?: "Base Form" | "Alternate Form" | "Default";
+  }>;
 };
 
 export type MarketplaceAccount = {
