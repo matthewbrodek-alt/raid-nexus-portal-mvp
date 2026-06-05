@@ -13,7 +13,7 @@ import {
   serverTimestamp,
   setDoc
 } from "firebase/firestore";
-import { Crown, MessageCircle, Megaphone, Pin, Save, Send, Shield, Trash2, UserMinus, UserPlus, Users } from "lucide-react";
+import { Crown, MessageCircle, Megaphone, Pin, Save, Send, Shield, Trash2, UserMinus, UserPlus, Users, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { GlassPanel } from "@/components/ui/glass-panel";
@@ -159,6 +159,7 @@ export function ClanBoard() {
   const [groupTags, setGroupTags] = useState("");
   const [adminEditingGroupId, setAdminEditingGroupId] = useState("");
   const [memberSearch, setMemberSearch] = useState("");
+  const [previewUser, setPreviewUser] = useState<DirectoryUser | null>(null);
   const [announcementStatus, setAnnouncementStatus] = useState("");
   const [groupStatus, setGroupStatus] = useState("");
   const [savingAnnouncement, setSavingAnnouncement] = useState(false);
@@ -280,6 +281,23 @@ export function ClanBoard() {
       .slice(0, 8);
   }, [activeGroup?.excludedUids, activeGroupMembers, directoryUsers, memberSearch, user?.uid]);
 
+  const previewIsGroupMember = previewUser ? activeGroupMembers.some((member) => member.uid === previewUser.uid) : false;
+  const previewIsGroupOwner = Boolean(previewUser && activeGroup?.ownerUid === previewUser.uid);
+
+  function openMemberPreview(member: GroupMember) {
+    const directoryUser = directoryUsers.find((item) => item.uid === member.uid);
+
+    setPreviewUser({
+      uid: member.uid,
+      displayName: directoryUser?.displayName ?? member.displayName,
+      avatarUrl: directoryUser?.avatarHiddenByAdmin ? "" : directoryUser?.avatarUrl ?? member.avatarUrl ?? "",
+      avatarHiddenByAdmin: directoryUser?.avatarHiddenByAdmin,
+      bpStatus: directoryUser?.bpStatus ?? member.bpStatus,
+      role: directoryUser?.role ?? member.role,
+      status: directoryUser?.status
+    });
+  }
+
   async function saveGroup(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -362,6 +380,7 @@ export function ClanBoard() {
       { merge: true }
     );
     setMemberSearch("");
+    setPreviewUser(null);
     setGroupStatus(`${item.displayName || "Участник"} добавлен в группу.`);
   }
 
@@ -382,6 +401,7 @@ export function ClanBoard() {
       },
       { merge: true }
     );
+    setPreviewUser(null);
     setGroupStatus(`${member.displayName} исключен из группы.`);
   }
 
@@ -398,6 +418,7 @@ export function ClanBoard() {
       },
       { merge: true }
     );
+    setPreviewUser(null);
   }
 
   async function createAnnouncement(event: React.FormEvent<HTMLFormElement>) {
@@ -556,7 +577,7 @@ export function ClanBoard() {
 
                       return (
                         <div key={member.uid} className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/30 p-2">
-                          <div className="flex min-w-0 items-center gap-3">
+                          <button type="button" onClick={() => openMemberPreview(member)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
                             <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl border border-relic/25 bg-relic/10 text-xs font-black text-relic">
                               {member.avatarUrl ? <img src={member.avatarUrl} alt="" className="h-full w-full object-cover" /> : ownerInitials(member.displayName)}
                             </span>
@@ -564,7 +585,7 @@ export function ClanBoard() {
                               <p className="truncate text-sm font-bold text-white">{member.displayName}</p>
                               <p className="text-xs text-zinc-500">{isOwner ? "Владелец" : bpLabel(member.bpStatus)}</p>
                             </div>
-                          </div>
+                          </button>
                           {!isOwner ? (
                             <button
                               type="button"
@@ -594,7 +615,7 @@ export function ClanBoard() {
                       <button
                         key={item.uid}
                         type="button"
-                        onClick={() => void addGroupMember(item)}
+                        onClick={() => setPreviewUser(item)}
                         className="flex w-full items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/30 p-2 text-left transition hover:border-relic/35 hover:bg-relic/[0.08]"
                       >
                         <span className="flex min-w-0 items-center gap-3">
@@ -727,12 +748,17 @@ export function ClanBoard() {
                   <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-relic">Состав</p>
                   <div className="flex flex-wrap items-center gap-2">
                     {getGroupMembers(item).slice(0, 8).map((member) => (
-                      <span key={member.uid} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/30 py-1 pl-1 pr-3 text-xs font-semibold text-zinc-300">
+                      <button
+                        key={member.uid}
+                        type="button"
+                        onClick={() => openMemberPreview(member)}
+                        className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/30 py-1 pl-1 pr-3 text-left text-xs font-semibold text-zinc-300 transition hover:border-relic/35 hover:bg-relic/[0.08] hover:text-white"
+                      >
                         <span className="grid h-7 w-7 place-items-center overflow-hidden rounded-full bg-relic/12 text-[10px] font-black text-relic">
                           {member.avatarUrl ? <img src={member.avatarUrl} alt="" className="h-full w-full object-cover" /> : ownerInitials(member.displayName)}
                         </span>
                         {member.displayName}
-                      </span>
+                      </button>
                     ))}
                     {getGroupMembers(item).length > 8 ? (
                       <span className="rounded-full border border-relic/20 px-3 py-1 text-xs font-bold text-relic">+{getGroupMembers(item).length - 8}</span>
@@ -853,6 +879,94 @@ export function ClanBoard() {
           </div>
         </GlassPanel>
       </div>
+
+      {previewUser ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/78 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md overflow-hidden rounded-[22px] border border-relic/20 bg-[#0a101b] shadow-[0_28px_80px_rgba(0,0,0,0.62)]">
+            <div className="flex items-start gap-4 border-b border-white/10 bg-white/[0.03] p-4">
+              <span className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-2xl border border-relic/30 bg-relic/12 text-xl font-black text-relic">
+                {previewUser.avatarUrl && !previewUser.avatarHiddenByAdmin ? (
+                  <img src={previewUser.avatarUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  ownerInitials(previewUser.displayName)
+                )}
+              </span>
+              <div className="min-w-0 flex-1 pt-1">
+                <p className="truncate text-lg font-black text-white">{previewUser.displayName || "Raid Player"}</p>
+                <p className="text-sm text-zinc-500">{bpLabel(previewUser.bpStatus)}</p>
+                <p className="mt-2 inline-flex rounded-full border border-relic/25 bg-relic/10 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.14em] text-relic">
+                  {previewUser.role === "admin" || previewUser.role === "owner" ? "Администратор" : previewIsGroupOwner ? "Владелец группы" : previewIsGroupMember ? "Участник группы" : "Можно пригласить"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewUser(null)}
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 text-zinc-400 transition hover:text-white"
+                aria-label="Закрыть"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3 p-4">
+              {activeGroup ? (
+                previewIsGroupMember ? (
+                  previewIsGroupOwner ? (
+                    <div className="rounded-xl border border-relic/20 bg-relic/[0.08] p-3 text-sm text-zinc-300">
+                      Это владелец выбранной группы. Его нельзя исключить из состава.
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!previewUser) {
+                          return;
+                        }
+
+                        const member = activeGroupMembers.find((item) => item.uid === previewUser.uid);
+                        if (member) {
+                          void excludeGroupMember(member);
+                        }
+                      }}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-blood/35 bg-blood/10 px-4 py-3 font-bold text-ember transition hover:bg-blood/20"
+                    >
+                      <UserMinus size={16} />
+                      Исключить из группы
+                    </button>
+                  )
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (previewUser) {
+                        void addGroupMember(previewUser);
+                      }
+                    }}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black transition hover:bg-[#f2cf78]"
+                  >
+                    <UserPlus size={16} />
+                    Пригласить в группу
+                  </button>
+                )
+              ) : (
+                <div className="rounded-xl border border-relic/20 bg-relic/[0.08] p-3 text-sm text-zinc-300">
+                  Сначала создай группу, затем открой поиск и пригласи участника.
+                </div>
+              )}
+
+              {previewUser.uid !== user?.uid ? (
+                <Link
+                  href={user ? `/chat?user=${previewUser.uid}` : "/login"}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-relic/30 bg-relic/10 px-4 py-3 font-bold text-relic transition hover:bg-relic hover:text-black"
+                >
+                  <MessageCircle size={16} />
+                  Перейти в личные сообщения
+                </Link>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
