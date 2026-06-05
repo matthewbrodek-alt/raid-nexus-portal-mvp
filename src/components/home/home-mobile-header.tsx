@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Home, Menu, MessageCircle, Shield, ShoppingBag, Swords, UserRound, X, Zap } from "lucide-react";
+import { Home, Menu, MessageCircle, Radio, Shield, ShoppingBag, Swords, UserRound, X, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { RaidLogo } from "@/components/brand/raid-logo";
@@ -16,6 +16,7 @@ const mobileLinks = [
   { label: { ru: "Покупка аккаунта", en: "Account Purchase" }, href: "/marketplace", icon: ShoppingBag },
   { label: { ru: "Кланы", en: "Clans" }, href: "/clans", icon: Shield },
   { label: { ru: "Чат", en: "Chat" }, href: "/chat", icon: MessageCircle },
+  { label: { ru: "Эфир", en: "Live" }, href: "/stream", icon: Radio },
   { label: { ru: "Личный кабинет", en: "Dashboard" }, href: "/dashboard", icon: UserRound }
 ];
 

@@ -22,5 +22,6 @@ export const collections = {
   crmTables: "crmTables",
   moderationQueue: "moderationQueue",
   siteSettings: "siteSettings",
+  streamChats: "streamChats",
   globalUserBlocks: "globalUserBlocks"
 } as const;

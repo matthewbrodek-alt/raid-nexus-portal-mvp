@@ -51,6 +51,7 @@ const copy: Record<
     donate: string;
     useful: string;
     chat: string;
+    stream: string;
     newsDescription: string;
     heroesDescription: string;
     marketDescription: string;
@@ -58,6 +59,7 @@ const copy: Record<
     donateDescription: string;
     usefulDescription: string;
     chatDescription: string;
+    streamDescription: string;
     newsType: string;
     heroType: string;
     marketType: string;
@@ -77,6 +79,7 @@ const copy: Record<
     donate: "Донат",
     useful: "Полезное",
     chat: "Чат",
+    stream: "Эфир",
     newsDescription: "Последние новости портала",
     heroesDescription: "База героев, фракции, роли и сборки",
     marketDescription: "Лоты, аккаунты и предложения",
@@ -84,6 +87,7 @@ const copy: Record<
     donateDescription: "Заявка на покупку набора через менеджера",
     usefulDescription: "Гайды и калькуляторы",
     chatDescription: "Общий чат и личные сообщения",
+    streamDescription: "Актуальная трансляция портала",
     newsType: "Новость",
     heroType: "Герой",
     marketType: "Аккаунт",
@@ -102,6 +106,7 @@ const copy: Record<
     donate: "Donate",
     useful: "Useful",
     chat: "Chat",
+    stream: "Live",
     newsDescription: "Latest portal news",
     heroesDescription: "Hero database, factions, roles and builds",
     marketDescription: "Lots, accounts and offers",
@@ -109,6 +114,7 @@ const copy: Record<
     donateDescription: "Request a pack purchase through a manager",
     usefulDescription: "Guides and calculators",
     chatDescription: "Global chat and direct messages",
+    streamDescription: "Current portal stream",
     newsType: "News",
     heroType: "Hero",
     marketType: "Account",
@@ -129,7 +135,8 @@ function getStaticItems(language: Language): SearchItem[] {
     { id: "page-clans", type: labels.section, title: labels.clans, description: labels.clansDescription, href: "/clans" },
     { id: "page-topup", type: labels.section, title: labels.donate, description: labels.donateDescription, href: "/topup" },
     { id: "page-useful", type: labels.section, title: labels.useful, description: labels.usefulDescription, href: "/useful" },
-    { id: "page-chat", type: labels.section, title: labels.chat, description: labels.chatDescription, href: "/chat" }
+    { id: "page-chat", type: labels.section, title: labels.chat, description: labels.chatDescription, href: "/chat" },
+    { id: "page-stream", type: labels.section, title: labels.stream, description: labels.streamDescription, href: "/stream" }
   ];
 }
 

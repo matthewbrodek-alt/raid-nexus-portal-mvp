@@ -1,6 +1,6 @@
 "use client";
 
-import { Coins, Database, Menu, MessageSquare, Search, Shield, ShoppingBag, UserRound, X, Zap } from "lucide-react";
+import { Coins, Database, Menu, MessageSquare, Radio, Search, Shield, ShoppingBag, UserRound, X, Zap } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -15,7 +15,8 @@ const iconMap = {
   shoppingBag: ShoppingBag,
   database: Database,
   shield: Shield,
-  messageSquare: MessageSquare
+  messageSquare: MessageSquare,
+  radio: Radio
 };
 
 const navLabels = {
@@ -27,6 +28,7 @@ const navLabels = {
     "/heroes": "Герои",
     "/clans": "Кланы",
     "/chat": "Чат",
+    "/stream": "Эфир",
     dashboard: "Личный кабинет",
     search: "Поиск",
     menu: "Меню"
@@ -39,6 +41,7 @@ const navLabels = {
     "/heroes": "Hero DB",
     "/clans": "Clans",
     "/chat": "Chat",
+    "/stream": "Live",
     dashboard: "Dashboard",
     search: "Search",
     menu: "Menu"

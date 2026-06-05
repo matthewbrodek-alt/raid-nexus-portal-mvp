@@ -292,6 +292,15 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /streamChats/{chatId} {
+      allow read: if true;
+      allow create, update: if activeUser()
+        && request.resource.data.keys().hasOnly(["messages", "updatedAt"])
+        && request.resource.data.messages is list
+        && request.resource.data.messages.size() <= 70;
+      allow delete: if isAdmin();
+    }
+
     match /globalUserBlocks/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
       allow write, delete: if isAdmin();

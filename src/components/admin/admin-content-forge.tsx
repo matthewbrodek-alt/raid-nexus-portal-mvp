@@ -170,6 +170,7 @@ export function AdminContentForge() {
   const [broadcastTitle, setBroadcastTitle] = useState("");
   const [broadcastVideoUrl, setBroadcastVideoUrl] = useState("");
   const [broadcastBackgroundImageUrl, setBroadcastBackgroundImageUrl] = useState("");
+  const [broadcastIsLive, setBroadcastIsLive] = useState(false);
   const [socialTelegram, setSocialTelegram] = useState("");
   const [socialVkVideo, setSocialVkVideo] = useState("");
   const [socialVkCommunity, setSocialVkCommunity] = useState("");
@@ -279,10 +280,11 @@ export function AdminContentForge() {
 
   useEffect(() => {
     void getDoc(doc(db, collections.siteSettings, "homeBroadcast")).then((snapshot) => {
-      const data = snapshot.data() as { title?: string; videoUrl?: string; backgroundImageUrl?: string } | undefined;
-      setBroadcastTitle(data?.title ?? "Боевой эфир");
+      const data = snapshot.data() as { title?: string; videoUrl?: string; backgroundImageUrl?: string; isLive?: boolean } | undefined;
+      setBroadcastTitle(data?.title ?? "Эфир");
       setBroadcastVideoUrl(data?.videoUrl ?? "https://www.youtube.com/embed/MhsY9Uvcx7E");
       setBroadcastBackgroundImageUrl(data?.backgroundImageUrl ?? "");
+      setBroadcastIsLive(Boolean(data?.isLive));
     });
   }, []);
 
@@ -331,17 +333,18 @@ export function AdminContentForge() {
       await setDoc(
         doc(db, collections.siteSettings, "homeBroadcast"),
         {
-          title: broadcastTitle.trim() || "Боевой эфир",
+          title: broadcastTitle.trim() || "Эфир",
           videoUrl: broadcastVideoUrl.trim(),
           backgroundImageUrl: broadcastBackgroundImageUrl.trim(),
+          isLive: broadcastIsLive,
           updatedBy: profile.uid,
           updatedAt: serverTimestamp()
         },
         { merge: true }
       );
-      setStatus("Настройки Raid Broadcast сохранены.");
+      setStatus("Настройки эфира сохранены.");
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Не удалось сохранить Raid Broadcast.");
+      setStatus(error instanceof Error ? error.message : "Не удалось сохранить эфир.");
     } finally {
       setSaving(false);
     }
@@ -730,8 +733,20 @@ export function AdminContentForge() {
       <form onSubmit={saveBroadcast} className="mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
         <div className="flex items-center gap-2 text-white">
           <Save size={18} className="text-relic" />
-          <h3 className="font-semibold">Raid Broadcast</h3>
+          <h3 className="font-semibold">Эфир</h3>
         </div>
+        <label className="flex items-center justify-between gap-4 rounded-md border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-200">
+          <span>
+            <span className="block font-bold text-white">Эфир запущен</span>
+            <span className="text-xs text-zinc-500">Включи, чтобы лампочка на странице эфира стала зеленой.</span>
+          </span>
+          <input
+            type="checkbox"
+            checked={broadcastIsLive}
+            onChange={(event) => setBroadcastIsLive(event.target.checked)}
+            className="h-5 w-5 rounded border-white/20 bg-black text-relic focus:ring-relic"
+          />
+        </label>
         <div className="grid gap-3 lg:grid-cols-3">
           <input
             value={broadcastTitle}
@@ -757,7 +772,7 @@ export function AdminContentForge() {
         </p>
         <button disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
           <Save size={16} />
-          Сохранить Broadcast
+          Сохранить эфир
         </button>
       </form>
 

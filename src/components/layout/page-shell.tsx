@@ -9,7 +9,8 @@ const sections = [
   { label: "Account Purchase", icon: "shoppingBag" as const, href: "/marketplace" },
   { label: "Hero DB", icon: "database" as const, href: "/heroes" },
   { label: "Clans", icon: "shield" as const, href: "/clans" },
-  { label: "Chat", icon: "messageSquare" as const, href: "/chat" }
+  { label: "Chat", icon: "messageSquare" as const, href: "/chat" },
+  { label: "Live", icon: "radio" as const, href: "/stream" }
 ];
 
 type LocalizedText = string | Record<Language, string>;

@@ -7,6 +7,7 @@ import {
   Download,
   Home as HomeIcon,
   MessageCircle,
+  Radio,
   Shield,
   ShoppingBag,
   Swords,
@@ -33,6 +34,7 @@ const sidebarLinks = [
   { label: { ru: "Покупка аккаунта", en: "Account Purchase" }, href: "/marketplace", icon: ShoppingBag },
   { label: { ru: "Кланы", en: "Clans" }, href: "/clans", icon: Shield },
   { label: { ru: "Чат", en: "Chat" }, href: "/chat", icon: MessageCircle },
+  { label: { ru: "Эфир", en: "Live" }, href: "/stream", icon: Radio },
   { label: { ru: "Личный кабинет", en: "Dashboard" }, href: "/dashboard", icon: Users }
 ];
 
