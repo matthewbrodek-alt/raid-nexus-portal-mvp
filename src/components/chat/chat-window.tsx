@@ -68,6 +68,31 @@ type MemberMenu = {
   avatarHiddenByAdmin?: boolean;
 };
 
+type GroupMember = {
+  uid: string;
+  displayName: string;
+  avatarUrl?: string;
+  bpStatus?: string;
+  role?: string;
+};
+
+type UserGroup = {
+  id: string;
+  ownerUid?: string;
+  ownerName?: string;
+  ownerAvatarUrl?: string;
+  ownerBpStatus?: string;
+  title?: string;
+  description?: string;
+  members?: GroupMember[];
+  memberUids?: string[];
+  excludedUids?: string[];
+  lastMessageText?: string;
+  lastMessageAt?: { seconds?: number };
+  createdAt?: { seconds?: number };
+  updatedAt?: { seconds?: number };
+};
+
 const basicEmojis = ["\u{1F600}", "\u{1F602}", "\u{1F60D}", "\u{1F44D}", "\u{1F525}", "\u2764\uFE0F", "\u{1F64F}", "\u{1F389}", "\u{1F60E}", "\u{1F914}"];
 
 async function uploadChatImage(file: File) {
@@ -156,11 +181,52 @@ function shouldShowAvatar(ownerUid: string, currentUid?: string, hiddenByAdmin?:
   return ownerUid === currentUid || !hiddenByAdmin;
 }
 
+function groupMemberFromUser(userProfile: UserProfile): GroupMember {
+  return {
+    uid: userProfile.uid,
+    displayName: getUserLabel(userProfile),
+    avatarUrl: userProfile.avatarHiddenByAdmin ? "" : userProfile.avatarUrl || "",
+    bpStatus: userProfile.bpStatus ?? "bronze",
+    role: userProfile.role ?? "user"
+  };
+}
+
+function uniqueGroupMembers(members: GroupMember[]) {
+  const seen = new Set<string>();
+
+  return members.filter((member) => {
+    if (!member.uid || seen.has(member.uid)) {
+      return false;
+    }
+
+    seen.add(member.uid);
+    return true;
+  });
+}
+
+function getGroupMembers(group: UserGroup) {
+  const ownerMember = group.ownerUid
+    ? [
+        {
+          uid: group.ownerUid,
+          displayName: group.ownerName || "Raid Player",
+          avatarUrl: group.ownerAvatarUrl || "",
+          bpStatus: group.ownerBpStatus || "bronze",
+          role: "owner"
+        }
+      ]
+    : [];
+
+  return uniqueGroupMembers([...ownerMember, ...(group.members ?? [])]);
+}
+
 export function ChatWindow() {
   const { profile, user } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [directContactIds, setDirectContactIds] = useState<string[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [groups, setGroups] = useState<UserGroup[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<UserGroup | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [message, setMessage] = useState("");
   const [search, setSearch] = useState("");
@@ -179,15 +245,52 @@ export function ChatWindow() {
   const canSend = Boolean(message.trim() || attachmentFile) && Boolean(user) && !sending;
   const canModerate = profile?.role === "admin" || profile?.role === "owner";
 
-  const activeThread = selectedUser && user ? directThreadId(user.uid, selectedUser.uid) : "global";
+  const activeThread = selectedGroup ? `group:${selectedGroup.id}` : selectedUser && user ? directThreadId(user.uid, selectedUser.uid) : "global";
   const directContactIdSet = useMemo(() => new Set(directContactIds), [directContactIds]);
+  const searchTerm = search.trim().toLowerCase();
+  const visibleGroups = useMemo(
+    () =>
+      groups.filter((group) => {
+        if (!user) return false;
+        if (canModerate || group.id === user.uid || group.ownerUid === user.uid) return true;
+        if ((group.memberUids ?? []).includes(user.uid)) return true;
+        return getGroupMembers(group).some((member) => member.uid === user.uid);
+      }),
+    [canModerate, groups, user]
+  );
+  const filteredGroups = useMemo(
+    () =>
+      visibleGroups.filter((group) => {
+        if (!searchTerm) return true;
+        return (group.title || "Группа").toLowerCase().includes(searchTerm);
+      }),
+    [searchTerm, visibleGroups]
+  );
   const filteredUsers = useMemo(
     () =>
       users.filter((item) => {
         const haystack = getUserLabel(item).toLowerCase();
-        return item.uid !== user?.uid && directContactIdSet.has(item.uid) && haystack.includes(search.trim().toLowerCase());
+        return item.uid !== user?.uid && directContactIdSet.has(item.uid) && haystack.includes(searchTerm);
       }),
-    [directContactIdSet, search, user?.uid, users]
+    [directContactIdSet, searchTerm, user?.uid, users]
+  );
+  const userSearchResults = useMemo(
+    () =>
+      searchTerm
+        ? users
+            .filter((item) => item.uid !== user?.uid)
+            .filter((item) => getUserLabel(item).toLowerCase().includes(searchTerm))
+            .slice(0, 6)
+        : [],
+    [searchTerm, user?.uid, users]
+  );
+  const manageableGroups = useMemo(
+    () =>
+      visibleGroups.filter((group) => {
+        if (!user) return false;
+        return canModerate || group.id === user.uid || group.ownerUid === user.uid;
+      }),
+    [canModerate, user, visibleGroups]
   );
   const visibleMessages = useMemo(
     () => messages.filter((item) => item.uid === user?.uid || !personalBlockedUids.includes(item.uid)),
@@ -291,6 +394,28 @@ export function ChatWindow() {
   }, [user]);
 
   useEffect(() => {
+    if (!user) {
+      setGroups([]);
+      setSelectedGroup(null);
+      return;
+    }
+
+    const groupsQuery = query(collection(db, collections.userGroups), limit(120));
+
+    return onSnapshot(
+      groupsQuery,
+      (snapshot) => {
+        const nextGroups = snapshot.docs
+          .map((item) => ({ id: item.id, ...(item.data() as Omit<UserGroup, "id">) }))
+          .sort((first, second) => (second.updatedAt?.seconds ?? second.createdAt?.seconds ?? 0) - (first.updatedAt?.seconds ?? first.createdAt?.seconds ?? 0));
+
+        setGroups(nextGroups);
+      },
+      () => setGroups([])
+    );
+  }, [user]);
+
+  useEffect(() => {
     const targetUid = new URLSearchParams(window.location.search).get("user");
 
     if (!targetUid || selectedUser?.uid === targetUid) {
@@ -301,8 +426,30 @@ export function ChatWindow() {
 
     if (targetUser) {
       setSelectedUser(targetUser);
+      setSelectedGroup(null);
     }
   }, [selectedUser?.uid, users]);
+
+  useEffect(() => {
+    const targetGroupId = new URLSearchParams(window.location.search).get("group");
+
+    if (!targetGroupId || selectedGroup?.id === targetGroupId) {
+      return;
+    }
+
+    const targetGroup = visibleGroups.find((item) => item.id === targetGroupId);
+
+    if (targetGroup) {
+      setSelectedGroup(targetGroup);
+      setSelectedUser(null);
+    }
+  }, [selectedGroup?.id, visibleGroups]);
+
+  useEffect(() => {
+    if (selectedGroup && !visibleGroups.some((group) => group.id === selectedGroup.id)) {
+      setSelectedGroup(null);
+    }
+  }, [selectedGroup, visibleGroups]);
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
@@ -313,8 +460,9 @@ export function ChatWindow() {
         return;
       }
 
-      const messagesRef =
-        selectedUser && user
+      const messagesRef = selectedGroup
+        ? collection(db, collections.userGroups, selectedGroup.id, "messages")
+        : selectedUser && user
           ? collection(db, "directThreads", directThreadId(user.uid, selectedUser.uid), "messages")
           : collection(db, collections.chatRooms, "global", "messages");
       const messagesQuery = query(messagesRef, orderBy("createdAt", "asc"), limit(80));
@@ -334,7 +482,7 @@ export function ChatWindow() {
       cancelled = true;
       unsubscribe?.();
     };
-  }, [selectedUser, user]);
+  }, [selectedGroup, selectedUser, user]);
 
   useEffect(() => {
     scrollToBottom();
@@ -370,6 +518,22 @@ export function ChatWindow() {
     });
   }
 
+  function openUserMenu(targetUser: UserProfile) {
+    if (targetUser.uid === user?.uid) {
+      return;
+    }
+
+    setMemberMenu({
+      uid: targetUser.uid,
+      displayName: getUserLabel(targetUser),
+      avatarFrame: targetUser.avatarFrame ?? "none",
+      bpStatus: targetUser.bpStatus ?? "bronze",
+      avatarHiddenByAdmin: Boolean(targetUser.avatarHiddenByAdmin),
+      nicknameStyle: targetUser.nicknameStyle,
+      avatarUrl: shouldShowAvatar(targetUser.uid, user?.uid, targetUser.avatarHiddenByAdmin) ? targetUser.avatarUrl || "" : ""
+    });
+  }
+
   async function toggleMemberAvatarVisibility(member: MemberMenu) {
     if (!canModerate) {
       return;
@@ -395,9 +559,65 @@ export function ChatWindow() {
 
     if (targetUser) {
       setSelectedUser(targetUser);
+      setSelectedGroup(null);
     }
 
     setMemberMenu(null);
+    setChatMenuOpen(false);
+  }
+
+  function selectGlobalRoom() {
+    setSelectedUser(null);
+    setSelectedGroup(null);
+    setChatMenuOpen(false);
+  }
+
+  function selectGroupRoom(group: UserGroup) {
+    setSelectedUser(null);
+    setSelectedGroup(group);
+    setChatMenuOpen(false);
+  }
+
+  async function inviteMemberToGroup(member: MemberMenu, group: UserGroup) {
+    if (!user) {
+      return;
+    }
+
+    const canManageGroup = canModerate || group.id === user.uid || group.ownerUid === user.uid;
+
+    if (!canManageGroup) {
+      return;
+    }
+
+    const targetUser = users.find((item) => item.uid === member.uid);
+    const currentMembers = getGroupMembers(group);
+    const nextMembers = uniqueGroupMembers([
+      ...currentMembers,
+      targetUser
+        ? groupMemberFromUser(targetUser)
+        : {
+            uid: member.uid,
+            displayName: member.displayName,
+            avatarUrl: member.avatarUrl || "",
+            bpStatus: member.bpStatus ?? "bronze",
+            role: "user"
+          }
+    ]).slice(0, 80);
+
+    await setDoc(
+      doc(db, collections.userGroups, group.id),
+      {
+        members: nextMembers,
+        memberUids: nextMembers.map((item) => item.uid),
+        excludedUids: (group.excludedUids ?? []).filter((uid) => uid !== member.uid),
+        updatedAt: serverTimestamp()
+      },
+      { merge: true }
+    );
+
+    setSelectedGroup({ ...group, members: nextMembers, memberUids: nextMembers.map((item) => item.uid) });
+    setMemberMenu(null);
+    setChatMenuOpen(false);
   }
 
   function blockForMe(member: MemberMenu) {
@@ -442,8 +662,9 @@ export function ChatWindow() {
       return;
     }
 
-    const messageRef =
-      selectedUser && user
+    const messageRef = selectedGroup
+      ? doc(db, collections.userGroups, selectedGroup.id, "messages", messageItem.id)
+      : selectedUser && user
         ? doc(db, "directThreads", directThreadId(user.uid, selectedUser.uid), "messages", messageItem.id)
         : doc(db, collections.chatRooms, "global", "messages", messageItem.id);
 
@@ -510,7 +731,23 @@ export function ChatWindow() {
         createdAt: serverTimestamp()
       };
 
-      if (selectedUser) {
+      if (selectedGroup) {
+        await setDoc(
+          doc(db, collections.userGroups, selectedGroup.id),
+          {
+            lastMessageText,
+            lastMessageUid: user.uid,
+            lastMessageAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          },
+          { merge: true }
+        );
+        await addDoc(collection(db, collections.userGroups, selectedGroup.id, "messages"), {
+          ...baseMessage,
+          groupId: selectedGroup.id,
+          roomType: "group"
+        });
+      } else if (selectedUser) {
         const threadId = directThreadId(user.uid, selectedUser.uid);
         await setDoc(
           doc(db, "directThreads", threadId),
@@ -581,6 +818,7 @@ export function ChatWindow() {
         type="button"
         onClick={() => {
           setSelectedUser(item);
+          setSelectedGroup(null);
           setChatMenuOpen(false);
         }}
         className={`flex ${compact ? "w-full" : "min-w-[220px] lg:min-w-0 lg:w-full"} items-center gap-3 rounded-lg p-3 text-left transition ${
@@ -602,6 +840,54 @@ export function ChatWindow() {
     );
   }
 
+  function renderGroupButton(group: UserGroup, compact = false) {
+    const membersCount = getGroupMembers(group).length;
+    const active = selectedGroup?.id === group.id;
+
+    return (
+      <button
+        key={group.id}
+        type="button"
+        onClick={() => selectGroupRoom(group)}
+        className={`flex ${compact ? "w-full" : "min-w-[220px] lg:min-w-0 lg:w-full"} items-center gap-3 rounded-lg p-3 text-left transition ${
+          active ? "border border-relic/40 bg-relic/15 text-white" : "border border-white/10 bg-white/[0.03] text-zinc-300 hover:bg-white/[0.06]"
+        }`}
+      >
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-relic/30 bg-relic/10 text-relic">
+          <Users size={18} />
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate font-semibold">{group.title || "Группа"}</span>
+          <span className="block truncate text-xs text-zinc-500">
+            {membersCount} участн. {group.lastMessageText ? `· ${group.lastMessageText}` : ""}
+          </span>
+        </span>
+      </button>
+    );
+  }
+
+  function renderSearchUserButton(item: UserProfile) {
+    const label = getUserLabel(item);
+    const visibleAvatarUrl = shouldShowAvatar(item.uid, user?.uid, item.avatarHiddenByAdmin) ? item.avatarUrl : "";
+
+    return (
+      <button
+        key={`search-${item.uid}`}
+        type="button"
+        onClick={() => openUserMenu(item)}
+        className="flex w-full items-center gap-3 rounded-lg border border-white/10 bg-black/20 p-3 text-left text-zinc-300 transition hover:border-relic/35 hover:bg-relic/10 hover:text-white"
+      >
+        <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-gradient-to-br from-violet-500 to-cyan-600 text-xs font-black text-white">
+          {visibleAvatarUrl ? <img src={visibleAvatarUrl} alt={label} loading="lazy" decoding="async" className="h-full w-full object-cover" /> : label.slice(0, 2).toUpperCase()}
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-semibold">{label}</span>
+          <span className="block truncate text-xs text-zinc-500">Открыть профиль / пригласить</span>
+        </span>
+      </button>
+    );
+  }
+
   return (
     <>
       <div className="mx-auto grid h-[calc(100dvh-112px)] min-h-[620px] w-full max-w-7xl overflow-hidden rounded-[18px] border border-relic/20 bg-[#05070b]/95 shadow-[0_0_44px_rgba(0,0,0,0.55)] lg:h-[78vh] lg:grid-cols-[330px_1fr]">
@@ -613,7 +899,7 @@ export function ChatWindow() {
               </span>
               <div className="min-w-0">
                 <h2 className="truncate text-lg font-bold text-white">Сообщения</h2>
-                <p className="truncate text-sm text-zinc-500">Общий чат и личные диалоги</p>
+                <p className="truncate text-sm text-zinc-500">Общий чат, группы и личные диалоги</p>
               </div>
             </div>
 
@@ -631,12 +917,9 @@ export function ChatWindow() {
           <div className="flex max-h-[150px] gap-2 overflow-x-auto p-3 lg:block lg:max-h-[590px] lg:space-y-2 lg:overflow-y-auto">
             <button
               type="button"
-              onClick={() => {
-                setSelectedUser(null);
-                setChatMenuOpen(false);
-              }}
+              onClick={selectGlobalRoom}
               className={`flex min-w-[220px] items-center gap-3 rounded-lg p-3 text-left transition lg:min-w-0 lg:w-full ${
-                !selectedUser ? "border border-relic/35 bg-relic/15 text-white" : "border border-white/10 bg-white/[0.03] text-zinc-300 hover:bg-white/[0.06]"
+                !selectedUser && !selectedGroup ? "border border-relic/35 bg-relic/15 text-white" : "border border-white/10 bg-white/[0.03] text-zinc-300 hover:bg-white/[0.06]"
               }`}
             >
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-relic to-amber-700 text-sm font-black text-black">
@@ -648,9 +931,23 @@ export function ChatWindow() {
               </span>
             </button>
 
+            {filteredGroups.length > 0 ? (
+              <div className="min-w-[220px] lg:min-w-0">
+                <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.22em] text-relic">Группы</p>
+                <div className="space-y-2">{filteredGroups.map((group) => renderGroupButton(group))}</div>
+              </div>
+            ) : null}
+
             {filteredUsers.map((item) => renderUserButton(item))}
 
-            {user && filteredUsers.length === 0 ? (
+            {user && userSearchResults.length > 0 ? (
+              <div className="min-w-[220px] lg:min-w-0">
+                <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.22em] text-relic">Поиск</p>
+                <div className="space-y-2">{userSearchResults.map((item) => renderSearchUserButton(item))}</div>
+              </div>
+            ) : null}
+
+            {user && filteredUsers.length === 0 && filteredGroups.length === 0 && userSearchResults.length === 0 ? (
               <p className="min-w-[220px] rounded-lg border border-white/10 bg-black/20 p-3 text-sm text-zinc-500 lg:min-w-0">
                 Личных диалогов пока нет. Откройте личные сообщения через участника в общем чате.
               </p>
@@ -672,8 +969,8 @@ export function ChatWindow() {
               <MessageSquare size={20} />
             </span>
             <div className="hidden min-w-0 lg:block">
-              <h2 className="truncate text-lg font-bold text-white">{selectedUser ? getUserLabel(selectedUser) : "Общий чат"}</h2>
-              <p className="truncate text-sm text-zinc-500">{selectedUser ? "Личный диалог" : "Открытая комната портала"}</p>
+              <h2 className="truncate text-lg font-bold text-white">{selectedGroup ? selectedGroup.title || "Группа" : selectedUser ? getUserLabel(selectedUser) : "Общий чат"}</h2>
+              <p className="truncate text-sm text-zinc-500">{selectedGroup ? "Групповая комната" : selectedUser ? "Личный диалог" : "Открытая комната портала"}</p>
             </div>
           </header>
 
@@ -923,7 +1220,7 @@ export function ChatWindow() {
                 </span>
                 <div className="min-w-0">
                   <h2 className="truncate text-lg font-bold text-white">Сообщения</h2>
-                  <p className="truncate text-sm text-zinc-500">Общий чат и личные диалоги</p>
+                  <p className="truncate text-sm text-zinc-500">Общий чат, группы и личные диалоги</p>
                 </div>
               </div>
               <button type="button" onClick={() => setChatMenuOpen(false)} className="grid h-10 w-10 place-items-center rounded-md border border-white/10 text-zinc-400">
@@ -944,12 +1241,9 @@ export function ChatWindow() {
             <div className="space-y-2">
               <button
                 type="button"
-                onClick={() => {
-                  setSelectedUser(null);
-                  setChatMenuOpen(false);
-                }}
+                onClick={selectGlobalRoom}
                 className={`flex w-full items-center gap-3 rounded-lg p-3 text-left transition ${
-                  !selectedUser ? "border border-relic/35 bg-relic/15 text-white" : "border border-white/10 bg-white/[0.03] text-zinc-300"
+                  !selectedUser && !selectedGroup ? "border border-relic/35 bg-relic/15 text-white" : "border border-white/10 bg-white/[0.03] text-zinc-300"
                 }`}
               >
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-relic to-amber-700 text-sm font-black text-black">
@@ -961,9 +1255,23 @@ export function ChatWindow() {
                 </span>
               </button>
 
+              {filteredGroups.length > 0 ? (
+                <div>
+                  <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.22em] text-relic">Группы</p>
+                  <div className="space-y-2">{filteredGroups.map((group) => renderGroupButton(group, true))}</div>
+                </div>
+              ) : null}
+
               {filteredUsers.map((item) => renderUserButton(item, true))}
 
-              {user && filteredUsers.length === 0 ? (
+              {user && userSearchResults.length > 0 ? (
+                <div>
+                  <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.22em] text-relic">Поиск</p>
+                  <div className="space-y-2">{userSearchResults.map((item) => renderSearchUserButton(item))}</div>
+                </div>
+              ) : null}
+
+              {user && filteredUsers.length === 0 && filteredGroups.length === 0 && userSearchResults.length === 0 ? (
                 <p className="rounded-lg border border-white/10 bg-black/20 p-3 text-sm leading-5 text-zinc-500">
                   Личных диалогов пока нет. Откройте личные сообщения через участника в общем чате.
                 </p>
@@ -998,6 +1306,30 @@ export function ChatWindow() {
               <button type="button" onClick={() => blockForMe(memberMenu)} className="rounded-md border border-white/10 bg-white/[0.04] px-4 py-3 text-left font-semibold text-zinc-200 hover:bg-white/[0.08]">
                 Не показывать мне сообщения участника
               </button>
+
+              {manageableGroups.length > 0 ? (
+                <div className="rounded-md border border-relic/20 bg-relic/[0.06] p-3">
+                  <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-relic">Пригласить в комнату</p>
+                  <div className="grid gap-2">
+                    {manageableGroups.map((group) => {
+                      const alreadyMember = getGroupMembers(group).some((member) => member.uid === memberMenu.uid);
+
+                      return (
+                        <button
+                          key={group.id}
+                          type="button"
+                          disabled={alreadyMember}
+                          onClick={() => void inviteMemberToGroup(memberMenu, group)}
+                          className="rounded-md border border-white/10 bg-black/25 px-3 py-2 text-left text-sm font-semibold text-zinc-200 transition hover:border-relic/35 hover:bg-relic/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-55"
+                        >
+                          <span className="block truncate">{group.title || "Группа"}</span>
+                          <span className="block text-xs font-normal text-zinc-500">{alreadyMember ? "Уже в группе" : "Добавить участника"}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
 
               {canModerate ? (
                 <button

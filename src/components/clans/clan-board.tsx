@@ -64,6 +64,7 @@ type UserGroup = {
   activity?: string;
   pinnedMessage?: string;
   members?: GroupMember[];
+  memberUids?: string[];
   excludedUids?: string[];
   tags?: string[];
   createdAt?: FirestoreStamp;
@@ -335,9 +336,15 @@ export function ClanBoard() {
         updatedAt: serverTimestamp()
       };
 
+      if (activeGroup) {
+        payload.memberUids = activeGroupMembers.map((member) => member.uid);
+      }
+
       if (isNewGroup) {
+        const initialMembers = [memberFromProfile(user.uid, profile)];
         payload.createdAt = serverTimestamp();
-        payload.members = [memberFromProfile(user.uid, profile)];
+        payload.members = initialMembers;
+        payload.memberUids = initialMembers.map((member) => member.uid);
         payload.excludedUids = [];
       }
 
@@ -374,6 +381,7 @@ export function ClanBoard() {
       doc(db, collections.userGroups, activeGroup.id),
       {
         members: nextMembers,
+        memberUids: nextMembers.map((member) => member.uid),
         excludedUids: nextExcluded,
         updatedAt: serverTimestamp()
       },
@@ -396,6 +404,7 @@ export function ClanBoard() {
       doc(db, collections.userGroups, activeGroup.id),
       {
         members: nextMembers,
+        memberUids: nextMembers.map((item) => item.uid),
         excludedUids: nextExcluded,
         updatedAt: serverTimestamp()
       },

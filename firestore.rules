@@ -32,6 +32,20 @@ service cloud.firestore {
       return hasRole(["owner"]);
     }
 
+    function userGroup(groupId) {
+      return get(/databases/$(database)/documents/userGroups/$(groupId)).data;
+    }
+
+    function isUserGroupMember(groupId) {
+      return signedIn()
+        && (
+          isAdmin()
+          || groupId == request.auth.uid
+          || userGroup(groupId).ownerUid == request.auth.uid
+          || userGroup(groupId).get("memberUids", []).hasAny([request.auth.uid])
+        );
+    }
+
     function hasPendingAdminInvite() {
       return signedIn()
         && exists(/databases/$(database)/documents/adminInvites/$(request.auth.token.email))
@@ -206,8 +220,28 @@ service cloud.firestore {
           && uid == request.auth.uid
           && resource.data.ownerUid == request.auth.uid
           && request.resource.data.ownerUid == request.auth.uid
+        )
+        || (
+          activeUser()
+          && isUserGroupMember(uid)
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+            "lastMessageText",
+            "lastMessageUid",
+            "lastMessageAt",
+            "updatedAt"
+          ])
+          && request.resource.data.lastMessageUid == request.auth.uid
         );
       allow delete: if signedIn() && (isAdmin() || uid == request.auth.uid);
+
+      match /messages/{messageId} {
+        allow read: if isUserGroupMember(uid);
+        allow create: if activeUser()
+          && isUserGroupMember(uid)
+          && request.resource.data.uid == request.auth.uid;
+        allow update: if isAdmin();
+        allow delete: if isAdmin() || resource.data.uid == request.auth.uid;
+      }
     }
 
     match /directThreads/{threadId} {
