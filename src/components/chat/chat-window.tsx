@@ -253,6 +253,7 @@ export function ChatWindow() {
   const [memberMenu, setMemberMenu] = useState<MemberMenu | null>(null);
   const [personalBlockedUids, setPersonalBlockedUids] = useState<string[]>([]);
   const [customEmojis, setCustomEmojis] = useState<CustomChatEmoji[]>([]);
+  const [messageAuthors, setMessageAuthors] = useState<Record<string, UserProfile>>({});
   const [chatMenuOpen, setChatMenuOpen] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [sending, setSending] = useState(false);
@@ -313,6 +314,10 @@ export function ChatWindow() {
     () => messages.filter((item) => item.uid === user?.uid || !personalBlockedUids.includes(item.uid)),
     [messages, personalBlockedUids, user?.uid]
   );
+  const messageAuthorUids = useMemo(
+    () => Array.from(new Set(visibleMessages.map((item) => item.uid).filter(Boolean))).sort(),
+    [visibleMessages]
+  );
   const mentionQuery = useMemo(() => {
     if (selectedUser) {
       return null;
@@ -372,6 +377,50 @@ export function ChatWindow() {
       () => setCustomEmojis([])
     );
   }, []);
+
+  useEffect(() => {
+    if (messageAuthorUids.length === 0) {
+      setMessageAuthors({});
+      return;
+    }
+
+    setMessageAuthors((current) => {
+      const next: Record<string, UserProfile> = {};
+
+      for (const uid of messageAuthorUids) {
+        if (current[uid]) {
+          next[uid] = current[uid];
+        }
+      }
+
+      return next;
+    });
+
+    const unsubscribers = messageAuthorUids.map((uid) =>
+      onSnapshot(
+        doc(db, collections.users, uid),
+        (snapshot) => {
+          if (!snapshot.exists()) {
+            return;
+          }
+
+          const data = snapshot.data() as Omit<UserProfile, "uid"> & { uid?: string };
+          setMessageAuthors((current) => ({
+            ...current,
+            [uid]: {
+              ...data,
+              uid: data.uid ?? uid
+            }
+          }));
+        },
+        () => undefined
+      )
+    );
+
+    return () => {
+      unsubscribers.forEach((unsubscribe) => unsubscribe());
+    };
+  }, [messageAuthorUids]);
 
   useEffect(() => {
     if (!user) {
@@ -533,11 +582,11 @@ export function ChatWindow() {
       return;
     }
 
-    const author = users.find((item) => item.uid === messageItem.uid);
+    const author = messageAuthors[messageItem.uid] ?? users.find((item) => item.uid === messageItem.uid);
 
     setMemberMenu({
       uid: messageItem.uid,
-      displayName: messageItem.displayName,
+      displayName: author ? getUserLabel(author) : messageItem.displayName,
       avatarFrame: author ? author.avatarFrame ?? "none" : messageItem.avatarFrame,
       bpStatus: author?.bpStatus ?? "bronze",
       avatarHiddenByAdmin: Boolean(author?.avatarHiddenByAdmin),
@@ -1015,8 +1064,9 @@ export function ChatWindow() {
               const own = item.uid === user?.uid;
               const attachmentUrl = item.attachment?.secureUrl ?? item.attachment?.url;
               const attachmentAlt = item.attachment?.alt ?? "Image";
-              const initials = (item.displayName || "U").slice(0, 2).toUpperCase();
-              const authorProfile = users.find((userItem) => userItem.uid === item.uid);
+              const authorProfile = messageAuthors[item.uid] ?? users.find((userItem) => userItem.uid === item.uid);
+              const authorDisplayName = authorProfile ? getUserLabel(authorProfile) : item.displayName || "User";
+              const initials = authorDisplayName.slice(0, 2).toUpperCase();
               const authorStatusId = authorProfile?.bpStatus ?? "bronze";
               const authorAvatarFrameClass = getAvatarFrameClass(authorProfile ? authorProfile.avatarFrame ?? "none" : item.avatarFrame, authorStatusId);
               const authorNicknameClass = getNicknameClass(authorProfile?.nicknameStyle || item.nicknameStyle, authorStatusId);
@@ -1031,10 +1081,10 @@ export function ChatWindow() {
                       type="button"
                       onClick={() => openMemberMenu(item)}
                       className={`bp-avatar-safe bp-avatar-chat grid h-8 w-8 shrink-0 place-items-center overflow-visible rounded-lg border bg-gradient-to-br from-violet-500 to-cyan-600 text-[11px] font-black text-white ${authorAvatarFrameClass}`}
-                      title={item.displayName}
+                      title={authorDisplayName}
                     >
                       <span className="bp-avatar-crop rounded-md">
-                        {messageAvatarUrl ? <img src={messageAvatarUrl} alt={item.displayName} loading="lazy" decoding="async" className="h-full w-full object-cover" /> : initials}
+                        {messageAvatarUrl ? <img src={messageAvatarUrl} alt={authorDisplayName} loading="lazy" decoding="async" className="h-full w-full object-cover" /> : initials}
                       </span>
                     </button>
                   ) : null}
@@ -1047,7 +1097,7 @@ export function ChatWindow() {
                   >
                     {!own ? (
                       <button type="button" onClick={() => openMemberMenu(item)} className={`mb-0.5 text-[11px] font-bold hover:text-white ${authorNicknameClass}`}>
-                        {item.displayName}
+                        {authorDisplayName}
                       </button>
                     ) : null}
                     {item.replyTo ? (
