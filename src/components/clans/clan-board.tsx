@@ -157,6 +157,7 @@ export function ClanBoard() {
   const [groupActivity, setGroupActivity] = useState("");
   const [groupPinnedMessage, setGroupPinnedMessage] = useState("");
   const [groupTags, setGroupTags] = useState("");
+  const [adminEditingGroupId, setAdminEditingGroupId] = useState("");
   const [memberSearch, setMemberSearch] = useState("");
   const [announcementStatus, setAnnouncementStatus] = useState("");
   const [groupStatus, setGroupStatus] = useState("");
@@ -207,6 +208,14 @@ export function ClanBoard() {
     return groups.find((group) => group.id === user.uid || group.ownerUid === user.uid) ?? null;
   }, [groups, user]);
 
+  const activeGroup = useMemo(() => {
+    if (canModerate && adminEditingGroupId) {
+      return groups.find((group) => group.id === adminEditingGroupId) ?? ownGroup;
+    }
+
+    return ownGroup;
+  }, [adminEditingGroupId, canModerate, groups, ownGroup]);
+
   useEffect(() => {
     if (!user) {
       setGroupTitle("");
@@ -220,44 +229,45 @@ export function ClanBoard() {
       return;
     }
 
-    setGroupTitle(ownGroup?.title ?? "");
-    setGroupDescription(ownGroup?.description ?? "");
-    setGroupRequirements(ownGroup?.requirements ?? "");
-    setGroupContact(ownGroup?.contact ?? "");
-    setGroupActivity(ownGroup?.activity ?? "");
-    setGroupPinnedMessage(ownGroup?.pinnedMessage ?? "");
-    setGroupTags((ownGroup?.tags ?? []).join(", "));
+    setGroupTitle(activeGroup?.title ?? "");
+    setGroupDescription(activeGroup?.description ?? "");
+    setGroupRequirements(activeGroup?.requirements ?? "");
+    setGroupContact(activeGroup?.contact ?? "");
+    setGroupActivity(activeGroup?.activity ?? "");
+    setGroupPinnedMessage(activeGroup?.pinnedMessage ?? "");
+    setGroupTags((activeGroup?.tags ?? []).join(", "));
   }, [
-    ownGroup?.activity,
-    ownGroup?.contact,
-    ownGroup?.description,
-    ownGroup?.pinnedMessage,
-    ownGroup?.requirements,
-    ownGroup?.tags,
-    ownGroup?.title,
+    activeGroup?.activity,
+    activeGroup?.contact,
+    activeGroup?.description,
+    activeGroup?.id,
+    activeGroup?.pinnedMessage,
+    activeGroup?.requirements,
+    activeGroup?.tags,
+    activeGroup?.title,
     user
   ]);
 
-  const ownGroupMembers = useMemo(() => {
-    if (!ownGroup || !user || !profile) return [];
+  const activeGroupMembers = useMemo(() => {
+    if (!activeGroup) return [];
     return getGroupMembers({
-      ...ownGroup,
-      ownerUid: ownGroup.ownerUid || user.uid,
-      ownerName: ownGroup.ownerName || profile.displayName || "Raid Player",
-      ownerAvatarUrl: ownGroup.ownerAvatarUrl || (profile.avatarHiddenByAdmin ? "" : profile.avatarUrl || ""),
-      ownerBpStatus: ownGroup.ownerBpStatus || profile.bpStatus || "bronze"
+      ...activeGroup,
+      ownerUid: activeGroup.ownerUid || user?.uid,
+      ownerName: activeGroup.ownerName || profile?.displayName || "Raid Player",
+      ownerAvatarUrl: activeGroup.ownerAvatarUrl || (profile?.avatarHiddenByAdmin ? "" : profile?.avatarUrl || ""),
+      ownerBpStatus: activeGroup.ownerBpStatus || profile?.bpStatus || "bronze"
     });
-  }, [ownGroup, profile, user]);
+  }, [activeGroup, profile, user?.uid]);
 
   const excludedUsers = useMemo(() => {
-    const excluded = new Set(ownGroup?.excludedUids ?? []);
+    const excluded = new Set(activeGroup?.excludedUids ?? []);
     return directoryUsers.filter((item) => excluded.has(item.uid));
-  }, [directoryUsers, ownGroup?.excludedUids]);
+  }, [activeGroup?.excludedUids, directoryUsers]);
 
   const memberCandidates = useMemo(() => {
     const search = memberSearch.trim().toLowerCase();
-    const memberUids = new Set(ownGroupMembers.map((member) => member.uid));
-    const excluded = new Set(ownGroup?.excludedUids ?? []);
+    const memberUids = new Set(activeGroupMembers.map((member) => member.uid));
+    const excluded = new Set(activeGroup?.excludedUids ?? []);
 
     return directoryUsers
       .filter((item) => item.uid !== user?.uid)
@@ -268,7 +278,7 @@ export function ClanBoard() {
         return (item.displayName || "").toLowerCase().includes(search) || item.uid.toLowerCase().includes(search);
       })
       .slice(0, 8);
-  }, [directoryUsers, memberSearch, ownGroup?.excludedUids, ownGroupMembers, user?.uid]);
+  }, [activeGroup?.excludedUids, activeGroupMembers, directoryUsers, memberSearch, user?.uid]);
 
   async function saveGroup(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -290,11 +300,13 @@ export function ClanBoard() {
     setGroupStatus("");
 
     try {
+      const targetGroupId = activeGroup?.id ?? user.uid;
+      const isNewGroup = !activeGroup;
       const payload: Record<string, unknown> = {
-        ownerUid: user.uid,
-        ownerName: profile.displayName || "Raid Player",
-        ownerAvatarUrl: profile.avatarHiddenByAdmin ? "" : profile.avatarUrl || "",
-        ownerBpStatus: profile.bpStatus ?? "bronze",
+        ownerUid: activeGroup?.ownerUid ?? user.uid,
+        ownerName: activeGroup?.ownerName ?? profile.displayName ?? "Raid Player",
+        ownerAvatarUrl: activeGroup?.ownerAvatarUrl ?? (profile.avatarHiddenByAdmin ? "" : profile.avatarUrl || ""),
+        ownerBpStatus: activeGroup?.ownerBpStatus ?? profile.bpStatus ?? "bronze",
         title: nextTitle,
         description: nextDescription,
         requirements: groupRequirements.trim(),
@@ -305,14 +317,14 @@ export function ClanBoard() {
         updatedAt: serverTimestamp()
       };
 
-      if (!ownGroup) {
+      if (isNewGroup) {
         payload.createdAt = serverTimestamp();
         payload.members = [memberFromProfile(user.uid, profile)];
         payload.excludedUids = [];
       }
 
-      await setDoc(doc(db, collections.userGroups, user.uid), payload, { merge: true });
-      setGroupStatus(ownGroup ? "Группа обновлена." : "Группа создана. У этого аккаунта может быть только одна группа.");
+      await setDoc(doc(db, collections.userGroups, targetGroupId), payload, { merge: true });
+      setGroupStatus(activeGroup ? "Группа обновлена." : "Группа создана. У этого аккаунта может быть только одна группа.");
     } catch (error) {
       setGroupStatus(error instanceof Error ? error.message : "Не удалось сохранить группу.");
     } finally {
@@ -329,19 +341,19 @@ export function ClanBoard() {
   }
 
   async function addGroupMember(item: DirectoryUser) {
-    if (!user || !profile || !ownGroup) {
+    if (!user || !activeGroup) {
       setGroupStatus("Сначала создай группу.");
       return;
     }
 
     const nextMembers = uniqueMembers([
-      ...ownGroupMembers,
+      ...activeGroupMembers,
       memberFromProfile(item.uid, item)
     ]).slice(0, 80);
-    const nextExcluded = (ownGroup.excludedUids ?? []).filter((uid) => uid !== item.uid);
+    const nextExcluded = (activeGroup.excludedUids ?? []).filter((uid) => uid !== item.uid);
 
     await setDoc(
-      doc(db, collections.userGroups, user.uid),
+      doc(db, collections.userGroups, activeGroup.id),
       {
         members: nextMembers,
         excludedUids: nextExcluded,
@@ -354,15 +366,15 @@ export function ClanBoard() {
   }
 
   async function excludeGroupMember(member: GroupMember) {
-    if (!user || !ownGroup || member.uid === user.uid || member.uid === ownGroup.ownerUid) {
+    if (!user || !activeGroup || member.uid === activeGroup.ownerUid) {
       return;
     }
 
-    const nextMembers = ownGroupMembers.filter((item) => item.uid !== member.uid);
-    const nextExcluded = Array.from(new Set([...(ownGroup.excludedUids ?? []), member.uid])).slice(0, 120);
+    const nextMembers = activeGroupMembers.filter((item) => item.uid !== member.uid);
+    const nextExcluded = Array.from(new Set([...(activeGroup.excludedUids ?? []), member.uid])).slice(0, 120);
 
     await setDoc(
-      doc(db, collections.userGroups, user.uid),
+      doc(db, collections.userGroups, activeGroup.id),
       {
         members: nextMembers,
         excludedUids: nextExcluded,
@@ -374,14 +386,14 @@ export function ClanBoard() {
   }
 
   async function restoreExcludedUser(uid: string) {
-    if (!user || !ownGroup) {
+    if (!user || !activeGroup) {
       return;
     }
 
     await setDoc(
-      doc(db, collections.userGroups, user.uid),
+      doc(db, collections.userGroups, activeGroup.id),
       {
-        excludedUids: (ownGroup.excludedUids ?? []).filter((item) => item !== uid),
+        excludedUids: (activeGroup.excludedUids ?? []).filter((item) => item !== uid),
         updatedAt: serverTimestamp()
       },
       { merge: true }
@@ -437,9 +449,22 @@ export function ClanBoard() {
             </span>
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-relic">My Clan Group</p>
-              <h2 className="text-2xl font-black text-white">{ownGroup ? "Моя группа" : "Создать группу"}</h2>
+              <h2 className="text-2xl font-black text-white">{activeGroup ? (canModerate && adminEditingGroupId ? "Админ: группа" : "Моя группа") : "Создать группу"}</h2>
             </div>
           </div>
+
+          {canModerate && adminEditingGroupId ? (
+            <button
+              type="button"
+              onClick={() => {
+                setAdminEditingGroupId("");
+                setMemberSearch("");
+              }}
+              className="mb-4 inline-flex w-full items-center justify-center rounded-md border border-relic/25 bg-relic/10 px-3 py-2 text-sm font-bold text-relic transition hover:bg-relic hover:text-black"
+            >
+              Вернуться к своей группе
+            </button>
+          ) : null}
 
           {user ? (
             <>
@@ -501,12 +526,12 @@ export function ClanBoard() {
               <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
                 <button disabled={savingGroup} className="inline-flex items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
                   <Save size={16} />
-                  {ownGroup ? "Сохранить группу" : "Создать группу"}
+                  {activeGroup ? "Сохранить группу" : "Создать группу"}
                 </button>
-                {ownGroup ? (
+                {activeGroup ? (
                   <button
                     type="button"
-                    onClick={() => void removeGroup(ownGroup)}
+                    onClick={() => void removeGroup(activeGroup)}
                     className="inline-flex items-center justify-center gap-2 rounded-md border border-blood/35 px-4 py-3 font-bold text-ember transition hover:bg-blood/15"
                   >
                     <Trash2 size={16} />
@@ -516,7 +541,7 @@ export function ClanBoard() {
               </div>
             </form>
 
-            {ownGroup ? (
+            {activeGroup ? (
               <div className="mt-5 space-y-4 rounded-[20px] border border-relic/18 bg-black/28 p-4">
                 <div className="flex items-center gap-2 text-relic">
                   <Pin size={16} />
@@ -526,8 +551,8 @@ export function ClanBoard() {
                 <div>
                   <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-relic">Участники</p>
                   <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
-                    {ownGroupMembers.map((member) => {
-                      const isOwner = member.uid === user.uid || member.uid === ownGroup.ownerUid;
+                    {activeGroupMembers.map((member) => {
+                      const isOwner = member.uid === activeGroup.ownerUid;
 
                       return (
                         <div key={member.uid} className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/30 p-2">
@@ -644,9 +669,25 @@ export function ClanBoard() {
                     </div>
                   </div>
                   {user && (item.ownerUid === user.uid || item.id === user.uid || canModerate) ? (
-                    <button type="button" onClick={() => void removeGroup(item)} className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-blood/30 text-ember hover:bg-blood/15" aria-label="Удалить группу">
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {canModerate ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAdminEditingGroupId(item.id);
+                            setMemberSearch("");
+                            setGroupStatus("Группа открыта для админского управления.");
+                          }}
+                          className="grid h-9 w-9 place-items-center rounded-md border border-relic/30 text-relic hover:bg-relic/15"
+                          aria-label="Управлять группой"
+                        >
+                          <Shield size={16} />
+                        </button>
+                      ) : null}
+                      <button type="button" onClick={() => void removeGroup(item)} className="grid h-9 w-9 place-items-center rounded-md border border-blood/30 text-ember hover:bg-blood/15" aria-label="Удалить группу">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   ) : null}
                 </div>
 
