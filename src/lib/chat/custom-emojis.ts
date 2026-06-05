@@ -43,7 +43,7 @@ export function normalizeCustomChatEmojis(items?: CustomChatEmoji[]) {
     .slice(0, 24);
 }
 
-export function splitCustomEmojiText(text: string, emojis: CustomChatEmoji[]) {
+export function splitCustomEmojiText(text: string, emojis: CustomChatEmoji[]): CustomEmojiTextPart[] {
   if (!text || emojis.length === 0) {
     return [{ type: "text", value: text }] satisfies CustomEmojiTextPart[];
   }
