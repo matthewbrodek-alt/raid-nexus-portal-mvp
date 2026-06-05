@@ -5,7 +5,7 @@ import type { CloudinaryFolder } from "@/lib/cloudinary/types";
 export const runtime = "nodejs";
 
 const MAX_FILE_SIZE = 6 * 1024 * 1024;
-const allowedFolders = new Set<CloudinaryFolder>(["heroes", "news", "offers", "marketplace", "chat", "forum", "users", "topup", "event-widgets"]);
+const allowedFolders = new Set<CloudinaryFolder>(["heroes", "news", "offers", "marketplace", "chat", "chat-emojis", "forum", "users", "topup", "event-widgets"]);
 
 function isUploadFile(value: FormDataEntryValue | null): value is File {
   return Boolean(

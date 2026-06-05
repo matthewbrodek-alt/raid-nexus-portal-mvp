@@ -21,6 +21,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import type { UserProfile } from "@/lib/auth/types";
 import { getClipboardImageFile } from "@/lib/browser/clipboard-image";
+import { normalizeCustomChatEmojis, splitCustomEmojiText, type CustomChatEmoji } from "@/lib/chat/custom-emojis";
 import type { CloudinaryAsset } from "@/lib/cloudinary/types";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
@@ -140,12 +141,8 @@ function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-function renderMessageText(text: string, mentions?: MentionedUser[]) {
-  if (!mentions?.length) {
-    return text;
-  }
-
-  const names = mentions.map((mention) => mention.displayName).filter(Boolean).sort((a, b) => b.length - a.length);
+function renderMentionText(text: string, mentions?: MentionedUser[], keyPrefix = "mention") {
+  const names = (mentions ?? []).map((mention) => mention.displayName).filter(Boolean).sort((a, b) => b.length - a.length);
 
   if (!names.length) {
     return text;
@@ -157,14 +154,33 @@ function renderMessageText(text: string, mentions?: MentionedUser[]) {
     const matched = names.find((name) => part.toLowerCase() === `@${name}`.toLowerCase());
 
     if (!matched) {
-      return <span key={`${part}-${index}`}>{part}</span>;
+      return <span key={`${keyPrefix}-${part}-${index}`}>{part}</span>;
     }
 
     return (
-      <span key={`${part}-${index}`} className="rounded bg-relic/15 px-1 font-bold text-relic">
+      <span key={`${keyPrefix}-${part}-${index}`} className="rounded bg-relic/15 px-1 font-bold text-relic">
         @{matched}
       </span>
     );
+  });
+}
+
+function renderMessageText(text: string, mentions?: MentionedUser[], customEmojis: CustomChatEmoji[] = []) {
+  return splitCustomEmojiText(text, customEmojis).map((part, index) => {
+    if (part.type === "emoji") {
+      return (
+        <img
+          key={`${part.emoji.code}-${index}`}
+          src={part.emoji.url}
+          alt={part.emoji.label}
+          loading="lazy"
+          decoding="async"
+          className="mx-0.5 inline-block h-7 w-7 align-[-0.42em] object-contain"
+        />
+      );
+    }
+
+    return <span key={`text-${index}`}>{renderMentionText(part.value, mentions, `mention-${index}`)}</span>;
   });
 }
 
@@ -236,6 +252,7 @@ export function ChatWindow() {
   const [imagePreview, setImagePreview] = useState<ImagePreview | null>(null);
   const [memberMenu, setMemberMenu] = useState<MemberMenu | null>(null);
   const [personalBlockedUids, setPersonalBlockedUids] = useState<string[]>([]);
+  const [customEmojis, setCustomEmojis] = useState<CustomChatEmoji[]>([]);
   const [chatMenuOpen, setChatMenuOpen] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [sending, setSending] = useState(false);
@@ -344,6 +361,17 @@ export function ChatWindow() {
 
     window.localStorage.setItem(`raid-personal-blocks-${user.uid}`, JSON.stringify(personalBlockedUids));
   }, [personalBlockedUids, user]);
+
+  useEffect(() => {
+    return onSnapshot(
+      doc(db, collections.siteSettings, "customChatEmojis"),
+      (snapshot) => {
+        const data = snapshot.data() as { items?: CustomChatEmoji[] } | undefined;
+        setCustomEmojis(normalizeCustomChatEmojis(data?.items));
+      },
+      () => setCustomEmojis([])
+    );
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -1037,7 +1065,7 @@ export function ChatWindow() {
                         <img src={attachmentUrl} alt={attachmentAlt} loading="lazy" decoding="async" className="max-h-44 object-cover" />
                       </button>
                     ) : null}
-                    {item.text ? <p className="break-words text-[13px] leading-5">{renderMessageText(item.text, item.mentions)}</p> : null}
+                    {item.text ? <p className="break-words text-[13px] leading-5">{renderMessageText(item.text, item.mentions, customEmojis)}</p> : null}
                     {!selectedUser ? (
                       <div className="mt-1 flex items-center gap-2 opacity-0 transition focus-within:opacity-100 group-hover:opacity-100">
                         <button
@@ -1142,7 +1170,7 @@ export function ChatWindow() {
                     <Smile size={18} />
                   </button>
                   {emojiOpen ? (
-                    <div className="absolute bottom-[calc(100%+8px)] left-0 z-20 grid w-[214px] grid-cols-5 gap-1 rounded-[16px] border border-relic/20 bg-[#060b13]/98 p-2 shadow-[0_18px_44px_rgba(0,0,0,0.48)] backdrop-blur-xl">
+                    <div className="absolute bottom-[calc(100%+8px)] left-0 z-20 grid max-h-[260px] w-[214px] grid-cols-5 gap-1 overflow-y-auto rounded-[16px] border border-relic/20 bg-[#060b13]/98 p-2 shadow-[0_18px_44px_rgba(0,0,0,0.48)] backdrop-blur-xl">
                       {basicEmojis.map((emoji) => (
                         <button
                           key={emoji}
@@ -1154,6 +1182,20 @@ export function ChatWindow() {
                           className="grid h-9 w-9 place-items-center rounded-lg text-xl transition hover:bg-relic/15"
                         >
                           {emoji}
+                        </button>
+                      ))}
+                      {customEmojis.map((emoji) => (
+                        <button
+                          key={emoji.id}
+                          type="button"
+                          onClick={() => {
+                            setMessage((current) => `${current}${emoji.code}`);
+                            setEmojiOpen(false);
+                          }}
+                          className="grid h-9 w-9 place-items-center rounded-lg transition hover:bg-relic/15"
+                          title={emoji.label}
+                        >
+                          <img src={emoji.url} alt={emoji.label} className="max-h-8 max-w-8 object-contain" loading="lazy" decoding="async" />
                         </button>
                       ))}
                     </div>

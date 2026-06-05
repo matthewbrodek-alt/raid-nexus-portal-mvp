@@ -1,15 +1,17 @@
 "use client";
 
-import { MessageCircle, Send } from "lucide-react";
+import { MessageCircle, Send, Smile } from "lucide-react";
 import { doc, onSnapshot, runTransaction, serverTimestamp } from "firebase/firestore";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
+import { normalizeCustomChatEmojis, splitCustomEmojiText, type CustomChatEmoji } from "@/lib/chat/custom-emojis";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import { useLanguage } from "@/lib/i18n/use-language";
 
 const streamChatLimit = 70;
 const maxMessageLength = 280;
+const basicEmojis = ["\u{1F600}", "\u{1F602}", "\u{1F60D}", "\u{1F44D}", "\u{1F525}", "\u2764\uFE0F", "\u{1F64F}", "\u{1F389}", "\u{1F60E}", "\u{1F914}"];
 
 type StreamMessage = {
   id: string;
@@ -37,12 +39,33 @@ function formatMessageTime(timestamp: number, language: string) {
   }).format(new Date(timestamp));
 }
 
+function renderStreamText(text: string, customEmojis: CustomChatEmoji[]) {
+  return splitCustomEmojiText(text, customEmojis).map((part, index) => {
+    if (part.type === "emoji") {
+      return (
+        <img
+          key={`${part.emoji.code}-${index}`}
+          src={part.emoji.url}
+          alt={part.emoji.label}
+          loading="lazy"
+          decoding="async"
+          className="mx-0.5 inline-block h-7 w-7 align-[-0.42em] object-contain"
+        />
+      );
+    }
+
+    return <span key={`text-${index}`}>{part.value}</span>;
+  });
+}
+
 export function StreamLiveChat() {
   const { language } = useLanguage();
   const { profile, user } = useAuth();
   const [messages, setMessages] = useState<StreamMessage[]>([]);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const [customEmojis, setCustomEmojis] = useState<CustomChatEmoji[]>([]);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const sendingRef = useRef(false);
   const chatRef = useMemo(() => doc(db, collections.streamChats, "active"), []);
@@ -57,6 +80,17 @@ export function StreamLiveChat() {
       () => setMessages([])
     );
   }, [chatRef]);
+
+  useEffect(() => {
+    return onSnapshot(
+      doc(db, collections.siteSettings, "customChatEmojis"),
+      (snapshot) => {
+        const data = snapshot.data() as { items?: CustomChatEmoji[] } | undefined;
+        setCustomEmojis(normalizeCustomChatEmojis(data?.items));
+      },
+      () => setCustomEmojis([])
+    );
+  }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -118,13 +152,9 @@ export function StreamLiveChat() {
             <MessageCircle size={18} />
           </span>
           <div>
-            <h3 className="font-black text-white">{language === "ru" ? "Чат эфира" : "Stream chat"}</h3>
-            <p className="text-xs text-zinc-500">
-              {language === "ru" ? `Только последние ${streamChatLimit} сообщений` : `Only the latest ${streamChatLimit} messages`}
-            </p>
+            <h3 className="font-black text-white">{language === "ru" ? "Обсуждение трансляции" : "Stream discussion"}</h3>
           </div>
         </div>
-        <span className="rounded-full border border-relic/20 px-3 py-1 text-xs font-bold text-relic">{messages.length}/{streamChatLimit}</span>
       </div>
 
       <div ref={scrollRef} className="h-[320px] space-y-3 overflow-y-auto px-4 py-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-relic/30">
@@ -149,7 +179,7 @@ export function StreamLiveChat() {
                     <span className="truncate text-xs font-black text-relic">{own ? (language === "ru" ? "Вы" : "You") : item.displayName}</span>
                     <span className="shrink-0 text-[11px] text-zinc-500">{formatMessageTime(item.createdAt, language)}</span>
                   </div>
-                  <p className="break-words text-sm leading-5">{item.text}</p>
+                  <p className="break-words text-sm leading-5">{renderStreamText(item.text, customEmojis)}</p>
                 </div>
               </div>
             );
@@ -158,6 +188,48 @@ export function StreamLiveChat() {
       </div>
 
       <form onSubmit={sendMessage} className="flex items-center gap-2 border-t border-white/10 bg-[#050a12]/90 p-3">
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setEmojiOpen((current) => !current)}
+            disabled={!user || !profile || sending}
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-[14px] border border-relic/15 bg-black/40 text-relic transition hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-45"
+            aria-label={language === "ru" ? "Открыть смайлики" : "Open emojis"}
+          >
+            <Smile size={18} />
+          </button>
+          {emojiOpen ? (
+            <div className="absolute bottom-[calc(100%+8px)] left-0 z-20 grid max-h-[260px] w-[214px] grid-cols-5 gap-1 overflow-y-auto rounded-[16px] border border-relic/20 bg-[#060b13]/98 p-2 shadow-[0_18px_44px_rgba(0,0,0,0.48)] backdrop-blur-xl">
+              {basicEmojis.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => {
+                    setMessage((current) => `${current}${emoji}`);
+                    setEmojiOpen(false);
+                  }}
+                  className="grid h-9 w-9 place-items-center rounded-lg text-xl transition hover:bg-relic/15"
+                >
+                  {emoji}
+                </button>
+              ))}
+              {customEmojis.map((emoji) => (
+                <button
+                  key={emoji.id}
+                  type="button"
+                  onClick={() => {
+                    setMessage((current) => `${current}${emoji.code}`);
+                    setEmojiOpen(false);
+                  }}
+                  className="grid h-9 w-9 place-items-center rounded-lg transition hover:bg-relic/15"
+                  title={emoji.label}
+                >
+                  <img src={emoji.url} alt={emoji.label} className="max-h-8 max-w-8 object-contain" loading="lazy" decoding="async" />
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
         <input
           value={message}
           onChange={(event) => setMessage(event.target.value.slice(0, maxMessageLength))}

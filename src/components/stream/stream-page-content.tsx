@@ -1,6 +1,6 @@
 "use client";
 
-import { Radio, Signal, SignalZero } from "lucide-react";
+import { SignalZero } from "lucide-react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { db } from "@/lib/firebase/client";
@@ -55,7 +55,7 @@ export function StreamPageContent() {
 
   useEffect(() => {
     return onSnapshot(
-      doc(db, collections.siteSettings, "homeBroadcast"),
+      doc(db, collections.siteSettings, "streamBroadcast"),
       (snapshot) => setSettings({ ...defaultSettings, ...((snapshot.data() as StreamSettings | undefined) ?? {}) }),
       () => setSettings(defaultSettings)
     );
@@ -68,7 +68,7 @@ export function StreamPageContent() {
   const statusText = isLive ? (language === "ru" ? "Эфир запущен" : "Live now") : language === "ru" ? "Эфир выключен" : "Offline";
 
   return (
-    <section className="grid gap-6 lg:grid-cols-[1fr_360px]">
+    <section className="mx-auto max-w-5xl">
       <div className="raid-ornate-panel overflow-hidden p-4 sm:p-6">
         <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -127,22 +127,6 @@ export function StreamPageContent() {
         <StreamLiveChat />
       </div>
 
-      <aside className="raid-ornate-panel p-5">
-        <div className="flex items-center gap-3">
-          <span className="grid h-12 w-12 place-items-center rounded-[16px] border border-relic/35 bg-relic/10 text-relic">
-            {isLive ? <Signal size={22} /> : <Radio size={22} />}
-          </span>
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.24em] text-relic">Status</p>
-            <h3 className="text-xl font-black text-white">{statusText}</h3>
-          </div>
-        </div>
-        <p className="mt-5 text-sm leading-7 text-zinc-300">
-          {language === "ru"
-            ? "Здесь будет отображаться актуальная трансляция портала. Когда админ включает эфир, лампочка становится зеленой, а зрители могут смотреть его прямо на сайте."
-            : "The current portal stream appears here. When an admin enables the stream, the lamp turns green and viewers can watch it directly on the site."}
-        </p>
-      </aside>
     </section>
   );
 }

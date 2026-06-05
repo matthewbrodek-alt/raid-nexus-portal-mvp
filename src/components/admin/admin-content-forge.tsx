@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, ImagePlus, Newspaper, Plus, Save, ShoppingBag, Trash2 } from "lucide-react";
+import { ExternalLink, ImagePlus, Newspaper, Plus, Save, ShoppingBag, Smile, Trash2 } from "lucide-react";
 import { addDoc, collection, deleteDoc, doc, getDoc, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import type { CloudinaryAsset } from "@/lib/cloudinary/types";
+import { makeCustomEmojiCode, normalizeCustomChatEmojis, type CustomChatEmoji } from "@/lib/chat/custom-emojis";
 import type { ChampionDamageSkill } from "@/lib/data/champion-multipliers";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
@@ -171,11 +172,19 @@ export function AdminContentForge() {
   const [broadcastVideoUrl, setBroadcastVideoUrl] = useState("");
   const [broadcastBackgroundImageUrl, setBroadcastBackgroundImageUrl] = useState("");
   const [broadcastIsLive, setBroadcastIsLive] = useState(false);
+  const [streamTitle, setStreamTitle] = useState("");
+  const [streamVideoUrl, setStreamVideoUrl] = useState("");
+  const [streamBackgroundImageUrl, setStreamBackgroundImageUrl] = useState("");
+  const [streamIsLive, setStreamIsLive] = useState(false);
   const [socialTelegram, setSocialTelegram] = useState("");
   const [socialVkVideo, setSocialVkVideo] = useState("");
   const [socialVkCommunity, setSocialVkCommunity] = useState("");
   const [socialYoutube, setSocialYoutube] = useState("");
   const [socialTwitch, setSocialTwitch] = useState("");
+  const [customEmojis, setCustomEmojis] = useState<CustomChatEmoji[]>([]);
+  const [customEmojiLabel, setCustomEmojiLabel] = useState("");
+  const [customEmojiUrl, setCustomEmojiUrl] = useState("");
+  const [customEmojiFile, setCustomEmojiFile] = useState<File | null>(null);
   const [calendarTitle, setCalendarTitle] = useState("");
   const [calendarDescription, setCalendarDescription] = useState("");
   const [calendarImage, setCalendarImage] = useState<File | null>(null);
@@ -281,10 +290,20 @@ export function AdminContentForge() {
   useEffect(() => {
     void getDoc(doc(db, collections.siteSettings, "homeBroadcast")).then((snapshot) => {
       const data = snapshot.data() as { title?: string; videoUrl?: string; backgroundImageUrl?: string; isLive?: boolean } | undefined;
-      setBroadcastTitle(data?.title ?? "Эфир");
+      setBroadcastTitle(data?.title ?? "Видео на главной");
       setBroadcastVideoUrl(data?.videoUrl ?? "https://www.youtube.com/embed/MhsY9Uvcx7E");
       setBroadcastBackgroundImageUrl(data?.backgroundImageUrl ?? "");
       setBroadcastIsLive(Boolean(data?.isLive));
+    });
+  }, []);
+
+  useEffect(() => {
+    void getDoc(doc(db, collections.siteSettings, "streamBroadcast")).then((snapshot) => {
+      const data = snapshot.data() as { title?: string; videoUrl?: string; backgroundImageUrl?: string; isLive?: boolean } | undefined;
+      setStreamTitle(data?.title ?? "Эфир");
+      setStreamVideoUrl(data?.videoUrl ?? "");
+      setStreamBackgroundImageUrl(data?.backgroundImageUrl ?? "");
+      setStreamIsLive(Boolean(data?.isLive));
     });
   }, []);
 
@@ -299,6 +318,13 @@ export function AdminContentForge() {
       setSocialVkCommunity(data?.vkCommunity ?? "");
       setSocialYoutube(data?.youtube ?? "");
       setSocialTwitch(data?.twitch ?? "");
+    });
+  }, []);
+
+  useEffect(() => {
+    void getDoc(doc(db, collections.siteSettings, "customChatEmojis")).then((snapshot) => {
+      const data = snapshot.data() as { items?: CustomChatEmoji[] } | undefined;
+      setCustomEmojis(normalizeCustomChatEmojis(data?.items));
     });
   }, []);
 
@@ -331,9 +357,9 @@ export function AdminContentForge() {
 
     try {
       await setDoc(
-        doc(db, collections.siteSettings, "homeBroadcast"),
-        {
-          title: broadcastTitle.trim() || "Эфир",
+          doc(db, collections.siteSettings, "homeBroadcast"),
+          {
+          title: broadcastTitle.trim() || "Видео на главной",
           videoUrl: broadcastVideoUrl.trim(),
           backgroundImageUrl: broadcastBackgroundImageUrl.trim(),
           isLive: broadcastIsLive,
@@ -342,9 +368,40 @@ export function AdminContentForge() {
         },
         { merge: true }
       );
-      setStatus("Настройки эфира сохранены.");
+      setStatus("Видео на главной сохранено.");
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Не удалось сохранить эфир.");
+      setStatus(error instanceof Error ? error.message : "Не удалось сохранить видео на главной.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveStreamBroadcast(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!profile) {
+      return;
+    }
+
+    setSaving(true);
+    setStatus("");
+
+    try {
+      await setDoc(
+        doc(db, collections.siteSettings, "streamBroadcast"),
+        {
+          title: streamTitle.trim() || "Эфир",
+          videoUrl: streamVideoUrl.trim(),
+          backgroundImageUrl: streamBackgroundImageUrl.trim(),
+          isLive: streamIsLive,
+          updatedBy: profile.uid,
+          updatedAt: serverTimestamp()
+        },
+        { merge: true }
+      );
+      setStatus("Настройки трансляции сохранены.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Не удалось сохранить трансляцию.");
     } finally {
       setSaving(false);
     }
@@ -377,6 +434,74 @@ export function AdminContentForge() {
       setStatus("Ссылки соцсетей сохранены.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Не удалось сохранить ссылки соцсетей.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function persistCustomEmojis(items: CustomChatEmoji[]) {
+    if (!profile) {
+      return;
+    }
+
+    const normalizedItems = normalizeCustomChatEmojis(items);
+    await setDoc(
+      doc(db, collections.siteSettings, "customChatEmojis"),
+      {
+        items: normalizedItems,
+        updatedBy: profile.uid,
+        updatedAt: serverTimestamp()
+      },
+      { merge: true }
+    );
+    setCustomEmojis(normalizedItems);
+  }
+
+  async function addCustomEmoji(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const label = customEmojiLabel.trim().slice(0, 32);
+
+    if (!label || (!customEmojiFile && !customEmojiUrl.trim())) {
+      setStatus("Укажи название и картинку или gif для смайлика.");
+      return;
+    }
+
+    setSaving(true);
+    setStatus("");
+
+    try {
+      const emojiPublicId = `emoji-${Date.now()}-${label.replace(/[^a-z0-9а-яё]+/gi, "-")}`;
+      const uploaded = customEmojiFile ? await uploadImage(customEmojiFile, emojiPublicId, "chat-emojis") : null;
+      const url = uploaded?.secureUrl ?? uploaded?.url ?? customEmojiUrl.trim();
+      const nextEmoji: CustomChatEmoji = {
+        id: `${Date.now()}-${label}`,
+        label,
+        code: makeCustomEmojiCode(label),
+        url
+      };
+
+      await persistCustomEmojis([...customEmojis, nextEmoji]);
+      setCustomEmojiLabel("");
+      setCustomEmojiUrl("");
+      setCustomEmojiFile(null);
+      setStatus("Смайлик добавлен в чаты.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Не удалось добавить смайлик.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteCustomEmoji(id: string) {
+    setSaving(true);
+    setStatus("");
+
+    try {
+      await persistCustomEmojis(customEmojis.filter((emoji) => emoji.id !== id));
+      setStatus("Смайлик удален.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Не удалось удалить смайлик.");
     } finally {
       setSaving(false);
     }
@@ -733,12 +858,12 @@ export function AdminContentForge() {
       <form onSubmit={saveBroadcast} className="mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
         <div className="flex items-center gap-2 text-white">
           <Save size={18} className="text-relic" />
-          <h3 className="font-semibold">Эфир</h3>
+          <h3 className="font-semibold">Видео на главной</h3>
         </div>
         <label className="flex items-center justify-between gap-4 rounded-md border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-200">
           <span>
-            <span className="block font-bold text-white">Эфир запущен</span>
-            <span className="text-xs text-zinc-500">Включи, чтобы лампочка на странице эфира стала зеленой.</span>
+            <span className="block font-bold text-white">Видео активно</span>
+            <span className="text-xs text-zinc-500">Этот блок относится только к видео на главной странице.</span>
           </span>
           <input
             type="checkbox"
@@ -770,6 +895,48 @@ export function AdminContentForge() {
         <p className="text-xs leading-5 text-zinc-500">
           Фон теперь статичный. Если нужна своя картинка, положи файл в public/images и укажи путь вида /images/raid-bg.jpg. Ссылка проигрывателя может быть YouTube или прямой mp4/webm.
         </p>
+        <button disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
+          <Save size={16} />
+          Сохранить видео
+        </button>
+      </form>
+
+      <form onSubmit={saveStreamBroadcast} className="mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
+        <div className="flex items-center gap-2 text-white">
+          <Save size={18} className="text-relic" />
+          <h3 className="font-semibold">Эфир</h3>
+        </div>
+        <label className="flex items-center justify-between gap-4 rounded-md border border-white/10 bg-black/30 px-4 py-3 text-sm text-zinc-200">
+          <span>
+            <span className="block font-bold text-white">Эфир запущен</span>
+          </span>
+          <input
+            type="checkbox"
+            checked={streamIsLive}
+            onChange={(event) => setStreamIsLive(event.target.checked)}
+            className="h-5 w-5 rounded border-white/20 bg-black text-relic focus:ring-relic"
+          />
+        </label>
+        <div className="grid gap-3 lg:grid-cols-3">
+          <input
+            value={streamTitle}
+            onChange={(event) => setStreamTitle(event.target.value)}
+            placeholder="Название трансляции"
+            className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+          />
+          <input
+            value={streamVideoUrl}
+            onChange={(event) => setStreamVideoUrl(event.target.value)}
+            placeholder="YouTube/VK/Twitch embed/link или /videos/stream.mp4"
+            className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+          />
+          <input
+            value={streamBackgroundImageUrl}
+            onChange={(event) => setStreamBackgroundImageUrl(event.target.value)}
+            placeholder="Фон трансляции: /images/stream-bg.jpg"
+            className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+          />
+        </div>
         <button disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
           <Save size={16} />
           Сохранить эфир
@@ -831,6 +998,60 @@ export function AdminContentForge() {
           <Save size={16} />
           Сохранить соцсети
         </button>
+      </form>
+
+      <form onSubmit={addCustomEmoji} className="mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
+        <div className="flex items-center gap-2 text-white">
+          <Smile size={18} className="text-relic" />
+          <h3 className="font-semibold">Кастомные смайлики для чатов</h3>
+        </div>
+        <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-center">
+          <input
+            value={customEmojiLabel}
+            onChange={(event) => setCustomEmojiLabel(event.target.value)}
+            placeholder="Название смайлика"
+            className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+          />
+          <input
+            value={customEmojiUrl}
+            onChange={(event) => setCustomEmojiUrl(event.target.value)}
+            placeholder="Ссылка на png/gif/webp"
+            className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+          />
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            onChange={(event) => setCustomEmojiFile(event.target.files?.[0] ?? null)}
+            className="block w-full text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-white/10 file:px-3 file:py-2 file:font-bold file:text-white"
+          />
+          <button disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
+            <Plus size={16} />
+            Добавить
+          </button>
+        </div>
+        {customEmojis.length ? (
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {customEmojis.map((emoji) => (
+              <div key={emoji.id} className="flex items-center gap-3 rounded-md border border-white/10 bg-black/25 p-2">
+                <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-lg bg-black/40">
+                  <img src={emoji.url} alt={emoji.label} className="max-h-9 max-w-9 object-contain" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-bold text-white">{emoji.label}</p>
+                  <p className="truncate text-xs text-zinc-500">{emoji.code}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void deleteCustomEmoji(emoji.id)}
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-blood/30 text-ember hover:bg-blood/15"
+                  aria-label="Удалить смайлик"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </form>
 
       <form onSubmit={createOffer} className="mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
