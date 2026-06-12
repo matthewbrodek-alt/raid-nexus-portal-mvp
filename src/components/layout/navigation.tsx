@@ -1,6 +1,6 @@
 "use client";
 
-import { Coins, Database, Menu, MessageSquare, Radio, Shield, ShoppingBag, UserRound, X, Zap } from "lucide-react";
+import { Coins, Database, Home as HomeIcon, Menu, MessageSquare, Radio, Shield, ShoppingBag, UserRound, X, Zap } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -12,6 +12,7 @@ import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { useLanguage } from "@/lib/i18n/use-language";
 
 const iconMap = {
+  home: HomeIcon,
   coins: Coins,
   zap: Zap,
   shoppingBag: ShoppingBag,
@@ -23,6 +24,7 @@ const iconMap = {
 
 const navLabels = {
   ru: {
+    "/": "Главная",
     "/donate": "Донат",
     "/topup": "Донат",
     "/useful": "Полезное",
@@ -36,6 +38,7 @@ const navLabels = {
     menu: "Меню"
   },
   en: {
+    "/": "Home",
     "/donate": "Donate",
     "/topup": "Donate",
     "/useful": "Useful",

@@ -39,7 +39,7 @@ function normalizeYoutubeUrl(value?: string) {
 export function HomeBroadcast() {
   const { language } = useLanguage();
   const [settings, setSettings] = useState<BroadcastSettings>(defaultSettings);
-  const defaultTitle = language === "ru" ? "Эфир" : "Live";
+  const fallbackTitle = language === "ru" ? "Трансляция" : "Stream";
 
   useEffect(() => {
     return onSnapshot(
@@ -54,14 +54,13 @@ export function HomeBroadcast() {
   const playbackUrl = useMemo(() => normalizeYoutubeUrl(settings.videoUrl || defaultSettings.videoUrl), [settings.videoUrl]);
   const isLive = Boolean(settings.isLive && playbackUrl);
   const rawTitle = settings.title?.trim();
-  const displayTitle = rawTitle && !rawTitle.toLowerCase().includes("боевой") && rawTitle !== defaultSettings.title ? rawTitle : defaultTitle;
+  const displayTitle = rawTitle && !rawTitle.toLowerCase().includes("боевой") && rawTitle !== defaultSettings.title ? rawTitle : "";
 
   return (
     <div className="raid-ornate-panel relative z-0 overflow-hidden p-5">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.36em] text-relic">Эфир</p>
-          <h2 className="raid-title-metal mt-3 text-xl font-black uppercase leading-tight">{displayTitle}</h2>
+          {displayTitle ? <h2 className="raid-title-metal text-xl leading-tight">{displayTitle}</h2> : null}
         </div>
         <span
           className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border shadow-[0_0_22px_rgba(216,168,71,0.16)] ${
@@ -75,7 +74,7 @@ export function HomeBroadcast() {
 
       {!playbackUrl ? (
         <div className="grid aspect-video place-items-center border border-relic/25 bg-black/70 p-6 text-center">
-          <p className="text-sm font-semibold text-zinc-400">{language === "ru" ? "Эфир скоро начнется" : "Stream starts soon"}</p>
+          <p className="text-sm font-semibold text-zinc-400">{language === "ru" ? "Трансляция скоро начнется" : "Stream starts soon"}</p>
         </div>
       ) : isVideoFile(playbackUrl) ? (
         <video className="relative z-0 aspect-video w-full border border-relic/25 bg-black object-cover" src={playbackUrl} controls playsInline />
@@ -83,7 +82,7 @@ export function HomeBroadcast() {
         <iframe
           className="relative z-0 aspect-video w-full border border-relic/25 bg-black"
           src={playbackUrl}
-          title={displayTitle}
+          title={displayTitle || fallbackTitle}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowFullScreen
         />

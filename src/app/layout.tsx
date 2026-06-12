@@ -32,6 +32,12 @@ export default function RootLayout({
   return (
     <html lang="ru" data-scroll-behavior="smooth" className={`${inter.variable} ${cinzel.variable}`}>
       <body className="font-sans antialiased">
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('raid-nexus-theme');if(t==='light'||t==='dark'){document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;}}catch(e){}"
+          }}
+        />
         <AuthProvider>
           <ThemeProvider>
             {children}

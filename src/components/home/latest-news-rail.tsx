@@ -26,7 +26,6 @@ type NewsItem = {
 const copy: Record<
   Language,
   {
-    eyebrow: string;
     title: string;
     allNews: string;
     details: string;
@@ -39,7 +38,6 @@ const copy: Record<
   }
 > = {
   ru: {
-    eyebrow: "Будь в курсе",
     title: "Свежие новости",
     allNews: "Все новости",
     details: "Подробности",
@@ -51,7 +49,6 @@ const copy: Record<
     fallbackDate: "24 часа назад"
   },
   en: {
-    eyebrow: "Stay Updated",
     title: "Fresh News",
     allNews: "All News",
     details: "Details",
@@ -157,7 +154,7 @@ export function LatestNewsRail() {
               <img src={getNewsImage(item)} alt="" loading="lazy" decoding="async" className="h-full w-full object-contain" />
             </span>
             <span className={`min-w-0 ${compact ? "" : "mt-3 block flex-1"}`}>
-              <span className={`block font-[var(--font-cinzel)] font-black tracking-[0.02em] text-white transition group-hover:text-[#ffe1a0] ${compact ? "truncate text-lg sm:text-xl" : "line-clamp-2 text-base"}`}>
+              <span className={`block font-[var(--font-display)] font-light tracking-[0.01em] text-white transition group-hover:text-[#ffe1a0] ${compact ? "truncate text-lg sm:text-xl" : "line-clamp-2 text-base"}`}>
                 {getNewsTitle(item, language)}
               </span>
               <span className={`mt-1 block text-sm text-zinc-400 ${compact ? "truncate" : "line-clamp-3"}`}>{getNewsSummary(item, language)}</span>
@@ -177,8 +174,7 @@ export function LatestNewsRail() {
       <div className="raid-ornate-panel min-h-[650px] overflow-hidden p-5 sm:p-7">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-relic/18 pb-5">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.32em] text-relic">{labels.eyebrow}</p>
-            <h2 className={`raid-title-metal mt-4 text-4xl uppercase sm:text-6xl ${language === "ru" ? "!leading-[1.24]" : "leading-none"}`}>
+            <h2 className={`raid-title-metal text-3xl sm:text-4xl ${language === "ru" ? "!leading-[1.32]" : "leading-tight"}`}>
               {labels.title}
             </h2>
           </div>
