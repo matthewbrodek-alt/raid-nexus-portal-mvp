@@ -165,8 +165,8 @@ export default function Home() {
 
           <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_430px]">
             <section id="news" className="min-w-0">
-              <HomeTestimonials />
               <LatestNewsRail />
+              <HomeTestimonials />
             </section>
 
             <aside className="space-y-5">

@@ -1293,6 +1293,24 @@ h3,
   }
 }
 
+.raid-review-track {
+  animation: raid-review-marquee 30s linear infinite;
+}
+
+.raid-review-marquee:hover .raid-review-track {
+  animation-play-state: paused;
+}
+
+@keyframes raid-review-marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 .raid-donate-pulse {
   animation: raid-donate-pulse 2.7s ease-in-out infinite;
 }

@@ -430,7 +430,9 @@ export function AdminCrmPanel() {
           <div>
             <p className="text-xs uppercase tracking-[0.22em] text-relic">Internal Order Desk</p>
             <h2 className="text-xl font-bold text-white sm:text-2xl">Панель заявок и монетизации</h2>
-            <p className="mt-1 text-sm leading-6 text-zinc-300">Выбери месяц и скачай операции в Excel или CSV. Это главный рабочий блок менеджера.</p>
+            <p className="mt-1 text-sm leading-6 text-zinc-300">
+              Realtime-таблица на Firestore: новые заявки появляются без перезагрузки, история хранится по месяцам, операции можно скачать в Excel или CSV.
+            </p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 xl:justify-end">

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Camera, Coins, CreditCard, MessageCircle, Paperclip, Send, ShieldCheck, Timer, WalletCards, X } from "lucide-react";
+import { Coins, Paperclip, Send, ShieldCheck, WalletCards, X } from "lucide-react";
 import { addDoc, collection, doc, getDocs, increment, query, serverTimestamp, setDoc, where, writeBatch } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -19,9 +19,9 @@ const MAX_SCREENSHOT_SIZE = 6 * 1024 * 1024;
 
 const copy = {
   ru: {
-    title: "Заявка на донат",
-    subtitle: "Форма сохраняет заявку в панель менеджера и открывает личный диалог на сайте.",
-    telegram: "Telegram",
+    title: "Написать менеджеру",
+    subtitle: "Короткая заявка сохранится в CRM-панели сайта, а ответ будет на странице заказа.",
+    telegram: "Контакт для связи",
     package: "Набор",
     payment: "Оплата",
     manager: "Через менеджера",
@@ -29,20 +29,19 @@ const copy = {
     screenshot: "Скриншот",
     screenshotHint: "PNG, JPG или WEBP до 6 МБ",
     screenshotTooLarge: "Скриншот должен быть до 6 МБ.",
-    directTelegram: "Написать менеджеру в Telegram",
-    placeholder: "Прикреплю скриншот магазина, нужен этот набор сегодня...",
+    placeholder: "Нужен этот набор сегодня, скриншот приложил...",
     sending: "Отправка...",
     submit: "Отправить заявку",
-    sent: "Заявка отправлена. Менеджер получит уведомление.",
+    sent: "Заявка отправлена. Откроется страница заказа.",
     error: "Не удалось сохранить заявку. Проверь вход в аккаунт и доступ к базе.",
     noPackages: "Наборы появятся после добавления в админ-панели.",
     from: "от",
     rub: "₽"
   },
   en: {
-    title: "Donation request",
-    subtitle: "The form saves a request in the manager panel and opens a private site dialog.",
-    telegram: "Telegram",
+    title: "Message manager",
+    subtitle: "A short request is saved in the site CRM panel, and the reply appears on the order page.",
+    telegram: "Contact",
     package: "Pack",
     payment: "Payment",
     manager: "Manager assisted",
@@ -50,11 +49,10 @@ const copy = {
     screenshot: "Screenshot",
     screenshotHint: "PNG, JPG or WEBP up to 6 MB",
     screenshotTooLarge: "Screenshot must be 6 MB or smaller.",
-    directTelegram: "Message manager in Telegram",
-    placeholder: "I will attach a shop screenshot, need this pack today...",
+    placeholder: "Need this pack today, screenshot attached...",
     sending: "Sending...",
     submit: "Send request",
-    sent: "Request sent. Manager will receive it.",
+    sent: "Request sent. The order page will open.",
     error: "Could not save request. Check your account session and database access.",
     noPackages: "Packs will appear after they are added in the admin panel.",
     from: "from",
@@ -115,7 +113,6 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [activeManagerUid, setActiveManagerUid] = useState("");
   const submittingRef = useRef(false);
-  const managerTelegramUrl = process.env.NEXT_PUBLIC_MANAGER_TELEGRAM_URL ?? "";
 
   useEffect(() => {
     if (selectedPackageId) {
@@ -140,12 +137,6 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
   const bumpyCoinsBalance = Math.max(0, Math.floor(profile?.bumpyCoinsBalance ?? 0));
   const bumpyCoinsDiscount = useBumpyCoins && selectedPackage ? Math.min(bumpyCoinsBalance, selectedPackage.priceRub, BUMPY_COINS_DISCOUNT_CAP) : 0;
   const finalAmountRub = selectedPackage ? Math.max(0, selectedPackage.priceRub - bumpyCoinsDiscount) : 0;
-
-  const serviceSteps = [
-    { Icon: Camera, label: isRu ? "Скриншот набора" : "Pack screenshot" },
-    { Icon: CreditCard, label: isRu ? "Счёт менеджера" : "Manager invoice" },
-    { Icon: Timer, label: isRu ? "5-10 минут без очереди" : "5-10 min if no queue" }
-  ];
 
   function updateScreenshot(file: File | null) {
     setFileError("");
@@ -315,13 +306,13 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
   }
 
   return (
-    <GlassPanel className="p-6">
-      <div className="mb-5 flex items-center gap-3">
-        <span className="rounded-lg bg-relic/15 p-3 text-relic">
+    <GlassPanel className="p-4 sm:p-5">
+      <div className="mb-4 flex items-center gap-3">
+        <span className="rounded-lg bg-relic/15 p-2.5 text-relic">
           <WalletCards />
         </span>
         <div>
-          <h2 className="text-2xl font-bold text-white">{t.title}</h2>
+          <h2 className="text-xl font-bold text-white">{t.title}</h2>
           <p className="text-sm text-zinc-400">{t.subtitle}</p>
         </div>
       </div>
@@ -339,15 +330,6 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
         </div>
       ) : null}
 
-      <div className="mb-5 grid gap-3 sm:grid-cols-3">
-        {serviceSteps.map(({ Icon, label }) => (
-          <div key={label} className="rounded-lg border border-white/10 bg-black/25 p-3 text-sm text-zinc-300">
-            <Icon className="mb-2 text-relic" size={18} />
-            {label}
-          </div>
-        ))}
-      </div>
-
       <form className="space-y-4" onSubmit={submitLead} onPaste={handlePasteImage}>
         <label className="block space-y-2">
           <span className="text-sm text-zinc-300">{t.telegram}</span>
@@ -355,7 +337,7 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
             required
             value={telegram}
             onChange={(event) => setTelegram(event.target.value)}
-            placeholder="@username"
+            placeholder={isRu ? "@telegram, email или другой контакт" : "@telegram, email or another contact"}
             className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
           />
         </label>
@@ -481,23 +463,11 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
 
         <button
           disabled={status === "sending" || status === "sent" || !user || !selectedPackage}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-semibold text-black transition hover:bg-[#f0c766] disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-relic px-4 py-2.5 font-semibold text-black transition hover:bg-[#f0c766] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Send size={18} />
           {status === "sending" ? t.sending : t.submit}
         </button>
-
-        {managerTelegramUrl ? (
-          <a
-            href={managerTelegramUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-relic/35 px-4 py-3 font-semibold text-relic transition hover:border-relic hover:bg-relic/10"
-          >
-            <MessageCircle size={18} />
-            {t.directTelegram}
-          </a>
-        ) : null}
 
         {status === "sent" ? (
           <p className="rounded-md border border-relic/20 bg-relic/[0.08] px-3 py-2 text-sm text-relic">

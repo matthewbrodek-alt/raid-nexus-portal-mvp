@@ -134,7 +134,7 @@ export function LatestNewsRail() {
 
   function renderNewsList(items: NewsItem[], compact = false, afterSelect?: () => void) {
     return (
-      <div className={compact ? "space-y-3" : "grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"}>
+      <div className={compact ? "space-y-3" : "grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"}>
         {items.map((item) => (
           <button
             key={item.id}
@@ -146,15 +146,15 @@ export function LatestNewsRail() {
             className={`group w-full text-left transition hover:bg-relic/[0.07] ${
               compact
                 ? "grid grid-cols-[86px_1fr_auto] items-center gap-4 rounded-[18px] border border-relic/18 bg-black/28 p-4"
-                : "flex min-h-[260px] flex-col overflow-hidden rounded-[18px] border border-relic/18 bg-black/32 p-3"
+                : "flex min-h-[310px] flex-col overflow-hidden rounded-[18px] border border-relic/18 bg-black/32 p-3"
             }`}
             aria-label={`${labels.openNewsLabel}: ${getNewsTitle(item, language)}`}
           >
-            <span className={`block overflow-hidden rounded-[14px] border border-relic/22 bg-black/40 ${compact ? "h-16" : "h-28 w-full"}`}>
+            <span className={`block overflow-hidden rounded-[14px] border border-relic/22 bg-black/40 ${compact ? "h-16" : "h-40 w-full"}`}>
               <img src={getNewsImage(item)} alt="" loading="lazy" decoding="async" className="h-full w-full object-contain" />
             </span>
             <span className={`min-w-0 ${compact ? "" : "mt-3 block flex-1"}`}>
-              <span className={`block font-[var(--font-display)] font-light tracking-[0.01em] text-white transition group-hover:text-[#ffe1a0] ${compact ? "truncate text-lg sm:text-xl" : "line-clamp-2 text-base"}`}>
+              <span className={`block font-[var(--font-display)] font-light tracking-[0.01em] text-white transition group-hover:text-[#ffe1a0] ${compact ? "truncate text-lg sm:text-xl" : "line-clamp-2 text-xl"}`}>
                 {getNewsTitle(item, language)}
               </span>
               <span className={`mt-1 block text-sm text-zinc-400 ${compact ? "truncate" : "line-clamp-3"}`}>{getNewsSummary(item, language)}</span>

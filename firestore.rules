@@ -153,6 +153,17 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /reviews/{reviewId} {
+      allow read: if resource.data.status == "published" || isAdmin();
+      allow create: if activeUser()
+        && request.resource.data.status == "published"
+        && request.resource.data.text is string
+        && request.resource.data.text.size() <= 420
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5;
+      allow update, delete: if isAdmin();
+    }
+
     match /raffleEntries/{entryId} {
       allow get: if signedIn();
       allow list: if isAdmin();

@@ -116,7 +116,7 @@ export const avatarFrames: Array<Unlockable & { id: AvatarFrameId; label: string
   {
     id: "rgb",
     label: "RGB Mythic",
-    minStatus: "platinum",
+    minStatus: "gold",
     className: "bp-frame-rgb bp-avatar-rgb bp-frame-style-crown",
     previewClassName: "from-red-500 via-emerald-400 to-cyan-400"
   },
