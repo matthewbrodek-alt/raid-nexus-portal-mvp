@@ -80,7 +80,7 @@ const copy: Record<
     useful: "Полезное",
     chat: "Чат",
     stream: "Эфир",
-    newsDescription: "Последние новости портала",
+    newsDescription: "Свежие новости портала",
     heroesDescription: "База героев, фракции, роли и сборки",
     marketDescription: "Лоты, аккаунты и предложения",
     clansDescription: "Объявления участников и набор в кланы",

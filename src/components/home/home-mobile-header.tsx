@@ -6,7 +6,9 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { RaidLogo } from "@/components/brand/raid-logo";
 import { HomeCommunityLinks } from "@/components/home/home-community-links";
+import { HomeSearch } from "@/components/home/home-search";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { useLanguage, type Language } from "@/lib/i18n/use-language";
 
 const mobileLinks = [
@@ -48,8 +50,13 @@ export function HomeMobileHeader() {
           </button>
         </div>
 
-        <div className="mb-4">
+        <div className="mb-4 flex flex-wrap gap-2">
           <LanguageSwitcher />
+          <ThemeSwitcher />
+        </div>
+
+        <div className="mb-4">
+          <HomeSearch />
         </div>
 
         <nav className="space-y-2">
@@ -61,7 +68,7 @@ export function HomeMobileHeader() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setOpen(false)}
-                className="raid-side-link flex h-14 items-center gap-4 border border-white/5 bg-black/55 px-4 text-sm font-semibold uppercase tracking-[0.1em] text-zinc-300 transition hover:border-relic/35 hover:text-relic"
+                className="raid-side-link flex h-14 items-center gap-4 border border-white/5 bg-black/55 px-4 text-sm font-semibold tracking-[0.04em] text-zinc-300 transition hover:border-relic/35 hover:text-relic"
               >
                 <Icon className="relative z-10 h-5 w-5 shrink-0" />
                 <span className="relative z-10">{text(item.label, language)}</span>

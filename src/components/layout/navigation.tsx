@@ -1,12 +1,14 @@
 "use client";
 
-import { Coins, Database, Menu, MessageSquare, Radio, Search, Shield, ShoppingBag, UserRound, X, Zap } from "lucide-react";
+import { Coins, Database, Menu, MessageSquare, Radio, Shield, ShoppingBag, UserRound, X, Zap } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { RaidLogo } from "@/components/brand/raid-logo";
 import { HomeCommunityLinks } from "@/components/home/home-community-links";
+import { HomeSearch } from "@/components/home/home-search";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { useLanguage } from "@/lib/i18n/use-language";
 
 const iconMap = {
@@ -88,8 +90,13 @@ export function Navigation({ sections }: NavigationProps) {
           </button>
         </div>
 
-        <div className="mb-4">
+        <div className="mb-4 flex flex-wrap gap-2">
           <LanguageSwitcher />
+          <ThemeSwitcher />
+        </div>
+
+        <div className="mb-4">
+          <HomeSearch />
         </div>
 
         <nav className="space-y-2">
@@ -99,7 +106,7 @@ export function Navigation({ sections }: NavigationProps) {
               <Link
                 key={section.href}
                 href={section.href}
-                className="raid-side-link flex h-14 items-center gap-4 border border-white/5 bg-black/55 px-4 text-sm font-semibold uppercase tracking-[0.1em] text-zinc-300 transition hover:border-relic/35 hover:text-relic"
+                className="raid-side-link flex h-14 items-center gap-4 border border-white/5 bg-black/55 px-4 text-sm font-semibold tracking-[0.04em] text-zinc-300 transition hover:border-relic/35 hover:text-relic"
                 onClick={() => setOpen(false)}
               >
                 <Icon className="relative z-10 h-5 w-5 shrink-0" />
@@ -109,7 +116,7 @@ export function Navigation({ sections }: NavigationProps) {
           })}
           <Link
             href="/dashboard"
-            className="raid-side-link flex h-14 items-center gap-4 border border-relic/30 bg-relic/10 px-4 text-sm font-semibold uppercase tracking-[0.1em] text-relic"
+            className="raid-side-link flex h-14 items-center gap-4 border border-relic/30 bg-relic/10 px-4 text-sm font-semibold tracking-[0.04em] text-relic"
             onClick={() => setOpen(false)}
           >
             <UserRound className="relative z-10 h-5 w-5 shrink-0" />
@@ -144,7 +151,7 @@ export function Navigation({ sections }: NavigationProps) {
                 <Link
                   key={section.href}
                   href={section.href}
-                  className="flex items-center gap-2 rounded-[14px] border border-transparent px-3 py-2 text-sm uppercase tracking-[0.08em] text-zinc-300 transition hover:border-relic/40 hover:bg-relic/10 hover:text-relic"
+                  className="flex items-center gap-2 rounded-[14px] border border-transparent px-3 py-2 text-sm font-semibold tracking-[0.03em] text-zinc-300 transition hover:border-relic/40 hover:bg-relic/10 hover:text-relic"
                 >
                   <Icon size={16} />
                   {labels[section.href as keyof typeof labels] ?? section.label}
@@ -153,11 +160,13 @@ export function Navigation({ sections }: NavigationProps) {
             })}
           </nav>
 
+          <div className="mx-3 hidden min-w-[260px] max-w-[360px] flex-1 xl:block">
+            <HomeSearch />
+          </div>
+
           <div className="hidden items-center gap-2 sm:flex">
             <LanguageSwitcher />
-            <button className="grid h-10 w-10 place-items-center rounded-[14px] border border-relic/25 bg-black/35 text-zinc-300 transition hover:text-relic" aria-label={labels.search}>
-              <Search size={18} />
-            </button>
+            <ThemeSwitcher />
             <Link href="/dashboard" className="flex h-10 items-center gap-2 rounded-[14px] border border-relic/45 bg-black/35 px-3 text-sm font-semibold text-relic transition hover:bg-relic hover:text-black">
               <UserRound size={18} />
               {labels.dashboard}

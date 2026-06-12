@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { GlassPanel } from "@/components/ui/glass-panel";
-import { getBpStatus, getOrderStage, isCompletedOrder, orderStages, type OrderStageId } from "@/lib/bp-status";
+import { bpStatuses, getBpStatus, getOrderStage, isCompletedOrder, orderStages, type OrderStageId } from "@/lib/bp-status";
 import { copyTextToClipboard } from "@/lib/browser/clipboard";
 import type { UserProfile } from "@/lib/auth/types";
 import { db } from "@/lib/firebase/client";
@@ -162,7 +162,8 @@ async function updateCustomerBpTotal(lead: TopupLead, amountRub: number, nextSta
   const userRef = doc(db, collections.users, lead.uid);
   const userSnapshot = await getDoc(userRef);
   const userProfile = userSnapshot.exists() ? (userSnapshot.data() as UserProfile) : null;
-  const nextTotalRub = Math.max(0, (userProfile?.totalSpentRub ?? 0) + diff);
+  const manualStatusMinRub = bpStatuses.find((status) => status.id === userProfile?.bpStatus)?.minTotalRub ?? 0;
+  const nextTotalRub = Math.max(0, (userProfile?.totalSpentRub ?? 0) + diff, manualStatusMinRub);
 
   await updateDoc(userRef, {
     bpStatus: getBpStatus(nextTotalRub).id,

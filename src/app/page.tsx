@@ -20,11 +20,14 @@ import { HomeBroadcast } from "@/components/home/home-broadcast";
 import { HomeCommunityLinks } from "@/components/home/home-community-links";
 import { HomeEventCalendarCard } from "@/components/home/home-event-calendar-card";
 import { HomeMobileHeader } from "@/components/home/home-mobile-header";
+import { HomeSearch } from "@/components/home/home-search";
+import { HomeTestimonials } from "@/components/home/home-testimonials";
 import { HomeUnreadBell } from "@/components/home/home-unread-bell";
 import { HomeUserCard } from "@/components/home/home-user-card";
 import { LatestNewsRail } from "@/components/home/latest-news-rail";
 import { RafflePanel } from "@/components/home/raffle-panel";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { useLanguage, type Language } from "@/lib/i18n/use-language";
 
 const sidebarLinks = [
@@ -78,7 +81,7 @@ export default function Home() {
       <div className="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(circle_at_50%_0%,rgba(231,193,106,0.16),transparent_26%),linear-gradient(90deg,rgba(3,7,12,0.46),rgba(3,7,12,0.17)_48%,rgba(3,7,12,0.42))]" />
 
       <div className="raid-dashboard-shell relative z-10 min-h-screen lg:grid lg:grid-cols-[300px_1fr]">
-        <aside className="hidden min-h-screen flex-col border-r border-relic/18 bg-[#02070c]/72 backdrop-blur-md lg:flex">
+        <aside className="hidden min-h-screen flex-col border-r border-relic/18 bg-[#02070c]/72 backdrop-blur-md lg:sticky lg:top-0 lg:flex lg:h-screen">
           <div className="flex h-28 items-center border-b border-relic/12 px-4">
             <RaidLogo compact withBumpyPay className="-ml-1" />
           </div>
@@ -94,7 +97,7 @@ export default function Home() {
                     key={item.href}
                     href={item.href}
                     data-active={item.active ? "true" : "false"}
-                    className="raid-side-link flex h-14 items-center gap-5 border border-transparent px-4 text-sm font-semibold uppercase tracking-[0.08em] text-zinc-400 transition hover:border-relic/35 hover:text-relic"
+                    className="raid-side-link flex h-14 items-center gap-5 border border-transparent px-4 text-sm font-semibold tracking-[0.04em] text-zinc-400 transition hover:border-relic/35 hover:text-relic"
                   >
                     <Icon className="relative z-10 h-6 w-6 shrink-0" />
                     <span className="relative z-10">{label}</span>
@@ -148,8 +151,11 @@ export default function Home() {
               {language === "ru" ? "Купить игровой набор в RAID" : "Buy RAID Game Pack"}
             </Link>
 
+            <HomeSearch />
+
             <div className="ml-auto flex items-center gap-5">
               <LanguageSwitcher />
+              <ThemeSwitcher />
               <span className="h-8 w-px bg-relic/18" />
               <HomeUnreadBell label={labels.notifications} />
               <span className="h-8 w-px bg-relic/18" />
@@ -159,6 +165,7 @@ export default function Home() {
 
           <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_430px]">
             <section id="news" className="min-w-0">
+              <HomeTestimonials />
               <LatestNewsRail />
             </section>
 

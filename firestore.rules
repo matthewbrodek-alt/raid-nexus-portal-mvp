@@ -191,7 +191,14 @@ service cloud.firestore {
     match /bonusTransactions/{transactionId} {
       allow read: if signedIn()
         && (isAdmin() || resource.data.uid == request.auth.uid);
-      allow create, update, delete: if isAdmin();
+      allow create: if isAdmin()
+        || (
+          activeUser()
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.source == "discount"
+          && request.resource.data.amountCoins <= 0
+        );
+      allow update, delete: if isAdmin();
     }
 
     match /chatRooms/{roomId} {

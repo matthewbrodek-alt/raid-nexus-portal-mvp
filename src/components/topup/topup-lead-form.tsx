@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Camera, CreditCard, MessageCircle, Paperclip, Send, ShieldCheck, Timer, WalletCards, X } from "lucide-react";
-import { addDoc, collection, doc, getDocs, query, serverTimestamp, setDoc, where } from "firebase/firestore";
+import { Camera, Coins, CreditCard, MessageCircle, Paperclip, Send, ShieldCheck, Timer, WalletCards, X } from "lucide-react";
+import { addDoc, collection, doc, getDocs, increment, query, serverTimestamp, setDoc, where, writeBatch } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -13,6 +13,7 @@ import { getDonationOfferTitle } from "@/lib/donation/offers";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import { useLanguage } from "@/lib/i18n/use-language";
+import { BUMPY_COINS_DISCOUNT_CAP } from "@/lib/referrals";
 
 const MAX_SCREENSHOT_SIZE = 6 * 1024 * 1024;
 
@@ -109,6 +110,7 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
   const [paymentMethod, setPaymentMethod] = useState("manager");
   const [comment, setComment] = useState("");
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [useBumpyCoins, setUseBumpyCoins] = useState(false);
   const [fileError, setFileError] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [activeManagerUid, setActiveManagerUid] = useState("");
@@ -135,6 +137,9 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
     () => donationOffers.find((item) => item.id === packageId) ?? donationOffers[0] ?? null,
     [donationOffers, packageId]
   );
+  const bumpyCoinsBalance = Math.max(0, Math.floor(profile?.bumpyCoinsBalance ?? 0));
+  const bumpyCoinsDiscount = useBumpyCoins && selectedPackage ? Math.min(bumpyCoinsBalance, selectedPackage.priceRub, BUMPY_COINS_DISCOUNT_CAP) : 0;
+  const finalAmountRub = selectedPackage ? Math.max(0, selectedPackage.priceRub - bumpyCoinsDiscount) : 0;
 
   const serviceSteps = [
     { Icon: Camera, label: isRu ? "Скриншот набора" : "Pack screenshot" },
@@ -221,7 +226,9 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
         telegram,
         packageId,
         packageName: getDonationOfferTitle(selectedPackage, isRu),
-        amountRub: selectedPackage.priceRub,
+        baseAmountRub: selectedPackage.priceRub,
+        bumpyCoinsDiscount,
+        amountRub: finalAmountRub,
         paymentMethod,
         comment,
         screenshotUrl: screenshot?.secureUrl ?? "",
@@ -232,11 +239,32 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
         source: "portal"
       };
 
-      await setDoc(topupRef, {
+      const batch = writeBatch(db);
+
+      batch.set(topupRef, {
         ...payload,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
+
+      if (bumpyCoinsDiscount > 0) {
+        batch.update(doc(db, collections.users, user.uid), {
+          bumpyCoinsBalance: increment(-bumpyCoinsDiscount),
+          bumpyCoinsSpentTotal: increment(bumpyCoinsDiscount),
+          updatedAt: serverTimestamp()
+        });
+
+        batch.set(doc(db, collections.bonusTransactions, `spent-${topupRef.id}`), {
+          amountCoins: -bumpyCoinsDiscount,
+          createdAt: serverTimestamp(),
+          description: `Bumpy Coins discount: ${payload.packageName}`,
+          leadId: topupRef.id,
+          source: "discount",
+          uid: user.uid
+        });
+      }
+
+      await batch.commit();
 
       if (manager) {
         await setDoc(
@@ -361,6 +389,48 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
             </select>
           </label>
         </div>
+
+        {selectedPackage ? (
+          <div className="rounded-xl border border-relic/20 bg-black/24 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-relic/25 bg-relic/10 text-relic">
+                  <Coins size={18} />
+                </span>
+                <div>
+                  <p className="font-bold text-white">Bumpy Coins: {bumpyCoinsBalance.toLocaleString("ru-RU")}</p>
+                  <p className="mt-1 text-xs leading-5 text-zinc-500">
+                    {isRu ? "1 Bumpy Coin = 1 рубль скидки. Лимит списания: 10 000 за заявку." : "1 Bumpy Coin = 1 ruble discount. Max use: 10,000 per request."}
+                  </p>
+                </div>
+              </div>
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm font-semibold text-zinc-300">
+                <input
+                  type="checkbox"
+                  checked={useBumpyCoins}
+                  disabled={bumpyCoinsBalance <= 0}
+                  onChange={(event) => setUseBumpyCoins(event.target.checked)}
+                  className="rounded border-relic/30 bg-black/40 text-relic focus:ring-relic"
+                />
+                {isRu ? "Списать доступные Bumpy Coins" : "Apply available Bumpy Coins"}
+              </label>
+            </div>
+            <div className="mt-4 grid gap-2 text-sm sm:grid-cols-3">
+              <div className="rounded-lg border border-white/10 bg-black/25 p-3">
+                <p className="text-xs text-zinc-500">{isRu ? "Цена набора" : "Pack price"}</p>
+                <p className="mt-1 font-black text-white">{selectedPackage.priceRub.toLocaleString("ru-RU")} {t.rub}</p>
+              </div>
+              <div className="rounded-lg border border-white/10 bg-black/25 p-3">
+                <p className="text-xs text-zinc-500">{isRu ? "Скидка" : "Discount"}</p>
+                <p className="mt-1 font-black text-relic">-{bumpyCoinsDiscount.toLocaleString("ru-RU")} {t.rub}</p>
+              </div>
+              <div className="rounded-lg border border-relic/25 bg-relic/[0.08] p-3">
+                <p className="text-xs text-zinc-500">{isRu ? "Итого к оплате" : "Final price"}</p>
+                <p className="mt-1 font-black text-white">{finalAmountRub.toLocaleString("ru-RU")} {t.rub}</p>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <label className="block space-y-2">
           <span className="text-sm text-zinc-300">{t.comment}</span>

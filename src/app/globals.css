@@ -6,6 +6,10 @@
   color-scheme: dark;
 }
 
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -32,6 +36,11 @@ body {
   color: #f2ead6;
 }
 
+:root[data-theme="light"] body {
+  background: #f8fafc;
+  color: #111827;
+}
+
 body::before {
   content: "";
   position: fixed;
@@ -39,6 +48,11 @@ body::before {
   z-index: -2;
   background: url("/images/raid-castle-bg.png") center top / cover no-repeat;
   pointer-events: none;
+}
+
+:root[data-theme="light"] body::before {
+  opacity: 0.16;
+  filter: saturate(0.85) brightness(1.22);
 }
 
 body::after {
@@ -51,6 +65,25 @@ body::after {
     radial-gradient(circle at 84% 52%, rgba(216, 75, 53, 0.16), transparent 28%),
     linear-gradient(90deg, rgba(2, 6, 10, 0.18), rgba(3, 8, 13, 0.08) 48%, rgba(2, 6, 10, 0.22));
   pointer-events: none;
+}
+
+:root[data-theme="light"] body::after {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(231, 193, 106, 0.18), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(241, 245, 249, 0.9));
+}
+
+:root[data-theme="light"] .raid-dashboard-shell,
+:root[data-theme="light"] .raid-ornate-panel,
+:root[data-theme="light"] .raid-glow-button,
+:root[data-theme="light"] header,
+:root[data-theme="light"] aside {
+  color: #111827;
+}
+
+:root[data-theme="light"] .raid-ornate-panel,
+:root[data-theme="light"] .raid-glow-button {
+  background-color: rgba(255, 255, 255, 0.84);
 }
 
 ::selection {

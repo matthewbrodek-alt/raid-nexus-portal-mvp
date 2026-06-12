@@ -40,7 +40,7 @@ const copy: Record<
 > = {
   ru: {
     eyebrow: "Будь в курсе",
-    title: "Последние новости",
+    title: "Свежие новости",
     allNews: "Все новости",
     details: "Подробности",
     emptyDescription: "Описание новости пока не заполнено.",
@@ -52,7 +52,7 @@ const copy: Record<
   },
   en: {
     eyebrow: "Stay Updated",
-    title: "Latest News",
+    title: "Fresh News",
     allNews: "All News",
     details: "Details",
     emptyDescription: "News description has not been filled in yet.",
@@ -137,7 +137,7 @@ export function LatestNewsRail() {
 
   function renderNewsList(items: NewsItem[], compact = false, afterSelect?: () => void) {
     return (
-      <div className={compact ? "space-y-3" : "divide-y divide-relic/12"}>
+      <div className={compact ? "space-y-3" : "grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"}>
         {items.map((item) => (
           <button
             key={item.id}
@@ -146,21 +146,23 @@ export function LatestNewsRail() {
               setSelectedNews(item);
               afterSelect?.();
             }}
-            className={`group grid w-full grid-cols-[86px_1fr_auto] items-center gap-4 text-left transition hover:bg-relic/[0.07] ${
-              compact ? "rounded-[18px] border border-relic/18 bg-black/28 p-4" : "px-1 py-5 sm:px-3"
+            className={`group w-full text-left transition hover:bg-relic/[0.07] ${
+              compact
+                ? "grid grid-cols-[86px_1fr_auto] items-center gap-4 rounded-[18px] border border-relic/18 bg-black/28 p-4"
+                : "flex min-h-[260px] flex-col overflow-hidden rounded-[18px] border border-relic/18 bg-black/32 p-3"
             }`}
             aria-label={`${labels.openNewsLabel}: ${getNewsTitle(item, language)}`}
           >
-            <span className="block h-16 overflow-hidden rounded-[14px] border border-relic/22 bg-black/40">
+            <span className={`block overflow-hidden rounded-[14px] border border-relic/22 bg-black/40 ${compact ? "h-16" : "h-28 w-full"}`}>
               <img src={getNewsImage(item)} alt="" loading="lazy" decoding="async" className="h-full w-full object-contain" />
             </span>
-            <span className="min-w-0">
-              <span className="block truncate font-[var(--font-cinzel)] text-lg font-black uppercase tracking-[0.04em] text-white transition group-hover:text-[#ffe1a0] sm:text-xl">
+            <span className={`min-w-0 ${compact ? "" : "mt-3 block flex-1"}`}>
+              <span className={`block font-[var(--font-cinzel)] font-black tracking-[0.02em] text-white transition group-hover:text-[#ffe1a0] ${compact ? "truncate text-lg sm:text-xl" : "line-clamp-2 text-base"}`}>
                 {getNewsTitle(item, language)}
               </span>
-              <span className="mt-1 block truncate text-sm text-zinc-400">{getNewsSummary(item, language)}</span>
+              <span className={`mt-1 block text-sm text-zinc-400 ${compact ? "truncate" : "line-clamp-3"}`}>{getNewsSummary(item, language)}</span>
             </span>
-            <span className="hidden items-center gap-2 text-xs text-zinc-500 sm:inline-flex">
+            <span className={`items-center gap-2 text-xs text-zinc-500 ${compact ? "hidden sm:inline-flex" : "mt-3 inline-flex"}`}>
               <Clock3 size={15} />
               {formatNewsDate(item, language)}
             </span>

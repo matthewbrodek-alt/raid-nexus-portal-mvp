@@ -1,4 +1,5 @@
 export type UserRole = "user" | "admin" | "owner";
+export type UserTheme = "dark" | "light";
 
 export type UserProfile = {
   uid: string;
@@ -17,6 +18,7 @@ export type UserProfile = {
   bumpyCoinsBalance?: number;
   bumpyCoinsEarnedTotal?: number;
   bumpyCoinsSpentTotal?: number;
+  theme?: UserTheme;
   role: UserRole;
   status: "active" | "blocked" | "pending";
   activityStats?: {

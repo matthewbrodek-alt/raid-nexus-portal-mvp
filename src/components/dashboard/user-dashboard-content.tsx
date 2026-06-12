@@ -8,7 +8,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { copyTextToClipboard } from "@/lib/browser/clipboard";
-import { getBpProgress, getOrderStage, isCompletedOrder, normalizeOrderStage, orderStages } from "@/lib/bp-status";
+import { bpStatuses, getBpProgress, getOrderStage, isCompletedOrder, normalizeOrderStage, orderStages } from "@/lib/bp-status";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import {
@@ -22,7 +22,7 @@ import {
   type AvatarFrameId,
   type NicknameStyleId
 } from "@/lib/profile-cosmetics";
-import { makeReferralCode, makeReferralLink, normalizeReferralCode, REFERRAL_REWARD_RATE } from "@/lib/referrals";
+import { BUMPY_COINS_DISCOUNT_CAP, makeReferralCode, makeReferralLink, normalizeReferralCode, REFERRAL_REWARD_RATE } from "@/lib/referrals";
 
 type TopupLead = {
   id: string;
@@ -172,7 +172,9 @@ export function UserDashboardContent() {
     () => topupLeads.filter((lead) => isCompletedOrder(lead.status)).reduce((sum, lead) => sum + (lead.amountRub ?? 0), 0),
     [topupLeads]
   );
-  const bpProgress = useMemo(() => getBpProgress(totalSpentRub), [totalSpentRub]);
+  const manualStatusMinRub = useMemo(() => bpStatuses.find((status) => status.id === profile?.bpStatus)?.minTotalRub ?? 0, [profile?.bpStatus]);
+  const effectiveSpentRub = Math.max(totalSpentRub, manualStatusMinRub);
+  const bpProgress = useMemo(() => getBpProgress(effectiveSpentRub), [effectiveSpentRub]);
   const avatarUrl = profile?.avatarUrl || "";
   const canUseAdminFrame = profile?.role === "admin" || profile?.role === "owner";
   const availableAvatarFrames = useMemo(() => getAvailableAvatarFrames(bpProgress.status.id, canUseAdminFrame), [bpProgress.status.id, canUseAdminFrame]);
@@ -314,7 +316,7 @@ export function UserDashboardContent() {
         avatarUrl: nextAvatarUrl,
         avatarFrame: normalizeAvatarFrame(selectedAvatarFrame, bpProgress.status.id, canUseAdminFrame),
         bpStatus: bpProgress.status.id,
-        totalSpentRub,
+        totalSpentRub: effectiveSpentRub,
         updatedAt: new Date()
       });
       await refreshProfile();
@@ -347,7 +349,7 @@ export function UserDashboardContent() {
         avatarFrame: nextFrame,
         nicknameStyle: nextStyle,
         bpStatus: bpProgress.status.id,
-        totalSpentRub,
+        totalSpentRub: effectiveSpentRub,
         updatedAt: serverTimestamp()
       });
       await refreshProfile();
@@ -543,7 +545,7 @@ export function UserDashboardContent() {
             </div>
           </div>
           <p className="text-sm leading-6 text-zinc-400">
-            Приглашай игроков на портал. Когда приглашенный игрок оплачивает и менеджер переводит заявку в статус выполнена, тебе начисляется {Math.round(REFERRAL_REWARD_RATE * 100)}% от суммы заказа в Bumpy Coins.
+            Приглашай игроков на портал. Когда приглашенный игрок оплачивает и менеджер переводит заявку в статус выполнена, тебе начисляется {Math.round(REFERRAL_REWARD_RATE * 100)}% от суммы заказа в Bumpy Coins. Скидка списывается по курсу 1 coin = 1 рубль, максимум {BUMPY_COINS_DISCOUNT_CAP.toLocaleString("ru-RU")} coins на одну заявку.
           </p>
           <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]">
             <div className="rounded-xl border border-relic/20 bg-black/25 p-4">
@@ -576,7 +578,7 @@ export function UserDashboardContent() {
             <div className="rounded-xl border border-relic/20 bg-relic/[0.08] p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Доступно</p>
               <p className="mt-2 text-3xl font-black text-relic">{bumpyBalance.toLocaleString("ru-RU")}</p>
-              <p className="mt-1 text-xs text-zinc-500">1 Bumpy Coin = 1 рубль скидки</p>
+              <p className="mt-1 text-xs text-zinc-500">1 Bumpy Coin = 1 рубль скидки, до {BUMPY_COINS_DISCOUNT_CAP.toLocaleString("ru-RU")} за заявку</p>
             </div>
             <div className="rounded-xl border border-white/10 bg-black/22 p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Начислено всего</p>

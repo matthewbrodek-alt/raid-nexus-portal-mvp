@@ -49,6 +49,7 @@ async function loadOrCreateProfile(user: User): Promise<UserProfile> {
         bumpyCoinsBalance: profile.bumpyCoinsBalance ?? 0,
         bumpyCoinsEarnedTotal: profile.bumpyCoinsEarnedTotal ?? 0,
         bumpyCoinsSpentTotal: profile.bumpyCoinsSpentTotal ?? 0,
+        theme: profile.theme ?? "dark",
         updatedAt: serverTimestamp()
       },
       { merge: true }
@@ -87,7 +88,8 @@ async function loadOrCreateProfile(user: User): Promise<UserProfile> {
       referralCode,
       bumpyCoinsBalance: profile.bumpyCoinsBalance ?? 0,
       bumpyCoinsEarnedTotal: profile.bumpyCoinsEarnedTotal ?? 0,
-      bumpyCoinsSpentTotal: profile.bumpyCoinsSpentTotal ?? 0
+      bumpyCoinsSpentTotal: profile.bumpyCoinsSpentTotal ?? 0,
+      theme: profile.theme ?? "dark"
     };
   }
 
@@ -107,6 +109,7 @@ async function loadOrCreateProfile(user: User): Promise<UserProfile> {
     bumpyCoinsBalance: 0,
     bumpyCoinsEarnedTotal: 0,
     bumpyCoinsSpentTotal: 0,
+    theme: "dark",
     role,
     status: "active"
   };

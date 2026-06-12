@@ -1,4 +1,5 @@
 export const REFERRAL_REWARD_RATE = 0.02;
+export const BUMPY_COINS_DISCOUNT_CAP = 10_000;
 
 export function normalizeReferralCode(value?: string | null) {
   return (value ?? "")

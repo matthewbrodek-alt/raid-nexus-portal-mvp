@@ -115,6 +115,7 @@ export function RegisterForm() {
       bumpyCoinsBalance: 0,
       bumpyCoinsEarnedTotal: 0,
       bumpyCoinsSpentTotal: 0,
+      theme: "dark",
       role: "user",
       status: "active"
     };

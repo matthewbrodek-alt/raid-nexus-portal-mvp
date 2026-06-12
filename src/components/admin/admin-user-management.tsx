@@ -1,7 +1,7 @@
 "use client";
 
-import { MailPlus, ShieldCheck } from "lucide-react";
-import { collection, doc, getDocs, serverTimestamp, setDoc } from "firebase/firestore";
+import { Crown, MailPlus, ShieldCheck } from "lucide-react";
+import { collection, doc, getDocs, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { GlassPanel } from "@/components/ui/glass-panel";
@@ -9,6 +9,7 @@ import { emailToDocId, normalizeEmail } from "@/lib/auth/role-utils";
 import type { UserProfile } from "@/lib/auth/types";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
+import { bpStatuses, type BpStatusId } from "@/lib/bp-status";
 
 type AdminInvite = {
   email: string;
@@ -22,6 +23,7 @@ function userLabel(user: UserProfile) {
 export function AdminUserManagement() {
   const { profile, refreshProfile } = useAuth();
   const [email, setEmail] = useState("");
+  const [users, setUsers] = useState<UserProfile[]>([]);
   const [admins, setAdmins] = useState<UserProfile[]>([]);
   const [invites, setInvites] = useState<AdminInvite[]>([]);
   const [status, setStatus] = useState("");
@@ -35,6 +37,7 @@ export function AdminUserManagement() {
       .map((item) => item.data() as UserProfile)
       .sort((a, b) => userLabel(a).localeCompare(userLabel(b)));
 
+    setUsers(nextUsers);
     setAdmins(nextUsers.filter((item) => item.role === "admin" || item.role === "owner").sort((a, b) => a.email.localeCompare(b.email)));
 
     if (isOwner) {
@@ -84,6 +87,22 @@ export function AdminUserManagement() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function updateUserBpStatus(uid: string, statusId: BpStatusId) {
+    if (!isAdmin) {
+      return;
+    }
+
+    const statusData = bpStatuses.find((item) => item.id === statusId);
+
+    await updateDoc(doc(db, collections.users, uid), {
+      bpStatus: statusId,
+      totalSpentRub: statusData?.minTotalRub ?? 0,
+      updatedAt: serverTimestamp()
+    });
+
+    await loadUsersAndInvites();
   }
 
   return (
@@ -152,6 +171,59 @@ export function AdminUserManagement() {
           </div>
         </div>
       </div>
+
+      {isAdmin ? (
+        <div className="mt-6 rounded-xl border border-relic/18 bg-black/20 p-4">
+          <div className="mb-4 flex items-center gap-3">
+            <Crown className="text-relic" size={20} />
+            <div>
+              <h3 className="font-semibold text-white">BP-статусы пользователей</h3>
+              <p className="text-sm text-zinc-500">Здесь админ может выдать клиенту Platinum или другой статус для доступа к рамкам и скрытым элементам.</p>
+            </div>
+          </div>
+          <div className="max-h-[420px] overflow-auto rounded-lg border border-white/10">
+            <table className="w-full min-w-[760px] text-left text-sm">
+              <thead className="sticky top-0 bg-[#0b1320] text-xs uppercase tracking-[0.12em] text-relic">
+                <tr>
+                  <th className="border-b border-white/10 p-3">Пользователь</th>
+                  <th className="border-b border-white/10 p-3">Роль</th>
+                  <th className="border-b border-white/10 p-3">Статус BP</th>
+                  <th className="border-b border-white/10 p-3">Сумма статуса</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((item) => {
+                  const statusData = bpStatuses.find((statusItem) => statusItem.id === item.bpStatus) ?? bpStatuses[0];
+
+                  return (
+                    <tr key={item.uid} className="border-b border-white/8 bg-black/14 hover:bg-relic/[0.06]">
+                      <td className="p-3">
+                        <p className="font-semibold text-white">{item.displayName || "Raid Player"}</p>
+                        <p className="text-xs text-zinc-500">{item.email}</p>
+                      </td>
+                      <td className="p-3 text-zinc-400">{item.role}</td>
+                      <td className="p-3">
+                        <select
+                          value={statusData.id}
+                          onChange={(event) => void updateUserBpStatus(item.uid, event.target.value as BpStatusId)}
+                          className="w-full rounded-md border-white/10 bg-black/35 text-white focus:border-relic focus:ring-relic"
+                        >
+                          {bpStatuses.map((statusItem) => (
+                            <option key={statusItem.id} value={statusItem.id}>
+                              {statusItem.shortLabel}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="p-3 font-semibold text-relic">{(item.totalSpentRub ?? statusData.minTotalRub).toLocaleString("ru-RU")} ₽</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
     </GlassPanel>
   );
 }
