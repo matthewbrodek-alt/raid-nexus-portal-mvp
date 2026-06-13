@@ -12,7 +12,7 @@ export function AuthFormShell({ children, mode }: AuthFormShellProps) {
       <div className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-6xl items-center gap-8 lg:grid-cols-[0.85fr_1fr]">
         <section>
           <Link href="/" className="inline-flex items-center gap-3">
-            <RaidLogo compact />
+            <RaidLogo compact imageClassName="!h-[280px] !max-w-none sm:!h-[320px]" />
           </Link>
           <p className="mt-8 text-xs uppercase tracking-[0.28em] text-relic">
             {mode === "login" ? "Возвращение в цитадель" : "Регистрация игрока"}

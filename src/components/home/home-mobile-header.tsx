@@ -39,7 +39,7 @@ export function HomeMobileHeader() {
     <div className="fixed inset-0 bg-black/92 backdrop-blur-2xl lg:hidden" role="dialog" aria-modal="true" style={{ zIndex: 2147483647 }}>
       <div className="min-h-dvh w-[84vw] max-w-sm overflow-y-auto bg-[#02060b]/96 p-4 shadow-2xl backdrop-blur-2xl">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <RaidLogo compact imageClassName="!h-12 !max-w-none sm:!h-14" />
+          <RaidLogo compact imageClassName="!h-24 !max-w-none sm:!h-28" />
           <button
             type="button"
             onClick={() => setOpen(false)}
@@ -89,9 +89,9 @@ export function HomeMobileHeader() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-[1000] flex h-[calc(64px+env(safe-area-inset-top))] items-center gap-3 border-b border-white/8 bg-[#050b12]/82 px-4 pt-[env(safe-area-inset-top)] shadow-[0_12px_36px_rgba(0,0,0,0.28)] backdrop-blur-2xl lg:hidden">
+      <header className="fixed inset-x-0 top-0 z-[1000] flex h-[calc(104px+env(safe-area-inset-top))] items-center gap-3 border-b border-white/8 bg-[#050b12]/82 px-4 pt-[env(safe-area-inset-top)] shadow-[0_12px_36px_rgba(0,0,0,0.28)] backdrop-blur-2xl lg:hidden">
         <Link href="/" className="flex min-w-0 flex-1 items-center">
-          <RaidLogo compact imageClassName="!h-12 !max-w-none sm:!h-14" />
+          <RaidLogo compact imageClassName="!h-24 !max-w-none sm:!h-28" />
         </Link>
         <button
           type="button"
@@ -102,7 +102,7 @@ export function HomeMobileHeader() {
           <Menu size={21} />
         </button>
       </header>
-      <div className="h-[calc(64px+env(safe-area-inset-top))] lg:hidden" aria-hidden="true" />
+      <div className="h-[calc(104px+env(safe-area-inset-top))] lg:hidden" aria-hidden="true" />
 
       {mounted && mobileMenu ? createPortal(mobileMenu, document.body) : null}
     </>
