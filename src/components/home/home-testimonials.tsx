@@ -3,6 +3,7 @@
 import { MessageSquarePlus, Star, Trash2, X } from "lucide-react";
 import { addDoc, collection, deleteDoc, doc, limit, onSnapshot, query, serverTimestamp, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "@/components/auth/auth-provider";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
@@ -46,7 +47,12 @@ export function HomeTestimonials() {
   const [saving, setSaving] = useState(false);
   const [allReviewsOpen, setAllReviewsOpen] = useState(false);
   const [hiddenFallbackIds, setHiddenFallbackIds] = useState<string[]>([]);
+  const [mounted, setMounted] = useState(false);
   const isAdmin = profile?.role === "admin" || profile?.role === "owner";
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     try {
@@ -131,7 +137,7 @@ export function HomeTestimonials() {
   }
 
   return (
-    <section className="raid-ornate-panel mt-5 overflow-hidden p-4 sm:p-5">
+    <section className="raid-ornate-panel mt-5 overflow-visible p-4 sm:p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold tracking-[0.16em] text-relic">{isRu ? "Отзывы игроков" : "Player reviews"}</p>
@@ -182,9 +188,9 @@ export function HomeTestimonials() {
         </div>
       </div>
 
-      {open ? (
-        <div className="fixed inset-0 z-[80] grid place-items-center bg-black/70 px-4 backdrop-blur-sm" role="dialog" aria-modal="true">
-          <form onSubmit={submitReview} className="raid-review-modal w-full max-w-lg rounded-[22px] border border-relic/25 bg-[#071019]/98 p-5 shadow-2xl">
+      {mounted && open ? createPortal(
+        <div className="fixed inset-0 z-[120] overflow-y-auto bg-black/70 px-4 py-6 backdrop-blur-sm sm:py-8" role="dialog" aria-modal="true">
+          <form onSubmit={submitReview} className="raid-review-modal mx-auto w-full max-w-lg rounded-[22px] border border-relic/25 bg-[#071019]/98 p-5 shadow-2xl">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="font-[var(--font-display)] text-2xl font-light text-white">{isRu ? "Отзыв о сервисе" : "Service review"}</h2>
               <button type="button" onClick={() => setOpen(false)} className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 text-zinc-400 hover:text-white">
@@ -241,12 +247,13 @@ export function HomeTestimonials() {
               </p>
             ) : null}
           </form>
-        </div>
+        </div>,
+        document.body
       ) : null}
 
-      {allReviewsOpen ? (
-        <div className="fixed inset-0 z-[80] grid place-items-center bg-black/70 px-4 backdrop-blur-sm" role="dialog" aria-modal="true">
-          <div className="raid-review-modal flex max-h-[82dvh] w-full max-w-3xl flex-col overflow-hidden rounded-[22px] border border-relic/25 bg-[#071019]/98 shadow-2xl">
+      {mounted && allReviewsOpen ? createPortal(
+        <div className="fixed inset-0 z-[120] overflow-y-auto bg-black/70 px-4 py-6 backdrop-blur-sm sm:py-8" role="dialog" aria-modal="true">
+          <div className="raid-review-modal mx-auto flex max-h-[calc(100dvh-3rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[22px] border border-relic/25 bg-[#071019]/98 shadow-2xl sm:max-h-[calc(100dvh-4rem)]">
             <div className="flex items-center justify-between gap-3 border-b border-white/10 p-5">
               <div>
                 <p className="text-xs font-bold tracking-[0.18em] text-relic">{isRu ? "Отзывы" : "Reviews"}</p>
@@ -296,7 +303,8 @@ export function HomeTestimonials() {
               ) : null}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       ) : null}
     </section>
   );
