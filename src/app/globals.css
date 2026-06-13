@@ -26,13 +26,13 @@
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --theme-page: #fff;
-  --theme-surface: rgba(255, 255, 255, 0.92);
-  --theme-surface-strong: rgba(255, 255, 255, 0.98);
-  --theme-text: #171a20;
-  --theme-muted: #5c5f66;
-  --theme-border: rgba(23, 26, 32, 0.16);
-  --theme-soft-border: rgba(23, 26, 32, 0.11);
+  --theme-page: #eaf3ff;
+  --theme-surface: rgba(244, 249, 255, 0.82);
+  --theme-surface-strong: rgba(250, 253, 255, 0.94);
+  --theme-text: #142033;
+  --theme-muted: #5f6f84;
+  --theme-border: rgba(88, 127, 172, 0.22);
+  --theme-soft-border: rgba(88, 127, 172, 0.14);
 }
 
 * {
@@ -69,8 +69,11 @@ body {
 }
 
 :root[data-theme="light"] body {
-  background: #fff;
-  color: #171a20;
+  background:
+    radial-gradient(circle at 22% 0%, rgba(255, 255, 255, 0.94), transparent 34%),
+    radial-gradient(circle at 88% 18%, rgba(189, 219, 255, 0.82), transparent 38%),
+    linear-gradient(135deg, #eef7ff 0%, #dcecff 42%, #f8fbff 100%);
+  color: #142033;
 }
 
 body::before {
@@ -83,8 +86,8 @@ body::before {
 }
 
 :root[data-theme="light"] body::before {
-  opacity: 0.04;
-  filter: saturate(0.35) brightness(1.65);
+  opacity: 0.075;
+  filter: saturate(0.7) brightness(1.85) hue-rotate(170deg);
 }
 
 body::after {
@@ -101,8 +104,10 @@ body::after {
 
 :root[data-theme="light"] body::after {
   background:
-    radial-gradient(circle at 50% 0%, rgba(23, 26, 32, 0.04), transparent 30%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 246, 246, 0.98));
+    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.92), transparent 26%),
+    radial-gradient(circle at 76% 4%, rgba(135, 184, 242, 0.34), transparent 30%),
+    radial-gradient(circle at 76% 74%, rgba(199, 224, 255, 0.44), transparent 34%),
+    linear-gradient(180deg, rgba(240, 248, 255, 0.76), rgba(226, 240, 255, 0.88));
 }
 
 :root[data-theme="light"] .raid-dashboard-shell,
@@ -110,12 +115,12 @@ body::after {
 :root[data-theme="light"] .raid-glow-button,
 :root[data-theme="light"] header,
 :root[data-theme="light"] aside {
-  color: #171a20;
+  color: #142033;
 }
 
 :root[data-theme="light"] .raid-ornate-panel,
 :root[data-theme="light"] .raid-glow-button {
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: rgba(244, 249, 255, 0.84);
 }
 
 img,
@@ -1130,15 +1135,17 @@ h3,
 
 :root[data-theme="light"] .bg-raid-radial {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 246, 246, 0.98)),
-    radial-gradient(circle at 50% 0%, rgba(23, 26, 32, 0.05), transparent 28%) !important;
+    radial-gradient(circle at 16% 0%, rgba(255, 255, 255, 0.96), transparent 28%),
+    radial-gradient(circle at 84% 14%, rgba(165, 206, 255, 0.46), transparent 34%),
+    linear-gradient(180deg, rgba(240, 248, 255, 0.96), rgba(223, 238, 255, 0.94)) !important;
   background-blend-mode: normal;
 }
 
 :root[data-theme="light"] .raid-dashboard-shell {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 247, 247, 0.96)),
-    radial-gradient(circle at 50% 0%, rgba(23, 26, 32, 0.04), transparent 32%);
+    radial-gradient(circle at 24% 0%, rgba(255, 255, 255, 0.9), transparent 28%),
+    radial-gradient(circle at 78% 12%, rgba(168, 207, 255, 0.38), transparent 34%),
+    linear-gradient(180deg, rgba(235, 246, 255, 0.88), rgba(220, 236, 255, 0.86));
 }
 
 :root[data-theme="light"] .glass,
@@ -1147,9 +1154,12 @@ h3,
 :root[data-theme="light"] .raid-side-link,
 :root[data-theme="light"] header,
 :root[data-theme="light"] aside {
-  border-color: rgba(23, 26, 32, 0.14) !important;
-  background: rgba(255, 255, 255, 0.9) !important;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.07) !important;
+  border-color: rgba(88, 127, 172, 0.22) !important;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.86), rgba(231, 242, 255, 0.78)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    0 18px 48px rgba(72, 104, 142, 0.14) !important;
 }
 
 :root[data-theme="light"] aside,
@@ -1158,22 +1168,27 @@ h3,
 }
 
 :root[data-theme="light"] .raid-side-link {
-  color: #5c5f66 !important;
+  color: #5f6f84 !important;
 }
 
 :root[data-theme="light"] .raid-side-link:hover,
 :root[data-theme="light"] .raid-side-link[data-active="true"] {
-  color: #171a20 !important;
-  border-color: rgba(23, 26, 32, 0.32) !important;
-  background: rgba(244, 244, 244, 0.96) !important;
-  box-shadow: inset -3px 0 0 #171a20, 0 12px 34px rgba(0, 0, 0, 0.08) !important;
+  color: #142033 !important;
+  border-color: rgba(70, 111, 160, 0.38) !important;
+  background:
+    radial-gradient(circle at 12% 50%, rgba(231, 193, 106, 0.28), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(223, 237, 255, 0.9)) !important;
+  box-shadow:
+    inset -3px 0 0 #4673a6,
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 12px 34px rgba(72, 104, 142, 0.15) !important;
 }
 
 :root[data-theme="light"] .raid-title-metal,
 :root[data-theme="light"] h1,
 :root[data-theme="light"] h2,
 :root[data-theme="light"] h3 {
-  color: #171a20 !important;
+  color: #142033 !important;
   text-shadow: none !important;
 }
 
@@ -1187,9 +1202,10 @@ h3,
 :root[data-theme="light"] input,
 :root[data-theme="light"] textarea,
 :root[data-theme="light"] select {
-  border-color: rgba(23, 26, 32, 0.16) !important;
-  background-color: rgba(255, 255, 255, 0.92) !important;
-  color: #171a20 !important;
+  border-color: rgba(88, 127, 172, 0.2) !important;
+  background-color: rgba(250, 253, 255, 0.9) !important;
+  color: #142033 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
 }
 
 :root[data-theme="light"] input::placeholder,
@@ -1202,15 +1218,28 @@ h3,
 :root[data-theme="light"] .text-zinc-100,
 :root[data-theme="light"] .text-zinc-200,
 :root[data-theme="light"] .text-zinc-300 {
-  color: #171a20 !important;
+  color: #142033 !important;
 }
 
 :root[data-theme="light"] .text-zinc-400,
 :root[data-theme="light"] .text-zinc-500 {
-  color: #5c5f66 !important;
+  color: #5f6f84 !important;
+}
+
+:root[data-theme="light"] .text-zinc-600,
+:root[data-theme="light"] .text-zinc-700,
+:root[data-theme="light"] .text-slate-500,
+:root[data-theme="light"] .text-slate-600,
+:root[data-theme="light"] .text-slate-700 {
+  color: #42546c !important;
+}
+
+:root[data-theme="light"] .text-black {
+  color: #142033 !important;
 }
 
 :root[data-theme="light"] .bg-black,
+:root[data-theme="light"] [class*='bg-black/'],
 :root[data-theme="light"] .bg-black\/25,
 :root[data-theme="light"] .bg-black\/28,
 :root[data-theme="light"] .bg-black\/30,
@@ -1228,7 +1257,126 @@ h3,
 :root[data-theme="light"] .bg-\[\#050b12\]\/82,
 :root[data-theme="light"] .bg-\[\#060b12\]\/88,
 :root[data-theme="light"] .bg-\[\#070b12\]\/95 {
-  background-color: rgba(255, 255, 255, 0.9) !important;
+  background-color: rgba(244, 249, 255, 0.88) !important;
+}
+
+:root[data-theme="light"] [class*='bg-[#0'],
+:root[data-theme="light"] [class*='bg-[#1'] {
+  background-color: rgba(244, 249, 255, 0.88) !important;
+}
+
+:root[data-theme="light"] [class*='bg-white/'] {
+  background-color: rgba(255, 255, 255, 0.58) !important;
+}
+
+:root[data-theme="light"] [class*='bg-[linear-gradient'],
+:root[data-theme="light"] [class*='bg-[radial-gradient'] {
+  background-image:
+    radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.94), transparent 30%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(224, 238, 255, 0.8)) !important;
+}
+
+:root[data-theme="light"] [class*='border-white'],
+:root[data-theme="light"] [class*='border-slate'],
+:root[data-theme="light"] [class*='border-zinc'] {
+  border-color: rgba(88, 127, 172, 0.18) !important;
+}
+
+:root[data-theme="light"] [class*='shadow-[0_18px'],
+:root[data-theme="light"] [class*='shadow-[0_22px'],
+:root[data-theme="light"] [class*='shadow-[inset'] {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 18px 54px rgba(72, 104, 142, 0.14) !important;
+}
+
+:root[data-theme="light"] .raid-news-hero {
+  background:
+    radial-gradient(circle at 72% 26%, rgba(165, 206, 255, 0.34), transparent 34%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(228, 240, 255, 0.72)),
+    url("/images/raid-castle-bg.png") center / cover no-repeat !important;
+  background-blend-mode: normal, normal, soft-light;
+}
+
+:root[data-theme="light"] .fixed [class*='bg-[#0'],
+:root[data-theme="light"] .fixed [class*='bg-[#1'],
+:root[data-theme="light"] [role="dialog"][class*='bg-[#0'],
+:root[data-theme="light"] [role="dialog"] [class*='bg-[#0'] {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(227, 240, 255, 0.9)) !important;
+}
+
+:root[data-theme="light"] [class*='backdrop-blur'] {
+  backdrop-filter: blur(18px) saturate(1.18);
+}
+
+:root[data-theme="light"] [class*='from-[#'] {
+  --tw-gradient-from: rgba(255, 255, 255, 0.9) var(--tw-gradient-from-position);
+  --tw-gradient-to: rgba(224, 238, 255, 0) var(--tw-gradient-to-position);
+}
+
+:root[data-theme="light"] [class*='from-black'] {
+  --tw-gradient-from: rgba(232, 243, 255, 0.84) var(--tw-gradient-from-position);
+  --tw-gradient-to: rgba(232, 243, 255, 0) var(--tw-gradient-to-position);
+}
+
+:root[data-theme="light"] [class*='via-[#'] {
+  --tw-gradient-via: rgba(232, 243, 255, 0.82) var(--tw-gradient-via-position);
+}
+
+:root[data-theme="light"] [class*='via-black'] {
+  --tw-gradient-via: rgba(228, 240, 255, 0.58) var(--tw-gradient-via-position);
+}
+
+:root[data-theme="light"] [class*='to-[#'] {
+  --tw-gradient-to: rgba(207, 226, 249, 0.84) var(--tw-gradient-to-position);
+}
+
+:root[data-theme="light"] [class*='to-black'] {
+  --tw-gradient-to: rgba(207, 226, 249, 0.32) var(--tw-gradient-to-position);
+}
+
+:root[data-theme="light"] [style*='raid-castle-bg'] {
+  background-image:
+    radial-gradient(circle at 70% 18%, rgba(255, 255, 255, 0.62), transparent 30%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.84), rgba(217, 234, 255, 0.74)),
+    url("/images/raid-castle-bg.png") !important;
+  background-blend-mode: normal, normal, soft-light;
+}
+
+:root[data-theme="light"] input,
+:root[data-theme="light"] textarea,
+:root[data-theme="light"] select {
+  background-color: rgba(255, 255, 255, 0.74) !important;
+  border-color: rgba(88, 127, 172, 0.2) !important;
+  color: #142033 !important;
+}
+
+:root[data-theme="light"] input::placeholder,
+:root[data-theme="light"] textarea::placeholder {
+  color: rgba(95, 111, 132, 0.72) !important;
+}
+
+:root[data-theme="light"] option {
+  background-color: #f3f8ff;
+  color: #142033;
+}
+
+:root[data-theme="light"] .bg-relic {
+  color: #111827 !important;
+}
+
+:root[data-theme="light"] .raid-glow-button {
+  color: #27405f !important;
+}
+
+:root[data-theme="light"] .raid-glow-button:hover,
+:root[data-theme="light"] .raid-glow-button:focus-visible {
+  color: #142033 !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    0 0 28px rgba(113, 154, 205, 0.24),
+    0 16px 42px rgba(72, 104, 142, 0.14) !important;
 }
 
 .raid-glow-button {
