@@ -37,7 +37,7 @@ export function HomeMobileHeader() {
 
   const mobileMenu = open ? (
     <div className="fixed inset-0 bg-black/92 backdrop-blur-2xl lg:hidden" role="dialog" aria-modal="true" style={{ zIndex: 2147483647 }}>
-      <div className="min-h-dvh w-[84vw] max-w-sm overflow-y-auto bg-[#02060b]/96 p-4 shadow-2xl backdrop-blur-2xl">
+      <div className="min-h-dvh w-[84vw] max-w-sm overflow-y-auto bg-[#02060b]/96 p-4 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-2xl backdrop-blur-2xl">
         <div className="mb-3 flex items-center justify-between gap-3">
           <RaidLogo compact imageClassName="!h-24 !max-w-none sm:!h-28" />
           <button
@@ -48,11 +48,6 @@ export function HomeMobileHeader() {
           >
             <X size={18} />
           </button>
-        </div>
-
-        <div className="mb-4 flex flex-wrap gap-2">
-          <LanguageSwitcher />
-          <ThemeSwitcher />
         </div>
 
         <div className="mb-4">
@@ -89,14 +84,18 @@ export function HomeMobileHeader() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-[1000] flex h-[calc(104px+env(safe-area-inset-top))] items-center gap-3 border-b border-white/8 bg-[#050b12]/82 px-4 pt-[env(safe-area-inset-top)] shadow-[0_12px_36px_rgba(0,0,0,0.28)] backdrop-blur-2xl lg:hidden">
-        <Link href="/" className="flex min-w-0 flex-1 items-center">
+      <header className="fixed inset-x-0 top-0 z-[1000] flex h-[calc(104px+env(safe-area-inset-top))] items-center gap-2 border-b border-white/8 bg-[#050b12]/82 px-3 pt-[env(safe-area-inset-top)] backdrop-blur-2xl lg:hidden">
+        <Link href="/" className="flex min-w-0 flex-1 items-center overflow-hidden">
           <RaidLogo compact imageClassName="!h-24 !max-w-none sm:!h-28" />
         </Link>
+        <div className="mobile-top-switchers">
+          <LanguageSwitcher compact />
+          <ThemeSwitcher compact />
+        </div>
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-[13px] border border-relic/40 bg-black/55 text-relic shadow-[0_0_20px_rgba(47,124,255,0.14)]"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-[13px] border border-relic/40 bg-black/55 text-relic"
           aria-label={language === "ru" ? "Открыть меню" : "Open menu"}
         >
           <Menu size={21} />

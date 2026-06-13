@@ -1060,7 +1060,7 @@ export function ChatWindow() {
             }}
             className="raid-chat-canvas min-h-0 flex-1 overflow-y-auto px-3 py-3 sm:px-5"
           >
-            {visibleMessages.map((item) => {
+            {visibleMessages.map((item, index) => {
               const own = item.uid === user?.uid;
               const attachmentUrl = item.attachment?.secureUrl ?? item.attachment?.url;
               const attachmentAlt = item.attachment?.alt ?? "Image";
@@ -1073,29 +1073,30 @@ export function ChatWindow() {
               const messageAvatarUrl = shouldShowAvatar(item.uid, user?.uid, authorProfile?.avatarHiddenByAdmin)
                 ? authorProfile?.avatarUrl || item.avatarUrl
                 : "";
+              const previousMessage = visibleMessages[index - 1];
+              const startsAuthorGroup = !previousMessage || previousMessage.uid !== item.uid;
+              const showAuthorMeta = !own && startsAuthorGroup;
 
               return (
-                <div key={item.id} className={`mb-2 flex items-end gap-2 ${own ? "justify-end" : "justify-start"}`}>
-                  {!own ? (
+                <div key={item.id} className={`flex items-end gap-2 ${own ? "justify-end" : "justify-start"} ${startsAuthorGroup ? "mb-2.5" : "mb-1"}`}>
+                  {!own ? showAuthorMeta ? (
                     <button
                       type="button"
                       onClick={() => openMemberMenu(item)}
-                      className={`bp-avatar-safe bp-avatar-chat grid h-8 w-8 shrink-0 place-items-center overflow-visible rounded-lg border bg-gradient-to-br from-violet-500 to-cyan-600 text-[11px] font-black text-white ${authorAvatarFrameClass}`}
+                      className={`bp-avatar-safe bp-avatar-chat chat-avatar-soft grid h-8 w-8 shrink-0 place-items-center overflow-visible rounded-lg border bg-gradient-to-br from-violet-500 to-cyan-600 text-[11px] font-black text-white ${authorAvatarFrameClass}`}
                       title={authorDisplayName}
                     >
                       <span className="bp-avatar-crop rounded-md">
                         {messageAvatarUrl ? <img src={messageAvatarUrl} alt={authorDisplayName} loading="lazy" decoding="async" className="h-full w-full object-cover" /> : initials}
                       </span>
                     </button>
+                  ) : (
+                    <span className="h-8 w-8 shrink-0" aria-hidden="true" />
                   ) : null}
                   <article
-                    className={`group max-w-[82%] rounded-xl px-3 py-2 shadow-lg sm:max-w-[62%] ${
-                      own
-                        ? "rounded-br-sm border border-relic/35 bg-[linear-gradient(135deg,rgba(35,21,49,0.96),rgba(47,124,255,0.72))] text-white shadow-[0_0_22px_rgba(47,124,255,0.18)]"
-                        : "rounded-bl-sm border border-relic/15 bg-[#050a12]/92 text-white shadow-[0_0_20px_rgba(0,0,0,0.32)]"
-                    }`}
+                    className={`group chat-message-bubble ${own ? "chat-message-bubble-own rounded-br-md" : "chat-message-bubble-peer rounded-bl-md"} ${attachmentUrl ? "min-w-[176px]" : ""}`}
                   >
-                    {!own ? (
+                    {showAuthorMeta ? (
                       <button type="button" onClick={() => openMemberMenu(item)} className={`mb-0.5 text-[11px] font-bold hover:text-white ${authorNicknameClass}`}>
                         {authorDisplayName}
                       </button>
@@ -1117,7 +1118,7 @@ export function ChatWindow() {
                     ) : null}
                     {item.text ? <p className="break-words text-[13px] leading-5">{renderMessageText(item.text, item.mentions, customEmojis)}</p> : null}
                     {!selectedUser ? (
-                      <div className="mt-1 flex items-center gap-2 opacity-0 transition focus-within:opacity-100 group-hover:opacity-100">
+                      <div className={`absolute top-full z-20 mt-1 flex items-center gap-2 rounded-lg border border-white/10 bg-black/70 px-2 py-1 opacity-0 backdrop-blur-md transition focus-within:opacity-100 group-hover:opacity-100 ${own ? "right-0" : "left-0"}`}>
                         <button
                           type="button"
                           onClick={() => setReplyTo(item)}
@@ -1141,7 +1142,7 @@ export function ChatWindow() {
                       <button
                         type="button"
                         onClick={() => void deleteMessage(item)}
-                        className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-red-200 opacity-0 transition hover:text-red-100 focus-visible:opacity-100 group-hover:opacity-100"
+                        className="absolute right-0 top-full z-20 mt-1 inline-flex items-center gap-1 rounded-lg border border-white/10 bg-black/70 px-2 py-1 text-[11px] font-semibold text-red-200 opacity-0 backdrop-blur-md transition hover:text-red-100 focus-visible:opacity-100 group-hover:opacity-100"
                       >
                         <Trash2 size={12} />
                         Удалить

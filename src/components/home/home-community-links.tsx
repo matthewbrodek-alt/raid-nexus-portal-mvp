@@ -35,7 +35,7 @@ function CommunityIcon({ icon, title, variant }: { icon: string; title: string; 
       alt={title}
       className={`z-10 max-w-none brightness-125 contrast-110 saturate-125 transition duration-200 group-hover:scale-105 group-hover:brightness-150 ${
         variant === "mobile"
-          ? "h-6 w-6 object-contain opacity-80 grayscale drop-shadow-[0_0_7px_rgba(99,166,255,0.18)] group-hover:opacity-100 group-hover:grayscale-0"
+          ? "h-7 w-7 object-contain opacity-100 drop-shadow-none group-hover:brightness-110"
           : "absolute left-1/2 top-1/2 h-[104%] w-[104%] -translate-x-1/2 -translate-y-1/2 object-cover drop-shadow-[0_0_6px_rgba(99,166,255,0.2)]"
       }`}
     />
@@ -66,13 +66,13 @@ export function HomeCommunityLinks({ variant = "desktop" }: HomeCommunityLinksPr
   }, []);
 
   return (
-    <div className={`relative z-20 ${variant === "mobile" ? "mt-4 flex items-center justify-between gap-4" : "mt-4 grid grid-cols-5 gap-1.5"}`}>
+    <div className={`relative z-20 ${variant === "mobile" ? "mt-4 flex flex-wrap items-center gap-3" : "mt-4 grid grid-cols-5 gap-1.5"}`}>
       {communityLinks.map((item) => {
         const href = links[item.key];
         const className =
           `group relative z-20 min-h-0 overflow-hidden bg-transparent transition duration-200 hover:-translate-y-0.5 ${
             variant === "mobile"
-              ? "grid h-8 w-8 place-items-center rounded-none opacity-80 hover:scale-105 hover:opacity-100"
+              ? "grid h-9 w-9 place-items-center rounded-none opacity-100 hover:scale-105"
               : "aspect-square scale-[0.72] rounded-[10px] shadow-[0_0_10px_rgba(0,0,0,0.25)] hover:scale-[0.8] hover:shadow-[0_0_12px_rgba(99,166,255,0.14)]"
           }`;
         const icon = <CommunityIcon icon={item.icon} title={item.title} variant={variant} />;
