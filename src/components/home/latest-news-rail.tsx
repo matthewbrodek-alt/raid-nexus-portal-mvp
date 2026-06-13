@@ -114,7 +114,7 @@ export function LatestNewsRail() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [allNewsOpen, setAllNewsOpen] = useState(false);
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
-  const visibleNews = news.slice(0, 10);
+  const visibleNews = news.slice(0, 5);
 
   useEffect(() => {
     const newsQuery = query(collection(db, collections.news), where("status", "==", "published"), limit(40));
@@ -134,7 +134,7 @@ export function LatestNewsRail() {
 
   function renderNewsList(items: NewsItem[], compact = false, afterSelect?: () => void) {
     return (
-      <div className={compact ? "space-y-3" : "grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 min-[1800px]:grid-cols-5"}>
+      <div className={compact ? "space-y-3" : "raid-stable-news-grid"}>
         {items.map((item) => (
           <button
             key={item.id}
@@ -146,18 +146,18 @@ export function LatestNewsRail() {
             className={`group w-full text-left transition hover:bg-relic/[0.07] ${
               compact
                 ? "grid grid-cols-[86px_1fr_auto] items-center gap-4 rounded-[18px] border border-relic/18 bg-black/28 p-4"
-                : "flex min-h-[310px] flex-col overflow-hidden rounded-[18px] border border-relic/18 bg-black/32 p-3"
+                : "flex h-[340px] min-h-[340px] flex-col overflow-hidden rounded-[18px] border border-relic/18 bg-black/32 p-3"
             }`}
             aria-label={`${labels.openNewsLabel}: ${getNewsTitle(item, language)}`}
           >
-            <span className={`block overflow-hidden rounded-[14px] border border-relic/22 bg-black/40 ${compact ? "h-16" : "h-40 w-full"}`}>
+            <span className={`block overflow-hidden rounded-[14px] border border-relic/22 bg-black/40 ${compact ? "h-16" : "h-36 w-full"}`}>
               <img src={getNewsImage(item)} alt="" loading="lazy" decoding="async" className="h-full w-full object-contain" />
             </span>
-            <span className={`min-w-0 ${compact ? "" : "mt-3 block flex-1"}`}>
-              <span className={`block font-[var(--font-display)] font-light tracking-[0.01em] text-white transition group-hover:text-[#ffe1a0] ${compact ? "truncate text-lg sm:text-xl" : "line-clamp-2 text-xl"}`}>
+            <span className={`raid-word-wrap min-w-0 ${compact ? "" : "mt-3 block flex-1"}`}>
+              <span className={`raid-word-wrap block font-[var(--font-display)] font-light tracking-[0.01em] text-white transition group-hover:text-[#ffe1a0] ${compact ? "truncate text-lg sm:text-xl" : "line-clamp-3 text-lg leading-snug"}`}>
                 {getNewsTitle(item, language)}
               </span>
-              <span className={`mt-1 block text-sm text-zinc-400 ${compact ? "truncate" : "line-clamp-3"}`}>{getNewsSummary(item, language)}</span>
+              <span className={`raid-word-wrap mt-1 block text-sm text-zinc-400 ${compact ? "truncate" : "line-clamp-2"}`}>{getNewsSummary(item, language)}</span>
             </span>
             <span className={`items-center gap-2 text-xs text-zinc-500 ${compact ? "hidden sm:inline-flex" : "mt-3 inline-flex"}`}>
               <Clock3 size={15} />
