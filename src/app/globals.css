@@ -67,17 +67,17 @@
 [class*="border-white"],
 [class*="ring-white"],
 [class*="outline-white"] {
-  border-color: rgba(47, 124, 255, 0.18) !important;
-  --tw-ring-color: rgba(47, 124, 255, 0.18) !important;
-  outline-color: rgba(47, 124, 255, 0.18) !important;
+  border-color: rgba(47, 124, 255, 0.1) !important;
+  --tw-ring-color: rgba(47, 124, 255, 0.1) !important;
+  outline-color: rgba(47, 124, 255, 0.1) !important;
 }
 
 :root[data-theme="light"] [class*="border-white"],
 :root[data-theme="light"] [class*="ring-white"],
 :root[data-theme="light"] [class*="outline-white"] {
-  border-color: rgba(33, 108, 255, 0.14) !important;
-  --tw-ring-color: rgba(33, 108, 255, 0.14) !important;
-  outline-color: rgba(33, 108, 255, 0.14) !important;
+  border-color: rgba(33, 108, 255, 0.08) !important;
+  --tw-ring-color: rgba(33, 108, 255, 0.08) !important;
+  outline-color: rgba(33, 108, 255, 0.08) !important;
 }
 
 .raid-word-wrap {
@@ -1852,7 +1852,7 @@ b {
 :root[data-theme="light"] [class*='border-white'],
 :root[data-theme="light"] [class*='border-slate'],
 :root[data-theme="light"] [class*='border-zinc'] {
-  border-color: rgba(88, 127, 172, 0.18) !important;
+  border-color: rgba(88, 127, 172, 0.1) !important;
 }
 
 :root[data-theme="light"] [class*='shadow-[0_18px'],

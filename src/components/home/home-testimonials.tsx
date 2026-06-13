@@ -109,10 +109,10 @@ export function HomeTestimonials() {
         </button>
       </div>
 
-      <div className="raid-review-marquee overflow-hidden border-y border-relic/12 py-3">
+      <div className="raid-review-marquee overflow-hidden py-2">
         <div className="raid-review-track flex w-max gap-3">
           {marqueeItems.map((item, index) => (
-            <article key={`${item.id}-${index}`} className="flex min-w-[260px] max-w-[320px] items-center gap-3 rounded-2xl border border-relic/18 bg-black/26 px-4 py-3">
+            <article key={`${item.id}-${index}`} className="flex min-w-[260px] max-w-[320px] items-center gap-3 rounded-2xl border border-relic/10 bg-black/22 px-4 py-3">
               <div className="flex shrink-0 gap-0.5 text-relic">
                 {Array.from({ length: Math.max(1, Math.min(5, item.rating ?? 5)) }).map((_, starIndex) => (
                   <Star key={starIndex} size={12} fill="currentColor" />

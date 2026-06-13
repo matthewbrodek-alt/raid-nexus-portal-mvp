@@ -112,19 +112,17 @@ export default function Home() {
               href="https://lps.plarium.com/ru/desktop/raid/dragon_fire_f038_fdb_droapp?plid="
               target="_blank"
               rel="noreferrer"
-              className="raid-glow-button flex items-center justify-between border border-relic/24 bg-black/32 px-5 py-4 text-left"
+              className="raid-glow-button flex items-center justify-between gap-5 border border-relic/24 bg-black/32 px-5 py-4 text-left"
             >
               <span>
                 <span className="block text-xs font-bold uppercase tracking-[0.28em] text-relic">{labels.downloadTitle}</span>
                 <span className="mt-1 block text-sm text-zinc-400">{labels.downloadText}</span>
               </span>
-              <Download className="text-relic" size={22} />
+              <Download className="ml-3 shrink-0 text-relic" size={22} />
             </Link>
 
-            <div className="relative overflow-hidden rounded-[22px] border border-relic/28 bg-[#050b12]/82 p-5 shadow-[inset_0_0_28px_rgba(99,166,255,0.06),0_18px_55px_rgba(0,0,0,0.38)]">
-              <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_22%_0%,rgba(99,166,255,0.16),transparent_34%),radial-gradient(circle_at_86%_92%,rgba(39,76,145,0.2),transparent_38%),linear-gradient(135deg,rgba(255,255,255,0.06),transparent_42%)]" />
-              <span className="pointer-events-none absolute inset-0 opacity-[0.13] [background-image:linear-gradient(rgba(99,166,255,0.16)_1px,transparent_1px),linear-gradient(90deg,rgba(99,166,255,0.12)_1px,transparent_1px)] [background-size:18px_18px]" />
-              <span className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-relic/70 to-transparent" />
+            <div className="relative overflow-hidden rounded-[22px] border border-relic/18 bg-[#050b12]/68 p-5 shadow-[inset_0_0_18px_rgba(99,166,255,0.035),0_18px_42px_rgba(0,0,0,0.24)]">
+              <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_22%_0%,rgba(99,166,255,0.08),transparent_34%),radial-gradient(circle_at_86%_92%,rgba(39,76,145,0.1),transparent_38%)]" />
               <p className="relative z-10 text-xs font-bold uppercase tracking-[0.2em] text-zinc-300">{labels.communityTitle}</p>
               <HomeCommunityLinks />
             </div>
@@ -174,7 +172,7 @@ export default function Home() {
             </aside>
           </div>
 
-          <footer className="mt-8 flex items-center justify-between border-t border-relic/12 py-5 text-xs uppercase tracking-[0.18em] text-zinc-500">
+          <footer className="mt-8 flex items-center justify-between py-5 text-xs uppercase tracking-[0.18em] text-zinc-500">
             <span>RAID Shadow Legends</span>
             <Link href="/dashboard" className="inline-flex items-center gap-2 text-relic transition hover:text-[#b8d7ff]">
               {labels.footerAccount}

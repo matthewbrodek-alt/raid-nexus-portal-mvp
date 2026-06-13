@@ -145,12 +145,12 @@ export function LatestNewsRail() {
             }}
             className={`group w-full text-left transition hover:bg-relic/[0.07] ${
               compact
-                ? "grid grid-cols-[86px_1fr_auto] items-center gap-4 rounded-[18px] border border-relic/18 bg-black/28 p-4"
-                : "flex h-[300px] min-h-[300px] flex-col overflow-hidden rounded-[18px] border border-relic/18 bg-black/32 p-3 sm:h-[320px] sm:min-h-[320px]"
+                ? "grid grid-cols-[86px_1fr_auto] items-center gap-4 rounded-[18px] border border-relic/10 bg-black/28 p-4"
+                : "flex h-[300px] min-h-[300px] flex-col overflow-hidden rounded-[18px] border border-relic/10 bg-black/32 p-3 sm:h-[320px] sm:min-h-[320px]"
             }`}
             aria-label={`${labels.openNewsLabel}: ${getNewsTitle(item, language)}`}
           >
-            <span className={`block overflow-hidden rounded-[14px] border border-relic/22 bg-black/40 ${compact ? "h-16" : "h-32 w-full sm:h-36"}`}>
+            <span className={`block overflow-hidden rounded-[14px] border border-relic/12 bg-black/40 ${compact ? "h-16" : "h-32 w-full sm:h-36"}`}>
               <img src={getNewsImage(item)} alt="" loading="lazy" decoding="async" className="h-full w-full object-contain" />
             </span>
             <span className={`raid-word-wrap min-w-0 ${compact ? "" : "mt-3 block flex-1"}`}>
@@ -172,7 +172,7 @@ export function LatestNewsRail() {
   return (
     <>
       <div className="raid-ornate-panel min-h-0 overflow-hidden p-4 sm:p-6 lg:min-h-[520px]">
-        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-relic/18 pb-3 sm:pb-4">
+        <div className="flex flex-wrap items-start justify-between gap-3 pb-2 sm:pb-3">
           <div>
             <h2 className={`raid-title-metal text-[1.45rem] leading-tight sm:text-3xl lg:text-4xl ${language === "ru" ? "!leading-[1.16]" : "leading-tight"}`}>
               {labels.title}

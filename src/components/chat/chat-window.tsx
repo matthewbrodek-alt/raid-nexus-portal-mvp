@@ -1118,7 +1118,7 @@ export function ChatWindow() {
                     ) : null}
                     {item.text ? <p className="break-words text-[13px] leading-5">{renderMessageText(item.text, item.mentions, customEmojis)}</p> : null}
                     {!selectedUser ? (
-                      <div className={`absolute top-full z-20 mt-1 flex items-center gap-2 rounded-lg border border-white/10 bg-black/70 px-2 py-1 opacity-0 backdrop-blur-md transition focus-within:opacity-100 group-hover:opacity-100 ${own ? "right-0" : "left-0"}`}>
+                      <div className={`mt-1.5 hidden items-center gap-2 rounded-lg border border-white/10 bg-black/45 px-2 py-1 backdrop-blur-md group-hover:flex group-focus-within:flex ${own ? "justify-end" : "justify-start"}`}>
                         <button
                           type="button"
                           onClick={() => setReplyTo(item)}
@@ -1142,7 +1142,7 @@ export function ChatWindow() {
                       <button
                         type="button"
                         onClick={() => void deleteMessage(item)}
-                        className="absolute right-0 top-full z-20 mt-1 inline-flex items-center gap-1 rounded-lg border border-white/10 bg-black/70 px-2 py-1 text-[11px] font-semibold text-red-200 opacity-0 backdrop-blur-md transition hover:text-red-100 focus-visible:opacity-100 group-hover:opacity-100"
+                        className="mt-1.5 hidden items-center gap-1 rounded-lg border border-white/10 bg-black/45 px-2 py-1 text-[11px] font-semibold text-red-200 backdrop-blur-md transition hover:text-red-100 group-hover:inline-flex group-focus-within:inline-flex"
                       >
                         <Trash2 size={12} />
                         Удалить

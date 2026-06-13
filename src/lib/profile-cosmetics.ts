@@ -12,7 +12,20 @@ export type AvatarFrameId =
   | "platinum-void"
   | "rgb"
   | "admin-blue";
-export type NicknameStyleId = "plain" | "relic" | "ember" | "rgb";
+export type NicknameStyleId =
+  | "plain"
+  | "violet"
+  | "purple"
+  | "fuchsia"
+  | "blue"
+  | "cyan"
+  | "emerald"
+  | "amber"
+  | "orange"
+  | "crimson"
+  | "relic"
+  | "ember"
+  | "rgb";
 
 const statusRank: Record<BpStatusId, number> = {
   bronze: 0,
@@ -123,9 +136,63 @@ const legacyFrameMap: Record<string, AvatarFrameId> = {
 export const nicknameStyles: Array<Unlockable & { id: NicknameStyleId; label: string; className: string }> = [
   {
     id: "plain",
-    label: "Classic",
+    label: "Telegram Rose",
     minStatus: "bronze",
-    className: "text-white"
+    className: "text-[#d9689f]"
+  },
+  {
+    id: "violet",
+    label: "Violet",
+    minStatus: "bronze",
+    className: "text-violet-300"
+  },
+  {
+    id: "purple",
+    label: "Purple",
+    minStatus: "bronze",
+    className: "text-purple-300"
+  },
+  {
+    id: "fuchsia",
+    label: "Fuchsia",
+    minStatus: "bronze",
+    className: "text-fuchsia-300"
+  },
+  {
+    id: "blue",
+    label: "Blue",
+    minStatus: "bronze",
+    className: "text-blue-300"
+  },
+  {
+    id: "cyan",
+    label: "Cyan",
+    minStatus: "bronze",
+    className: "text-cyan-300"
+  },
+  {
+    id: "emerald",
+    label: "Emerald",
+    minStatus: "bronze",
+    className: "text-emerald-300"
+  },
+  {
+    id: "amber",
+    label: "Amber",
+    minStatus: "bronze",
+    className: "text-amber-300"
+  },
+  {
+    id: "orange",
+    label: "Orange",
+    minStatus: "bronze",
+    className: "text-orange-300"
+  },
+  {
+    id: "crimson",
+    label: "Crimson",
+    minStatus: "bronze",
+    className: "text-rose-300"
   },
   {
     id: "relic",
