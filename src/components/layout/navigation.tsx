@@ -82,7 +82,7 @@ export function Navigation({ sections }: NavigationProps) {
     >
       <div className="min-h-dvh w-[84vw] max-w-sm overflow-y-auto border-r border-relic/30 bg-[#02060b]/96 p-4 shadow-2xl backdrop-blur-2xl">
         <div className="mb-5 flex items-center justify-between gap-3">
-          <RaidLogo compact />
+          <RaidLogo compact imageClassName="!h-28 !max-w-none sm:!h-32" />
           <button
             type="button"
             onClick={() => setOpen(false)}
@@ -142,9 +142,9 @@ export function Navigation({ sections }: NavigationProps) {
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-relic/20 bg-[#030609]/92 backdrop-blur-xl">
-        <div className="mx-auto flex h-[82px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-[112px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:h-[82px] lg:px-8">
           <Link href="/" className="flex shrink-0 items-center gap-3 lg:mr-5 xl:mr-7">
-            <RaidLogo compact />
+            <RaidLogo compact imageClassName="!h-28 !max-w-none sm:!h-32 lg:!h-14 xl:!h-16" />
           </Link>
 
           <nav className="hidden items-center gap-1 lg:flex">
