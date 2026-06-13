@@ -699,7 +699,7 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
                 <div className="mt-3 flex items-center gap-3 rounded-2xl border border-relic/20 bg-black/35 p-3 text-xs text-zinc-300">
                   {attachmentPreviewUrl ? <img src={attachmentPreviewUrl} alt={attachmentFile.name} loading="lazy" decoding="async" className="h-16 w-16 rounded-xl object-cover" /> : null}
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-white">{attachmentFile.name}</p>
+                    <p className="break-words font-semibold text-white">{attachmentFile.name}</p>
                     <p className="text-zinc-500">{isRu ? "Скриншот будет отправлен вместе с сообщением." : "Screenshot will be sent with the message."}</p>
                   </div>
                   <button type="button" onClick={() => setAttachmentFile(null)} className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 text-zinc-400 hover:text-white">

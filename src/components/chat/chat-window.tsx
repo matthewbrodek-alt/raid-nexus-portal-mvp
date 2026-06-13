@@ -967,8 +967,8 @@ export function ChatWindow() {
 
   return (
     <>
-      <div className="mx-auto grid h-[calc(100dvh-112px)] min-h-[620px] w-full max-w-7xl overflow-hidden rounded-[18px] border border-relic/20 bg-[#05070b]/95 shadow-[0_0_44px_rgba(0,0,0,0.55)] lg:h-[78vh] lg:grid-cols-[330px_1fr]">
-        <aside className="hidden min-w-0 border-b border-white/10 bg-[#080e1a] lg:block lg:border-b-0 lg:border-r">
+      <div className="raid-chat-shell mx-auto grid h-[calc(100dvh-112px)] min-h-[620px] w-full max-w-7xl overflow-hidden rounded-[18px] border border-relic/20 bg-[#05070b]/95 shadow-[0_0_44px_rgba(0,0,0,0.55)] lg:h-[78vh] lg:grid-cols-[330px_1fr]">
+        <aside className="raid-chat-sidebar hidden min-w-0 border-b border-white/10 bg-[#080e1a] lg:block lg:border-b-0 lg:border-r">
           <div className="border-b border-white/10 p-3 sm:p-4">
             <div className="flex items-center gap-3">
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-relic/35 bg-relic/15 text-relic">
@@ -1032,8 +1032,8 @@ export function ChatWindow() {
           </div>
         </aside>
 
-        <section className="relative flex min-h-0 min-w-0 flex-col bg-[#0b1220]/96">
-          <header className="flex items-center gap-3 border-b border-relic/15 bg-[#08101c]/96 p-3 sm:p-4">
+        <section className="raid-chat-main relative flex min-h-0 min-w-0 flex-col bg-[#0b1220]/96">
+          <header className="raid-chat-header flex items-center gap-3 border-b border-relic/15 bg-[#08101c]/96 p-3 sm:p-4">
             <button
               type="button"
               onClick={() => setChatMenuOpen(true)}
@@ -1058,7 +1058,7 @@ export function ChatWindow() {
               event.preventDefault();
               applySelectedFile(event.dataTransfer.files?.[0]);
             }}
-            className="min-h-0 flex-1 overflow-y-auto px-3 py-3 sm:px-5"
+            className="raid-chat-canvas min-h-0 flex-1 overflow-y-auto px-3 py-3 sm:px-5"
           >
             {visibleMessages.map((item) => {
               const own = item.uid === user?.uid;
@@ -1177,7 +1177,7 @@ export function ChatWindow() {
           </button>
 
           {user ? (
-            <form onSubmit={handleSubmit} className="border-t border-white/10 bg-[#0d1422] p-3 sm:p-4">
+            <form onSubmit={handleSubmit} className="raid-chat-composer border-t border-white/10 bg-[#0d1422] p-3 sm:p-4">
               {replyTo ? (
                 <div className="mb-2 flex items-start justify-between gap-3 rounded-md border border-relic/20 bg-relic/[0.08] p-2 text-xs text-zinc-300">
                   <div className="min-w-0">
@@ -1196,7 +1196,7 @@ export function ChatWindow() {
                     <img src={attachmentPreviewUrl} alt={attachmentFile.name} loading="lazy" decoding="async" className="h-16 w-16 rounded-lg object-cover" />
                   ) : null}
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-white">{attachmentFile.name}</p>
+                    <p className="break-words font-semibold text-white">{attachmentFile.name}</p>
                     <p className="text-zinc-500">Будет отправлено вместе с сообщением</p>
                   </div>
                   <button type="button" onClick={() => setAttachmentFile(null)} className="grid h-8 w-8 place-items-center rounded-md border border-white/10 text-zinc-500 hover:text-white">
@@ -1295,7 +1295,7 @@ export function ChatWindow() {
               </div>
             </form>
           ) : (
-            <div className="border-t border-white/10 bg-[#0d1422] p-4 text-center text-sm text-zinc-400">
+            <div className="raid-chat-composer border-t border-white/10 bg-[#0d1422] p-4 text-center text-sm text-zinc-400">
               Для отправки сообщений нужно <Link href="/login" className="font-semibold text-relic">войти</Link>.
             </div>
           )}

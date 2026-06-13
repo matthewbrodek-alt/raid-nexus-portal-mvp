@@ -134,7 +134,7 @@ export function LatestNewsRail() {
 
   function renderNewsList(items: NewsItem[], compact = false, afterSelect?: () => void) {
     return (
-      <div className={compact ? "space-y-3" : "grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"}>
+      <div className={compact ? "space-y-3" : "grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 min-[1800px]:grid-cols-5"}>
         {items.map((item) => (
           <button
             key={item.id}

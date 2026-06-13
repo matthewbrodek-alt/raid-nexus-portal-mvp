@@ -17,7 +17,7 @@ export function RaidLogo({ compact = false, className = "", withBumpyPay = false
       {withBumpyPay ? (
         <span className="flex min-w-0 items-baseline gap-1.5 whitespace-nowrap">
           <span className="font-[var(--font-cinzel)] text-sm font-black uppercase tracking-[0.16em] text-relic/70 sm:text-base">x</span>
-          <span className="bg-gradient-to-b from-[#fff3c4] via-[#e7c16a] to-[#a56a2a] bg-clip-text font-[var(--font-cinzel)] text-lg font-black tracking-[0.03em] text-transparent drop-shadow-[0_0_16px_rgba(216,168,71,0.28)] sm:text-xl">
+          <span className="bp-brand-word bg-gradient-to-b from-[#fff3c4] via-[#e7c16a] to-[#a56a2a] bg-clip-text font-[var(--font-cinzel)] text-lg font-black tracking-[0.03em] text-transparent drop-shadow-[0_0_16px_rgba(216,168,71,0.28)] sm:text-xl">
             Bumpy Pay
           </span>
         </span>

@@ -431,9 +431,9 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
               <p className="text-sm font-semibold text-white">{t.screenshot}</p>
               <p className="text-xs text-zinc-500">{t.screenshotHint}</p>
             </div>
-            <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border border-relic/30 px-4 py-2 text-sm font-semibold text-relic transition hover:border-relic hover:bg-relic/10">
+            <label className="inline-flex max-w-full cursor-pointer items-center justify-center gap-2 rounded-md border border-relic/30 px-4 py-2 text-sm font-semibold text-relic transition hover:border-relic hover:bg-relic/10">
               <Paperclip size={16} />
-              {screenshotFile ? screenshotFile.name : t.screenshot}
+              <span className="min-w-0 whitespace-normal break-words text-left">{screenshotFile ? screenshotFile.name : t.screenshot}</span>
               <input
                 key={screenshotFile?.name ?? "empty"}
                 type="file"
@@ -446,7 +446,7 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
 
           {screenshotFile ? (
             <div className="mt-3 flex items-center justify-between rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-zinc-300">
-              <span className="min-w-0 truncate">{screenshotFile.name}</span>
+              <span className="min-w-0 break-words">{screenshotFile.name}</span>
               <button
                 type="button"
                 className="ml-3 rounded-full p-1 text-zinc-400 transition hover:bg-white/10 hover:text-white"

@@ -37,6 +37,9 @@
 
 * {
   box-sizing: border-box;
+  word-break: normal;
+  overflow-wrap: break-word;
+  hyphens: none;
 }
 
 button,
@@ -121,6 +124,46 @@ body::after {
 :root[data-theme="light"] .raid-ornate-panel,
 :root[data-theme="light"] .raid-glow-button {
   background-color: rgba(244, 249, 255, 0.84);
+}
+
+:root[data-theme="light"] .bp-brand-word {
+  background-image: linear-gradient(90deg, #0b4ea2, #1d77d2, #4aa3ff, #0b4ea2) !important;
+  background-size: 240% 100%;
+  text-shadow:
+    0 0 12px rgba(39, 118, 214, 0.36),
+    0 0 22px rgba(84, 169, 255, 0.28);
+  filter: drop-shadow(0 0 12px rgba(32, 116, 214, 0.28));
+  animation: bp-rgb-flow 4.8s linear infinite;
+}
+
+:root[data-theme="light"] .raid-chat-shell {
+  border-color: rgba(88, 127, 172, 0.22) !important;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(222, 238, 255, 0.74)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    0 26px 72px rgba(72, 104, 142, 0.16) !important;
+}
+
+:root[data-theme="light"] .raid-chat-sidebar,
+:root[data-theme="light"] .raid-chat-header,
+:root[data-theme="light"] .raid-chat-composer {
+  border-color: rgba(88, 127, 172, 0.18) !important;
+  background:
+    linear-gradient(145deg, rgba(250, 253, 255, 0.88), rgba(226, 240, 255, 0.82)) !important;
+}
+
+:root[data-theme="light"] .raid-chat-main,
+:root[data-theme="light"] .raid-chat-canvas {
+  background-color: #e9f4ff !important;
+}
+
+:root[data-theme="light"] .raid-chat-canvas {
+  background-image:
+    radial-gradient(circle at 22px 22px, rgba(58, 105, 163, 0.055) 0 1.5px, transparent 1.8px),
+    radial-gradient(circle at 64px 58px, rgba(200, 154, 61, 0.05) 0 1.2px, transparent 1.5px),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.62), rgba(220, 236, 255, 0.7)) !important;
+  background-size: 86px 86px, 118px 118px, cover;
 }
 
 img,
@@ -921,7 +964,7 @@ h3,
     inset 0 0 34px rgba(216, 168, 71, 0.06),
     0 24px 70px rgba(0, 0, 0, 0.42);
   backdrop-filter: blur(8px);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .gold-line {
@@ -1214,6 +1257,7 @@ h3,
 }
 
 :root[data-theme="light"] .text-white,
+:root[data-theme="light"] [class*='text-white/'],
 :root[data-theme="light"] .text-pale,
 :root[data-theme="light"] .text-zinc-100,
 :root[data-theme="light"] .text-zinc-200,
@@ -1352,6 +1396,43 @@ h3,
   color: #142033 !important;
 }
 
+:root[data-theme="light"] input[type="file"] {
+  min-height: 48px;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(225, 240, 255, 0.84)) !important;
+  border: 1px solid rgba(88, 127, 172, 0.2) !important;
+  border-radius: 12px;
+  padding: 6px;
+  font-weight: 700;
+}
+
+input[type="file"]::file-selector-button {
+  min-height: 38px;
+  margin-right: 12px;
+  border: 1px solid rgba(200, 154, 61, 0.42);
+  border-radius: 10px;
+  background: linear-gradient(135deg, #d8a847, #f0cf78);
+  color: #101827;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(200, 154, 61, 0.16);
+}
+
+input[type="file"]::-webkit-file-upload-button {
+  min-height: 38px;
+  margin-right: 12px;
+  border: 1px solid rgba(200, 154, 61, 0.42);
+  border-radius: 10px;
+  background: linear-gradient(135deg, #d8a847, #f0cf78);
+  color: #101827;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(200, 154, 61, 0.16);
+}
+
 :root[data-theme="light"] input::placeholder,
 :root[data-theme="light"] textarea::placeholder {
   color: rgba(95, 111, 132, 0.72) !important;
@@ -1364,6 +1445,22 @@ h3,
 
 :root[data-theme="light"] .bg-relic {
   color: #111827 !important;
+}
+
+:root[data-theme="light"] [class*='hover:text-white']:hover,
+:root[data-theme="light"] [class*='hover:text-zinc']:hover,
+:root[data-theme="light"] [class*='hover:text-slate']:hover {
+  color: #142033 !important;
+}
+
+:root[data-theme="light"] [class*='hover:bg-white']:hover {
+  background-color: rgba(212, 231, 255, 0.74) !important;
+}
+
+:root[data-theme="light"] [class*='text-white/'],
+:root[data-theme="light"] [class*='text-zinc-'],
+:root[data-theme="light"] [class*='text-slate-'] {
+  text-shadow: none;
 }
 
 :root[data-theme="light"] .raid-glow-button {
@@ -1532,6 +1629,8 @@ h3,
   span,
   a,
   button {
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
+    word-break: normal;
+    hyphens: none;
   }
 }

@@ -550,8 +550,8 @@ export function UserDashboardContent() {
           <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]">
             <div className="rounded-xl border border-relic/20 bg-black/25 p-4">
               <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Твой код</p>
-              <p className="mt-2 break-all font-mono text-lg font-black text-relic">{referralCode || "создается..."}</p>
-              <p className="mt-2 break-all text-xs text-zinc-500">{referralLink || "Ссылка появится после создания кода."}</p>
+              <p className="mt-2 break-words font-mono text-lg font-black text-relic">{referralCode || "создается..."}</p>
+              <p className="mt-2 break-words text-xs text-zinc-500">{referralLink || "Ссылка появится после создания кода."}</p>
             </div>
             <button
               type="button"
@@ -641,7 +641,7 @@ export function UserDashboardContent() {
                     <div className="min-w-0">
                       <p className="text-xs font-bold uppercase tracking-[0.16em] text-relic">{serviceLabel(lead.serviceType)}</p>
                       <p className="mt-1 truncate font-semibold text-white">{lead.packageName ?? lead.packageId ?? "Заявка"}</p>
-                      <p className="mt-1 break-all text-xs text-zinc-500">{lead.id}{leadTime(lead) ? ` · ${leadTime(lead)}` : ""}</p>
+                      <p className="mt-1 break-words text-xs text-zinc-500">{lead.id}{leadTime(lead) ? ` · ${leadTime(lead)}` : ""}</p>
                     </div>
                     <div className="text-left sm:text-right">
                       <p className="font-bold text-relic">{formatLeadAmount(lead)}</p>

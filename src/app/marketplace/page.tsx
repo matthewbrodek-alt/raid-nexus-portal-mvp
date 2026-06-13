@@ -10,6 +10,7 @@ export default function MarketplacePage() {
         ru: "Темная витрина Raid: Shadow Legends с фильтрами, скриншотами, характеристиками аккаунтов и быстрым контактом с менеджером.",
         en: "A dark Raid: Shadow Legends storefront with filters, screenshots, account stats and quick manager contact."
       }}
+      compact
     >
       <MarketplaceBoard />
     </PageShell>
