@@ -146,18 +146,18 @@ export function LatestNewsRail() {
             className={`group w-full text-left transition hover:bg-relic/[0.07] ${
               compact
                 ? "grid grid-cols-[86px_1fr_auto] items-center gap-4 rounded-[18px] border border-relic/18 bg-black/28 p-4"
-                : "flex h-[340px] min-h-[340px] flex-col overflow-hidden rounded-[18px] border border-relic/18 bg-black/32 p-3"
+                : "flex h-[300px] min-h-[300px] flex-col overflow-hidden rounded-[18px] border border-relic/18 bg-black/32 p-3 sm:h-[320px] sm:min-h-[320px]"
             }`}
             aria-label={`${labels.openNewsLabel}: ${getNewsTitle(item, language)}`}
           >
-            <span className={`block overflow-hidden rounded-[14px] border border-relic/22 bg-black/40 ${compact ? "h-16" : "h-36 w-full"}`}>
+            <span className={`block overflow-hidden rounded-[14px] border border-relic/22 bg-black/40 ${compact ? "h-16" : "h-32 w-full sm:h-36"}`}>
               <img src={getNewsImage(item)} alt="" loading="lazy" decoding="async" className="h-full w-full object-contain" />
             </span>
             <span className={`raid-word-wrap min-w-0 ${compact ? "" : "mt-3 block flex-1"}`}>
-              <span className={`raid-word-wrap block font-[var(--font-display)] font-light tracking-[0.01em] text-white transition group-hover:text-[#b8d7ff] ${compact ? "truncate text-lg sm:text-xl" : "line-clamp-3 text-lg leading-snug"}`}>
+              <span className={`raid-word-wrap block font-[var(--font-display)] font-light tracking-[0.01em] text-white transition group-hover:text-[#b8d7ff] ${compact ? "truncate text-lg sm:text-xl" : "line-clamp-3 text-base leading-snug sm:text-lg"}`}>
                 {getNewsTitle(item, language)}
               </span>
-              <span className={`raid-word-wrap mt-1 block text-sm text-zinc-400 ${compact ? "truncate" : "line-clamp-2"}`}>{getNewsSummary(item, language)}</span>
+              <span className={`raid-word-wrap mt-1 block text-sm text-zinc-400 ${compact ? "truncate" : "line-clamp-2 text-xs sm:text-sm"}`}>{getNewsSummary(item, language)}</span>
             </span>
             <span className={`items-center gap-2 text-xs text-zinc-500 ${compact ? "hidden sm:inline-flex" : "mt-3 inline-flex"}`}>
               <Clock3 size={15} />
@@ -171,17 +171,17 @@ export function LatestNewsRail() {
 
   return (
     <>
-      <div className="raid-ornate-panel min-h-[650px] overflow-hidden p-5 sm:p-7">
-        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-relic/18 pb-5">
+      <div className="raid-ornate-panel min-h-0 overflow-hidden p-4 sm:p-6 lg:min-h-[520px]">
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-relic/18 pb-3 sm:pb-4">
           <div>
-            <h2 className={`raid-title-metal text-3xl sm:text-4xl ${language === "ru" ? "!leading-[1.32]" : "leading-tight"}`}>
+            <h2 className={`raid-title-metal text-[1.45rem] leading-tight sm:text-3xl lg:text-4xl ${language === "ru" ? "!leading-[1.16]" : "leading-tight"}`}>
               {labels.title}
             </h2>
           </div>
           <button
             type="button"
             onClick={() => setAllNewsOpen(true)}
-            className="raid-glow-button border border-relic/35 bg-black/28 px-5 py-3 text-xs font-black uppercase tracking-[0.16em] text-relic"
+            className="raid-glow-button border border-relic/35 bg-black/28 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-relic"
           >
             <span>{labels.allNews}</span>
           </button>

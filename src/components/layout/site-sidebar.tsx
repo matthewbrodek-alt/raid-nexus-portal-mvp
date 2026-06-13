@@ -52,8 +52,8 @@ export function SiteSidebar() {
   const labels = copy[language];
 
   return (
-    <aside className="hidden min-h-screen flex-col border-r border-relic/18 bg-[#02070c]/74 backdrop-blur-md lg:sticky lg:top-0 lg:flex lg:h-screen">
-      <div className="flex h-40 items-center justify-center overflow-visible border-b border-relic/12 px-4">
+    <aside className="hidden min-h-screen flex-col bg-[#02070c]/74 backdrop-blur-md lg:sticky lg:top-0 lg:flex lg:h-screen">
+      <div className="flex h-40 items-center justify-center overflow-visible px-4">
         <Link href="/" className="flex min-w-0 translate-x-2 items-center justify-center">
           <RaidLogo compact imageClassName="!h-32 !max-w-none sm:!h-36" />
         </Link>

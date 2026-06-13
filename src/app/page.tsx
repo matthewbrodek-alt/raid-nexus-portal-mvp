@@ -81,8 +81,8 @@ export default function Home() {
       <div className="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(circle_at_50%_0%,rgba(99,166,255,0.16),transparent_26%),linear-gradient(90deg,rgba(3,7,12,0.46),rgba(3,7,12,0.17)_48%,rgba(3,7,12,0.42))]" />
 
       <div className="raid-dashboard-shell relative z-10 min-h-screen lg:grid lg:grid-cols-[300px_1fr]">
-        <aside className="hidden min-h-screen flex-col border-r border-relic/18 bg-[#02070c]/72 backdrop-blur-md lg:sticky lg:top-0 lg:flex lg:h-screen">
-          <div className="flex h-40 items-center justify-center overflow-visible border-b border-relic/12 px-4">
+        <aside className="hidden min-h-screen flex-col bg-[#02070c]/72 backdrop-blur-md lg:sticky lg:top-0 lg:flex lg:h-screen">
+          <div className="flex h-40 items-center justify-center overflow-visible px-4">
             <RaidLogo compact className="translate-x-2" imageClassName="!h-32 !max-w-none sm:!h-36" />
           </div>
 
@@ -131,12 +131,12 @@ export default function Home() {
           </div>
         </aside>
 
-        <section className="min-w-0 px-4 py-4 sm:px-6 lg:px-8">
+        <section className="min-w-0 px-4 py-2 sm:px-6 lg:px-8 lg:py-4">
           <HomeMobileHeader />
 
           <Link
             href="/topup"
-            className="raid-donate-pulse raid-glow-button mt-4 flex items-center justify-center gap-3 border border-relic/45 bg-black/55 px-4 py-4 text-center text-sm font-black uppercase tracking-[0.12em] text-relic shadow-[0_0_30px_rgba(47,124,255,0.16)] lg:hidden"
+            className="raid-donate-pulse raid-glow-button mt-2 flex items-center justify-center gap-2 border border-relic/45 bg-black/55 px-3 py-3 text-center text-xs font-black uppercase tracking-[0.1em] text-relic shadow-[0_0_30px_rgba(47,124,255,0.16)] lg:hidden"
           >
             <Crown size={18} />
             {language === "ru" ? "Купить игровой набор в RAID" : "Buy RAID Game Pack"}
@@ -156,14 +156,12 @@ export default function Home() {
             <div className="ml-auto flex items-center gap-5">
               <LanguageSwitcher />
               <ThemeSwitcher />
-              <span className="h-8 w-px bg-relic/18" />
               <HomeUnreadBell label={labels.notifications} />
-              <span className="h-8 w-px bg-relic/18" />
               <HomeUserCard />
             </div>
           </header>
 
-          <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_430px]">
+          <div className="mt-3 grid gap-5 lg:mt-5 xl:grid-cols-[minmax(0,1.55fr)_430px]">
             <section id="news" className="min-w-0">
               <LatestNewsRail />
               <HomeTestimonials />

@@ -80,9 +80,9 @@ export function Navigation({ sections }: NavigationProps) {
       aria-modal="true"
       style={{ zIndex: 2147483647 }}
     >
-      <div className="min-h-dvh w-[84vw] max-w-sm overflow-y-auto border-r border-relic/30 bg-[#02060b]/96 p-4 shadow-2xl backdrop-blur-2xl">
-        <div className="mb-5 flex items-center justify-between gap-3">
-          <RaidLogo compact imageClassName="!h-28 !max-w-none sm:!h-32" />
+      <div className="min-h-dvh w-[84vw] max-w-sm overflow-y-auto bg-[#02060b]/96 p-4 shadow-2xl backdrop-blur-2xl">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <RaidLogo compact imageClassName="!h-12 !max-w-none sm:!h-14" />
           <button
             type="button"
             onClick={() => setOpen(false)}
@@ -127,10 +127,8 @@ export function Navigation({ sections }: NavigationProps) {
           </Link>
         </nav>
 
-        <div className="relative mt-5 overflow-hidden rounded-[22px] border border-relic/28 bg-[#050b12]/82 p-4 shadow-[inset_0_0_28px_rgba(99,166,255,0.06),0_18px_55px_rgba(0,0,0,0.38)]">
-          <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(99,166,255,0.16),transparent_34%),radial-gradient(circle_at_86%_92%,rgba(39,76,145,0.2),transparent_38%),linear-gradient(135deg,rgba(255,255,255,0.06),transparent_42%)]" />
-          <span className="pointer-events-none absolute inset-0 opacity-[0.12] [background-image:linear-gradient(rgba(99,166,255,0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(99,166,255,0.1)_1px,transparent_1px)] [background-size:18px_18px]" />
-          <p className="relative z-10 text-xs font-bold uppercase tracking-[0.2em] text-zinc-300">
+        <div className="mt-5 border-t border-white/10 pt-4">
+          <p className="text-xs font-bold tracking-[0.08em] text-zinc-400">
             {language === "ru" ? "\u041f\u0440\u0438\u0441\u043e\u0435\u0434\u0438\u043d\u044f\u0439\u0441\u044f \u043a \u0441\u043e\u043e\u0431\u0449\u0435\u0441\u0442\u0432\u0443" : "Join the community"}
           </p>
           <HomeCommunityLinks variant="mobile" />
@@ -141,10 +139,10 @@ export function Navigation({ sections }: NavigationProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-relic/20 bg-[#030609]/92 backdrop-blur-xl">
-        <div className="mx-auto flex h-[112px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:h-[82px] lg:px-8">
+      <header className="sticky top-0 z-50 border-b border-white/8 bg-[#030609]/84 backdrop-blur-xl lg:border-relic/20 lg:bg-[#030609]/92">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:h-[82px] lg:px-8">
           <Link href="/" className="flex shrink-0 items-center gap-3 lg:mr-5 xl:mr-7">
-            <RaidLogo compact imageClassName="!h-28 !max-w-none sm:!h-32 lg:!h-14 xl:!h-16" />
+            <RaidLogo compact imageClassName="!h-12 !max-w-none sm:!h-14 lg:!h-14 xl:!h-16" />
           </Link>
 
           <nav className="hidden items-center gap-1 lg:flex">
@@ -177,11 +175,11 @@ export function Navigation({ sections }: NavigationProps) {
           </div>
 
           <button
-            className="grid h-14 w-14 place-items-center rounded-[16px] border border-relic/45 bg-black/45 text-relic shadow-glow lg:hidden"
+            className="grid h-10 w-10 place-items-center rounded-[13px] border border-relic/45 bg-black/45 text-relic shadow-glow lg:hidden"
             aria-label={labels.menu}
             onClick={() => setOpen(true)}
           >
-            <Menu size={26} />
+            <Menu size={21} />
           </button>
         </div>
       </header>
