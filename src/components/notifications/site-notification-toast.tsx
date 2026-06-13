@@ -258,7 +258,7 @@ export function SiteNotificationToast() {
 
   return (
     <div className="fixed bottom-4 left-3 right-3 z-[70] sm:bottom-6 sm:left-auto sm:right-6 sm:w-[360px]">
-      <div className="relative overflow-hidden rounded-[16px] border border-relic/35 bg-[#070d16]/95 p-4 text-white shadow-[0_18px_70px_rgba(0,0,0,0.62),0_0_34px_rgba(200,154,61,0.16)] backdrop-blur-md">
+      <div className="relative overflow-hidden rounded-[16px] border border-relic/35 bg-[#070d16]/95 p-4 text-white shadow-[0_18px_70px_rgba(0,0,0,0.62),0_0_34px_rgba(47,124,255,0.16)] backdrop-blur-md">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-relic/80 to-transparent" />
         <div className="flex items-start gap-3">
           <button

@@ -12,7 +12,7 @@ export function RaidLogo({ compact = false, className = "", imageClassName = "" 
       <img
         src="/images/raid-shadow-legends-logo.png"
         alt="RAID Shadow Legends"
-        className={`block w-auto max-w-full object-contain drop-shadow-[0_0_22px_rgba(216,168,71,0.2)] ${imageSize} ${imageClassName}`}
+        className={`block w-auto max-w-full object-contain drop-shadow-[0_0_22px_rgba(47,124,255,0.2)] ${imageSize} ${imageClassName}`}
       />
     </span>
   );

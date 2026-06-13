@@ -109,7 +109,7 @@ export default function AdminDashboardPage() {
                     type="button"
                     onClick={() => setActiveTabId(id)}
                     data-active={active ? "true" : "false"}
-                    className="group flex w-full items-start gap-3 rounded-2xl border border-white/[0.08] bg-black/20 p-3 text-left transition hover:border-relic/35 hover:bg-relic/[0.06] data-[active=true]:border-relic/55 data-[active=true]:bg-relic/[0.12] data-[active=true]:shadow-[inset_3px_0_0_rgba(231,193,106,0.78)]"
+                    className="group flex w-full items-start gap-3 rounded-2xl border border-white/[0.08] bg-black/20 p-3 text-left transition hover:border-relic/35 hover:bg-relic/[0.06] data-[active=true]:border-relic/55 data-[active=true]:bg-relic/[0.12] data-[active=true]:shadow-[inset_3px_0_0_rgba(99,166,255,0.78)]"
                   >
                     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-relic/20 bg-black/30 text-relic transition group-hover:border-relic/45">
                       <Icon size={18} />

@@ -254,7 +254,7 @@ export function NotificationCenter() {
               onClick={() => setActiveStep(step.id)}
               className={`rounded-2xl border px-4 py-3 text-left transition ${
                 activeStep === step.id
-                  ? "border-relic bg-relic/15 text-white shadow-[0_0_20px_rgba(200,154,61,0.16)]"
+                  ? "border-relic bg-relic/15 text-white shadow-[0_0_20px_rgba(47,124,255,0.16)]"
                   : "border-white/10 bg-black/25 text-zinc-400 hover:border-relic/35 hover:text-white"
               }`}
             >

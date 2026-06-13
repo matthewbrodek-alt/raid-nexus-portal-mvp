@@ -418,7 +418,7 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
 
         <button
           disabled={status === "sending" || status === "sent" || !user || !selectedPackage}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-relic px-4 py-2.5 font-semibold text-black transition hover:bg-[#f0c766] disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-relic px-4 py-2.5 font-semibold text-black transition hover:bg-[#8bbcff] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Send size={18} />
           {status === "sending" ? t.sending : t.submit}

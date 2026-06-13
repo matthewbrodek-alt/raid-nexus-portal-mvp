@@ -67,11 +67,11 @@ export function HeroCard({ hero }: HeroCardProps) {
   const roles = hero.roles?.length ? hero.roles.map((role) => formatRole(role, language)).join(" / ") : formatRole(hero.role, language);
 
   return (
-    <GlassPanel className="group h-full overflow-hidden rounded-[18px] border-relic/20 bg-[#060b12]/88 transition duration-200 hover:-translate-y-1 hover:border-relic/50 hover:shadow-[0_0_34px_rgba(200,154,61,0.16)]">
+    <GlassPanel className="group h-full overflow-hidden rounded-[18px] border-relic/20 bg-[#060b12]/88 transition duration-200 hover:-translate-y-1 hover:border-relic/50 hover:shadow-[0_0_34px_rgba(47,124,255,0.16)]">
       <div className="relative min-h-[228px] overflow-hidden p-3">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_12%,rgba(200,154,61,0.16),transparent_32%),linear-gradient(135deg,rgba(8,14,24,0.96),rgba(1,4,8,0.96))]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_12%,rgba(47,124,255,0.16),transparent_32%),linear-gradient(135deg,rgba(8,14,24,0.96),rgba(1,4,8,0.96))]" />
         <div className="relative mx-auto flex h-[126px] items-center justify-center">
-          {hero.borderUrl ? <img src={hero.borderUrl} alt="" loading="lazy" decoding="async" className="absolute h-[146px] w-[120px] object-contain opacity-95 drop-shadow-[0_0_18px_rgba(200,154,61,0.18)]" /> : null}
+          {hero.borderUrl ? <img src={hero.borderUrl} alt="" loading="lazy" decoding="async" className="absolute h-[146px] w-[120px] object-contain opacity-95 drop-shadow-[0_0_18px_rgba(47,124,255,0.18)]" /> : null}
           {hero.avatarUrl ? (
             <img
               src={hero.avatarUrl}

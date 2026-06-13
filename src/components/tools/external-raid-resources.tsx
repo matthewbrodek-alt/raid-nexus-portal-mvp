@@ -22,7 +22,7 @@ const resources = [
 export function ExternalRaidResources() {
   return (
     <GlassPanel className="overflow-hidden">
-      <div className="border-b border-relic/16 bg-[linear-gradient(135deg,rgba(216,168,71,0.14),rgba(5,10,18,0.82)_48%,rgba(39,76,145,0.18))] p-5 sm:p-6">
+      <div className="border-b border-relic/16 bg-[linear-gradient(135deg,rgba(47,124,255,0.14),rgba(5,10,18,0.82)_48%,rgba(39,76,145,0.18))] p-5 sm:p-6">
         <p className="text-xs font-bold uppercase tracking-[0.28em] text-relic">Внешние базы</p>
         <h2 className="mt-2 font-[var(--font-cinzel)] text-3xl font-black text-white">Полезные сайты RAID</h2>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-zinc-300">
@@ -40,9 +40,9 @@ export function ExternalRaidResources() {
               href={resource.href}
               target="_blank"
               rel="noreferrer"
-              className="group relative overflow-hidden rounded-[22px] border border-relic/20 bg-[#050a12]/82 p-5 transition hover:-translate-y-0.5 hover:border-relic/55 hover:shadow-[0_0_36px_rgba(216,168,71,0.14)]"
+              className="group relative overflow-hidden rounded-[22px] border border-relic/20 bg-[#050a12]/82 p-5 transition hover:-translate-y-0.5 hover:border-relic/55 hover:shadow-[0_0_36px_rgba(47,124,255,0.14)]"
             >
-              <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_10%,rgba(231,193,106,0.16),transparent_34%)] opacity-80" />
+              <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_70%_10%,rgba(99,166,255,0.16),transparent_34%)] opacity-80" />
               <span className="relative flex items-start justify-between gap-4">
                 <span className="grid h-14 w-14 place-items-center rounded-[18px] border border-relic/24 bg-relic/10 text-relic">
                   <Icon size={26} />

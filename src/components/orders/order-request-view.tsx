@@ -495,7 +495,7 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
 
           router.push("/dashboard");
         }}
-        className="mb-4 inline-flex items-center gap-2 rounded-xl border border-relic/35 bg-black/45 px-4 py-2 text-sm font-bold text-relic shadow-[0_0_22px_rgba(200,154,61,0.12)] transition hover:border-relic hover:bg-relic/10 hover:text-[#f4d784]"
+        className="mb-4 inline-flex items-center gap-2 rounded-xl border border-relic/35 bg-black/45 px-4 py-2 text-sm font-bold text-relic shadow-[0_0_22px_rgba(47,124,255,0.12)] transition hover:border-relic hover:bg-relic/10 hover:text-[#b8d7ff]"
       >
         <ArrowLeft size={16} />
         {isRu ? "Назад" : "Back"}
@@ -519,7 +519,7 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
               <span className="rounded-full border border-relic/30 bg-relic/10 px-3 py-1 text-xs font-bold text-relic">{activeLabel}</span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-white/10">
-              <div className="h-full rounded-full bg-gradient-to-r from-relic to-[#f5d681]" style={{ width: `${progressPercent}%` }} />
+              <div className="h-full rounded-full bg-gradient-to-r from-relic to-[#8bbcff]" style={{ width: `${progressPercent}%` }} />
             </div>
             <div className="mt-5 grid gap-3 sm:grid-cols-4">
               {visibleStages.map((stage, index) => {
@@ -590,7 +590,7 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
                     onClick={() => setManagerDraft((current) => ({ ...current, status: stage.id }))}
                     className={`rounded-xl border px-3 py-3 text-left transition ${
                       managerDraft.status === stage.id
-                        ? "border-relic bg-relic/15 text-white shadow-[0_0_18px_rgba(200,154,61,0.14)]"
+                        ? "border-relic bg-relic/15 text-white shadow-[0_0_18px_rgba(47,124,255,0.14)]"
                         : "border-white/10 bg-black/25 text-zinc-400 hover:border-relic/35 hover:text-white"
                     }`}
                   >
@@ -634,7 +634,7 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
                 type="button"
                 onClick={() => void saveOrderPanel()}
                 disabled={savingOrder}
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-relic px-4 py-3 font-black text-black transition hover:bg-[#f0c766] disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-relic px-4 py-3 font-black text-black transition hover:bg-[#8bbcff] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Save size={17} />
                 {savingOrder ? (isRu ? "Сохраняю..." : "Saving...") : isRu ? "Сохранить статус заявки" : "Save request status"}
@@ -721,7 +721,7 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
                 />
                 <button
                   disabled={!canSend}
-                  className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-relic text-black transition hover:bg-[#f2cf78] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-relic text-black transition hover:bg-[#8bbcff] disabled:cursor-not-allowed disabled:opacity-50"
                   aria-label={isRu ? "Отправить" : "Send"}
                 >
                   <Send size={18} />

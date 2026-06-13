@@ -78,7 +78,7 @@ export default function Home() {
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-transparent text-pale">
       <HomeBackgroundVideo />
-      <div className="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(circle_at_50%_0%,rgba(231,193,106,0.16),transparent_26%),linear-gradient(90deg,rgba(3,7,12,0.46),rgba(3,7,12,0.17)_48%,rgba(3,7,12,0.42))]" />
+      <div className="pointer-events-none fixed inset-0 z-[1] bg-[radial-gradient(circle_at_50%_0%,rgba(99,166,255,0.16),transparent_26%),linear-gradient(90deg,rgba(3,7,12,0.46),rgba(3,7,12,0.17)_48%,rgba(3,7,12,0.42))]" />
 
       <div className="raid-dashboard-shell relative z-10 min-h-screen lg:grid lg:grid-cols-[300px_1fr]">
         <aside className="hidden min-h-screen flex-col border-r border-relic/18 bg-[#02070c]/72 backdrop-blur-md lg:sticky lg:top-0 lg:flex lg:h-screen">
@@ -121,9 +121,9 @@ export default function Home() {
               <Download className="text-relic" size={22} />
             </Link>
 
-            <div className="relative overflow-hidden rounded-[22px] border border-relic/28 bg-[#050b12]/82 p-5 shadow-[inset_0_0_28px_rgba(231,193,106,0.06),0_18px_55px_rgba(0,0,0,0.38)]">
-              <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_22%_0%,rgba(231,193,106,0.16),transparent_34%),radial-gradient(circle_at_86%_92%,rgba(39,76,145,0.2),transparent_38%),linear-gradient(135deg,rgba(255,255,255,0.06),transparent_42%)]" />
-              <span className="pointer-events-none absolute inset-0 opacity-[0.13] [background-image:linear-gradient(rgba(231,193,106,0.16)_1px,transparent_1px),linear-gradient(90deg,rgba(231,193,106,0.12)_1px,transparent_1px)] [background-size:18px_18px]" />
+            <div className="relative overflow-hidden rounded-[22px] border border-relic/28 bg-[#050b12]/82 p-5 shadow-[inset_0_0_28px_rgba(99,166,255,0.06),0_18px_55px_rgba(0,0,0,0.38)]">
+              <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_22%_0%,rgba(99,166,255,0.16),transparent_34%),radial-gradient(circle_at_86%_92%,rgba(39,76,145,0.2),transparent_38%),linear-gradient(135deg,rgba(255,255,255,0.06),transparent_42%)]" />
+              <span className="pointer-events-none absolute inset-0 opacity-[0.13] [background-image:linear-gradient(rgba(99,166,255,0.16)_1px,transparent_1px),linear-gradient(90deg,rgba(99,166,255,0.12)_1px,transparent_1px)] [background-size:18px_18px]" />
               <span className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-relic/70 to-transparent" />
               <p className="relative z-10 text-xs font-bold uppercase tracking-[0.2em] text-zinc-300">{labels.communityTitle}</p>
               <HomeCommunityLinks />
@@ -136,7 +136,7 @@ export default function Home() {
 
           <Link
             href="/topup"
-            className="raid-donate-pulse raid-glow-button mt-4 flex items-center justify-center gap-3 border border-relic/45 bg-black/55 px-4 py-4 text-center text-sm font-black uppercase tracking-[0.12em] text-relic shadow-[0_0_30px_rgba(216,168,71,0.16)] lg:hidden"
+            className="raid-donate-pulse raid-glow-button mt-4 flex items-center justify-center gap-3 border border-relic/45 bg-black/55 px-4 py-4 text-center text-sm font-black uppercase tracking-[0.12em] text-relic shadow-[0_0_30px_rgba(47,124,255,0.16)] lg:hidden"
           >
             <Crown size={18} />
             {language === "ru" ? "Купить игровой набор в RAID" : "Buy RAID Game Pack"}
@@ -145,7 +145,7 @@ export default function Home() {
           <header className="hidden h-24 items-center gap-5 lg:flex">
             <Link
               href="/topup"
-              className="raid-donate-pulse raid-glow-button flex min-h-[56px] min-w-[360px] items-center justify-center gap-3 border border-relic/45 bg-black/48 px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-relic shadow-[0_0_30px_rgba(216,168,71,0.16)]"
+              className="raid-donate-pulse raid-glow-button flex min-h-[56px] min-w-[360px] items-center justify-center gap-3 border border-relic/45 bg-black/48 px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-relic shadow-[0_0_30px_rgba(47,124,255,0.16)]"
             >
               <Crown size={20} />
               {language === "ru" ? "Купить игровой набор в RAID" : "Buy RAID Game Pack"}
@@ -178,7 +178,7 @@ export default function Home() {
 
           <footer className="mt-8 flex items-center justify-between border-t border-relic/12 py-5 text-xs uppercase tracking-[0.18em] text-zinc-500">
             <span>RAID Shadow Legends</span>
-            <Link href="/dashboard" className="inline-flex items-center gap-2 text-relic transition hover:text-[#ffe1a0]">
+            <Link href="/dashboard" className="inline-flex items-center gap-2 text-relic transition hover:text-[#b8d7ff]">
               {labels.footerAccount}
               <ChevronRight size={16} />
             </Link>

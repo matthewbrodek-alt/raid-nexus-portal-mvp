@@ -999,7 +999,7 @@ export function ChatWindow() {
                 !selectedUser && !selectedGroup ? "border border-relic/35 bg-relic/15 text-white" : "border border-white/10 bg-white/[0.03] text-zinc-300 hover:bg-white/[0.06]"
               }`}
             >
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-relic to-amber-700 text-sm font-black text-black">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-relic to-blue-900 text-sm font-black text-black">
                 G
               </span>
               <span className="min-w-0">
@@ -1091,7 +1091,7 @@ export function ChatWindow() {
                   <article
                     className={`group max-w-[82%] rounded-xl px-3 py-2 shadow-lg sm:max-w-[62%] ${
                       own
-                        ? "rounded-br-sm border border-relic/35 bg-[linear-gradient(135deg,rgba(35,21,49,0.96),rgba(200,154,61,0.72))] text-white shadow-[0_0_22px_rgba(200,154,61,0.18)]"
+                        ? "rounded-br-sm border border-relic/35 bg-[linear-gradient(135deg,rgba(35,21,49,0.96),rgba(47,124,255,0.72))] text-white shadow-[0_0_22px_rgba(47,124,255,0.18)]"
                         : "rounded-bl-sm border border-relic/15 bg-[#050a12]/92 text-white shadow-[0_0_20px_rgba(0,0,0,0.32)]"
                     }`}
                   >
@@ -1289,7 +1289,7 @@ export function ChatWindow() {
                     className="h-11 max-h-28 min-h-11 w-full resize-none rounded-md border-white/10 bg-black/30 py-2.5 text-sm leading-5 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
                   />
                 </div>
-                <button disabled={!canSend} className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-relic text-black transition hover:bg-[#f0c766] disabled:cursor-not-allowed disabled:opacity-50">
+                <button disabled={!canSend} className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-relic text-black transition hover:bg-[#8bbcff] disabled:cursor-not-allowed disabled:opacity-50">
                   <Send size={18} />
                 </button>
               </div>
@@ -1338,7 +1338,7 @@ export function ChatWindow() {
                   !selectedUser && !selectedGroup ? "border border-relic/35 bg-relic/15 text-white" : "border border-white/10 bg-white/[0.03] text-zinc-300"
                 }`}
               >
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-relic to-amber-700 text-sm font-black text-black">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-relic to-blue-900 text-sm font-black text-black">
                   G
                 </span>
                 <span className="min-w-0">

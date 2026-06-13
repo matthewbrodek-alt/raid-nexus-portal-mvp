@@ -687,7 +687,7 @@ export function ClanBoard() {
 
           <div className="grid max-h-[760px] gap-4 overflow-y-auto pr-1 md:grid-cols-2">
             {groups.map((item) => (
-              <article key={item.id} className="rounded-[22px] border border-relic/18 bg-black/32 p-4 shadow-[inset_0_0_26px_rgba(200,154,61,0.04)]">
+              <article key={item.id} className="rounded-[22px] border border-relic/18 bg-black/32 p-4 shadow-[inset_0_0_26px_rgba(47,124,255,0.04)]">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
                     <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl border border-relic/30 bg-relic/12 text-sm font-black text-relic">
@@ -951,7 +951,7 @@ export function ClanBoard() {
                         void addGroupMember(previewUser);
                       }
                     }}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black transition hover:bg-[#f2cf78]"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black transition hover:bg-[#8bbcff]"
                   >
                     <UserPlus size={16} />
                     Пригласить в группу

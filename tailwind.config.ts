@@ -10,21 +10,25 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        abyss: "#07070a",
-        obsidian: "#101116",
-        charcoal: "#191b22",
-        blood: "#9f1d22",
-        ember: "#d63c2d",
-        relic: "#d8a847",
-        pale: "#f2ead6"
+        abyss: "#07111f",
+        obsidian: "#101a2b",
+        charcoal: "#1b2940",
+        blood: "#1f5fbf",
+        ember: "#4b8dff",
+        relic: "#2f7cff",
+        pale: "#edf5ff"
+      },
+      fontFamily: {
+        sans: ["var(--font-montserrat)", "Montserrat", "system-ui", "sans-serif"],
+        display: ["var(--font-montserrat)", "Montserrat", "system-ui", "sans-serif"]
       },
       boxShadow: {
-        glow: "0 0 40px rgba(216, 168, 71, 0.18)",
-        blood: "0 0 34px rgba(159, 29, 34, 0.2)"
+        glow: "0 0 40px rgba(47, 124, 255, 0.2)",
+        blood: "0 0 34px rgba(31, 95, 191, 0.18)"
       },
       backgroundImage: {
         "raid-radial":
-          "radial-gradient(circle at 18% 12%, rgba(216,168,71,0.16), transparent 28%), radial-gradient(circle at 86% 18%, rgba(159,29,34,0.18), transparent 30%), linear-gradient(135deg, #07070a 0%, #121319 52%, #060608 100%)"
+          "radial-gradient(circle at 18% 12%, rgba(47,124,255,0.18), transparent 28%), radial-gradient(circle at 86% 18%, rgba(74,141,255,0.14), transparent 30%), linear-gradient(135deg, #07111f 0%, #101a2b 52%, #050a13 100%)"
       }
     }
   },

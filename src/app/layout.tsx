@@ -1,18 +1,15 @@
 import type { Metadata } from "next";
-import { Cinzel, Inter } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { SiteNotificationToast } from "@/components/notifications/site-notification-toast";
 import { ThemeProvider } from "@/lib/theme/use-theme";
 import "./globals.css";
 
-const inter = Inter({
+const montserrat = Montserrat({
   subsets: ["latin", "cyrillic"],
-  variable: "--font-inter"
-});
-
-const cinzel = Cinzel({
-  subsets: ["latin"],
-  variable: "--font-cinzel"
+  weight: ["600", "700"],
+  variable: "--font-montserrat",
+  display: "swap"
 });
 
 export const metadata: Metadata = {
@@ -30,8 +27,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru" data-scroll-behavior="smooth" className={`${inter.variable} ${cinzel.variable}`}>
-      <body className="font-sans antialiased">
+    <html lang="ru" data-scroll-behavior="smooth" className={montserrat.variable}>
+      <body className="font-sans font-semibold antialiased">
         <script
           dangerouslySetInnerHTML={{
             __html:

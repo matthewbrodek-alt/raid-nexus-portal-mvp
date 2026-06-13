@@ -51,13 +51,13 @@ export function RafflePanel() {
 
   return (
     <section className="raid-ornate-panel relative overflow-hidden p-5 sm:p-6">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_88%_15%,rgba(231,193,106,0.13),transparent_30%),linear-gradient(135deg,rgba(43,17,10,0.34),transparent_48%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_88%_15%,rgba(99,166,255,0.13),transparent_30%),linear-gradient(135deg,rgba(43,17,10,0.34),transparent_48%)]" />
       <div className="relative">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="raid-title-metal text-3xl font-black">{labels.title}</h2>
           </div>
-          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[16px] border border-relic/35 bg-black/35 text-relic shadow-[0_0_24px_rgba(200,154,61,0.18)]">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[16px] border border-relic/35 bg-black/35 text-relic shadow-[0_0_24px_rgba(47,124,255,0.18)]">
             <Trophy size={22} />
           </span>
         </div>
@@ -107,7 +107,7 @@ export function RafflePanel() {
           </div>
         </div>
 
-        <Link href="/raffle" className="raid-glow-button mt-5 flex w-full items-center justify-center gap-2 border border-relic/45 bg-relic px-5 py-4 text-sm font-black uppercase tracking-[0.16em] text-black transition hover:bg-[#f0c766]">
+        <Link href="/raffle" className="raid-glow-button mt-5 flex w-full items-center justify-center gap-2 border border-relic/45 bg-relic px-5 py-4 text-sm font-black uppercase tracking-[0.16em] text-black transition hover:bg-[#8bbcff]">
           {labels.cta}
         </Link>
       </div>

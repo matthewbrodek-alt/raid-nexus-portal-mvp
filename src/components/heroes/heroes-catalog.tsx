@@ -620,7 +620,7 @@ export function HeroesCatalog({ affinityFilter = "all", factionFilter = "all", r
       {selectedHero ? (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/78 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true">
           <div className="mx-auto grid max-w-6xl gap-6 rounded-[24px] border border-relic/25 bg-[#070b12]/95 p-4 shadow-2xl shadow-black/70 lg:grid-cols-[0.95fr_1.05fr]">
-            <div className="relative min-h-[540px] overflow-hidden rounded-[22px] border border-relic/20 bg-[radial-gradient(circle_at_50%_18%,rgba(200,154,61,0.18),transparent_34%),linear-gradient(180deg,#101622_0%,#030509_100%)] p-5">
+            <div className="relative min-h-[540px] overflow-hidden rounded-[22px] border border-relic/20 bg-[radial-gradient(circle_at_50%_18%,rgba(47,124,255,0.18),transparent_34%),linear-gradient(180deg,#101622_0%,#030509_100%)] p-5">
               <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black via-black/42 to-transparent" />
               {selectedHero.portraitUrl ? (
                 <img

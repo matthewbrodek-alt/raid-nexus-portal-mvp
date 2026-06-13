@@ -127,9 +127,9 @@ export function Navigation({ sections }: NavigationProps) {
           </Link>
         </nav>
 
-        <div className="relative mt-5 overflow-hidden rounded-[22px] border border-relic/28 bg-[#050b12]/82 p-4 shadow-[inset_0_0_28px_rgba(231,193,106,0.06),0_18px_55px_rgba(0,0,0,0.38)]">
-          <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(231,193,106,0.16),transparent_34%),radial-gradient(circle_at_86%_92%,rgba(39,76,145,0.2),transparent_38%),linear-gradient(135deg,rgba(255,255,255,0.06),transparent_42%)]" />
-          <span className="pointer-events-none absolute inset-0 opacity-[0.12] [background-image:linear-gradient(rgba(231,193,106,0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(231,193,106,0.1)_1px,transparent_1px)] [background-size:18px_18px]" />
+        <div className="relative mt-5 overflow-hidden rounded-[22px] border border-relic/28 bg-[#050b12]/82 p-4 shadow-[inset_0_0_28px_rgba(99,166,255,0.06),0_18px_55px_rgba(0,0,0,0.38)]">
+          <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(99,166,255,0.16),transparent_34%),radial-gradient(circle_at_86%_92%,rgba(39,76,145,0.2),transparent_38%),linear-gradient(135deg,rgba(255,255,255,0.06),transparent_42%)]" />
+          <span className="pointer-events-none absolute inset-0 opacity-[0.12] [background-image:linear-gradient(rgba(99,166,255,0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(99,166,255,0.1)_1px,transparent_1px)] [background-size:18px_18px]" />
           <p className="relative z-10 text-xs font-bold uppercase tracking-[0.2em] text-zinc-300">
             {language === "ru" ? "\u041f\u0440\u0438\u0441\u043e\u0435\u0434\u0438\u043d\u044f\u0439\u0441\u044f \u043a \u0441\u043e\u043e\u0431\u0449\u0435\u0441\u0442\u0432\u0443" : "Join the community"}
           </p>

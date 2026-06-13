@@ -286,9 +286,9 @@ export function MarketplaceBoard() {
       <div className="mb-6 overflow-hidden rounded-[28px] border border-relic/25 bg-[#050a12]/90 shadow-[0_0_70px_rgba(0,0,0,0.58)]">
         <div
           className="relative min-h-[330px] bg-cover bg-center p-5 sm:p-7 lg:p-8"
-          style={{ backgroundImage: "linear-gradient(90deg, rgba(5,7,11,0.94), rgba(7,13,23,0.78) 48%, rgba(200,154,61,0.08)), url('/images/raid-castle-bg.png')" }}
+          style={{ backgroundImage: "linear-gradient(90deg, rgba(5,7,11,0.94), rgba(7,13,23,0.78) 48%, rgba(47,124,255,0.08)), url('/images/raid-castle-bg.png')" }}
         >
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_18%,rgba(231,193,106,0.16),transparent_34%),linear-gradient(180deg,transparent,rgba(0,0,0,0.4))]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_18%,rgba(99,166,255,0.16),transparent_34%),linear-gradient(180deg,transparent,rgba(0,0,0,0.4))]" />
           <div className="relative z-10 grid gap-6 xl:grid-cols-[1fr_420px]">
             <div className="flex min-h-[280px] flex-col justify-between">
               <div>
@@ -467,7 +467,7 @@ export function MarketplaceBoard() {
                           <Eye size={16} />
                           {t.details}
                         </button>
-                        <a href="/chat" className="inline-flex items-center justify-center gap-2 rounded-xl bg-relic px-4 py-2 text-sm font-bold text-black transition hover:bg-[#f0c766]">
+                        <a href="/chat" className="inline-flex items-center justify-center gap-2 rounded-xl bg-relic px-4 py-2 text-sm font-bold text-black transition hover:bg-[#8bbcff]">
                           <MessageSquare size={16} />
                           {t.reserve}
                         </a>

@@ -224,7 +224,7 @@ export function HomeSearch() {
 
   return (
     <div className="relative w-full max-w-[540px]">
-      <label className="flex h-14 items-center gap-3 rounded-[16px] border border-relic/24 bg-black/34 px-5 text-zinc-500 shadow-[inset_0_0_20px_rgba(216,168,71,0.03)]">
+      <label className="flex h-14 items-center gap-3 rounded-[16px] border border-relic/24 bg-black/34 px-5 text-zinc-500 shadow-[inset_0_0_20px_rgba(47,124,255,0.03)]">
         <input
           value={value}
           onChange={(event) => setValue(event.target.value)}

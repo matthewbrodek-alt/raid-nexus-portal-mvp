@@ -63,7 +63,7 @@ export function HomeBroadcast() {
           {displayTitle ? <h2 className="raid-title-metal text-xl leading-tight">{displayTitle}</h2> : null}
         </div>
         <span
-          className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border shadow-[0_0_22px_rgba(216,168,71,0.16)] ${
+          className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border shadow-[0_0_22px_rgba(47,124,255,0.16)] ${
             isLive ? "border-emerald-400/55 text-emerald-300" : "border-red-500/55 text-red-300"
           }`}
           title={isLive ? "Эфир запущен" : "Эфир выключен"}

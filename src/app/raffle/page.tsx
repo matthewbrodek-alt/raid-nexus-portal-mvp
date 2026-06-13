@@ -137,7 +137,7 @@ export default function RafflePage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#05070b] text-pale">
       <div className="fixed inset-0 bg-[url('/images/raid-castle-bg.png')] bg-cover bg-center opacity-58" />
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(231,193,106,0.12),transparent_24%),linear-gradient(180deg,rgba(5,7,11,0.48),#05070b_82%)]" />
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(99,166,255,0.12),transparent_24%),linear-gradient(180deg,rgba(5,7,11,0.48),#05070b_82%)]" />
 
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-5 sm:px-6 lg:px-8">
         <header className="flex items-center justify-between gap-4">
@@ -168,7 +168,7 @@ export default function RafflePage() {
 
             <div className="relative mt-7 overflow-hidden rounded-[28px] border border-relic/30 bg-[#030407] shadow-[0_28px_90px_rgba(0,0,0,0.55)]">
               <div className="absolute inset-0 bg-[url('/images/raid-castle-bg.png')] bg-cover bg-center opacity-62" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_44%_54%,rgba(231,193,106,0.12),transparent_30%),linear-gradient(90deg,rgba(3,4,7,0.9),rgba(3,4,7,0.34),rgba(3,4,7,0.92))]" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_44%_54%,rgba(99,166,255,0.12),transparent_30%),linear-gradient(90deg,rgba(3,4,7,0.9),rgba(3,4,7,0.34),rgba(3,4,7,0.92))]" />
 
               <div
                 className="group relative block min-h-[520px] w-full overflow-hidden text-left"
@@ -200,7 +200,7 @@ export default function RafflePage() {
                   aria-label="РџРѕС‚С‹РєР°Р№ РјР°С‡РµС…Сѓ РІ РїСѓР·РёРєРѕ"
                 />
 
-                <span className="pointer-events-none absolute left-4 top-4 z-[5] grid min-w-20 place-items-center rounded-[14px] border border-relic/40 bg-black/58 px-3 py-2 font-[var(--font-cinzel)] text-lg font-black text-relic shadow-[0_0_28px_rgba(200,154,61,0.2)] backdrop-blur-sm">
+                <span className="pointer-events-none absolute left-4 top-4 z-[5] grid min-w-20 place-items-center rounded-[14px] border border-relic/40 bg-black/58 px-3 py-2 font-[var(--font-cinzel)] text-lg font-black text-relic shadow-[0_0_28px_rgba(47,124,255,0.2)] backdrop-blur-sm">
                   {clicks}/{REQUIRED_CLICKS}
                 </span>
 

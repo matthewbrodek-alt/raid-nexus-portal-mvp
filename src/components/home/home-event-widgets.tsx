@@ -143,7 +143,7 @@ export function HomeEventWidgets() {
         return (
           <div
             key={widget.id}
-            className={`relative overflow-hidden rounded-[18px] border border-relic/35 bg-[#071019]/96 p-3 text-white shadow-[0_18px_70px_rgba(0,0,0,0.62),0_0_34px_rgba(200,154,61,0.16)] backdrop-blur-md transition-all duration-500 ${
+            className={`relative overflow-hidden rounded-[18px] border border-relic/35 bg-[#071019]/96 p-3 text-white shadow-[0_18px_70px_rgba(0,0,0,0.62),0_0_34px_rgba(47,124,255,0.16)] backdrop-blur-md transition-all duration-500 ${
               leaving ? "translate-y-4 scale-[0.98] opacity-0" : failed ? "translate-y-0 scale-100 border-blood/50 opacity-100" : "translate-y-0 scale-100 opacity-100"
             }`}
           >
@@ -170,7 +170,7 @@ export function HomeEventWidgets() {
                   <Clock3 size={13} />
                   {now ? getTimeLeft(widget.deadlineAt) : ""}
                 </span>
-                <button type="button" onClick={() => setExpandedId(expanded ? "" : widget.id)} className="text-xs font-bold uppercase tracking-[0.12em] text-relic hover:text-[#ffe0a0]">
+                <button type="button" onClick={() => setExpandedId(expanded ? "" : widget.id)} className="text-xs font-bold uppercase tracking-[0.12em] text-relic hover:text-[#b8d7ff]">
                   {expanded ? "Скрыть" : "Подробнее"}
                 </button>
               </div>
@@ -194,7 +194,7 @@ export function HomeEventWidgets() {
                       type="button"
                       onClick={() => void participate(widget)}
                       disabled={joined}
-                      className="w-full rounded-xl bg-relic px-3 py-2 text-sm font-black text-black transition hover:bg-[#f0c766] disabled:cursor-default disabled:opacity-70"
+                      className="w-full rounded-xl bg-relic px-3 py-2 text-sm font-black text-black transition hover:bg-[#8bbcff] disabled:cursor-default disabled:opacity-70"
                     >
                       {joined ? "Вы участвуете" : "Участвовать"}
                     </button>
@@ -208,7 +208,7 @@ export function HomeEventWidgets() {
                     ) : null}
                   </div>
                 ) : (
-                  <Link href="/login" className="block w-full rounded-xl bg-relic px-3 py-2 text-center text-sm font-black text-black transition hover:bg-[#f0c766]">
+                  <Link href="/login" className="block w-full rounded-xl bg-relic px-3 py-2 text-center text-sm font-black text-black transition hover:bg-[#8bbcff]">
                     Войти для участия
                   </Link>
                 )}

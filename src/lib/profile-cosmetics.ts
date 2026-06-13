@@ -83,14 +83,14 @@ export const avatarFrames: Array<Unlockable & { id: AvatarFrameId; label: string
     label: "Gold Relic",
     minStatus: "gold",
     className: "bp-frame-gold bp-frame-style-relic",
-    previewClassName: "from-[#704611] via-[#e7c16a] to-[#fff0a8]"
+    previewClassName: "from-[#704611] via-[#63a6ff] to-[#fff0a8]"
   },
   {
     id: "gold-royal",
     label: "Royal Crown",
     minStatus: "gold",
     className: "bp-frame-gold bp-frame-gold-royal bp-frame-style-crown",
-    previewClassName: "from-[#4b2507] via-[#f0c766] to-[#fff3b0]"
+    previewClassName: "from-[#4b2507] via-[#8bbcff] to-[#fff3b0]"
   },
   {
     id: "ember",
@@ -141,7 +141,7 @@ export const nicknameStyles: Array<Unlockable & { id: NicknameStyleId; label: st
     id: "relic",
     label: "Relic Gold",
     minStatus: "silver",
-    className: "text-relic drop-shadow-[0_0_12px_rgba(231,193,106,0.34)]"
+    className: "text-relic drop-shadow-[0_0_12px_rgba(99,166,255,0.34)]"
   },
   {
     id: "ember",

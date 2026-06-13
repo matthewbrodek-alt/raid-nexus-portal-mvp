@@ -479,7 +479,7 @@ export function AdminCrmPanel() {
 
   return (
     <GlassPanel className="p-4 sm:p-6">
-      <div className="mb-5 rounded-2xl border border-relic/25 bg-[linear-gradient(135deg,rgba(200,154,61,0.13),rgba(4,8,14,0.72))] p-4 shadow-[0_0_34px_rgba(200,154,61,0.1)]">
+      <div className="mb-5 rounded-2xl border border-relic/25 bg-[linear-gradient(135deg,rgba(47,124,255,0.13),rgba(4,8,14,0.72))] p-4 shadow-[0_0_34px_rgba(47,124,255,0.1)]">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex items-center gap-3">
           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-relic/35 bg-black/35 text-relic">
@@ -529,7 +529,7 @@ export function AdminCrmPanel() {
             <Download size={17} />
             Скачать Excel
           </button>
-          <button type="button" onClick={downloadCsv} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-relic/45 bg-relic px-4 py-2 text-sm font-black text-black shadow-[0_0_22px_rgba(200,154,61,0.24)] transition hover:bg-[#e7c16a]">
+          <button type="button" onClick={downloadCsv} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-relic/45 bg-relic px-4 py-2 text-sm font-black text-black shadow-[0_0_22px_rgba(47,124,255,0.24)] transition hover:bg-[#63a6ff]">
             <FileSpreadsheet size={16} />
             Скачать CSV
           </button>

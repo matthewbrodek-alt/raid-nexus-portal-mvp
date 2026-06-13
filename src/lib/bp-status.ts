@@ -25,7 +25,7 @@ export const bpStatuses = [
     shortLabel: "Gold BP",
     minTotalRub: 300_000,
     nextTotalRub: 777_777,
-    frameClass: "border-[#e7c16a] shadow-[0_0_28px_rgba(231,193,106,0.34)]"
+    frameClass: "border-[#63a6ff] shadow-[0_0_28px_rgba(99,166,255,0.34)]"
   },
   {
     id: "platinum",

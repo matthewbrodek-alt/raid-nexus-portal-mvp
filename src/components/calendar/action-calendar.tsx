@@ -349,7 +349,7 @@ export function ActionCalendar({ events }: ActionCalendarProps) {
                 className={`h-[58px] overflow-hidden rounded-[14px] border p-1.5 text-left transition sm:h-[64px] ${
                   day
                     ? hasEvent
-                      ? "border-relic/45 bg-relic/[0.12] shadow-[0_0_20px_rgba(216,168,71,0.12)] hover:border-relic"
+                      ? "border-relic/45 bg-relic/[0.12] shadow-[0_0_20px_rgba(47,124,255,0.12)] hover:border-relic"
                       : "border-white/10 bg-black/20 hover:border-relic/25"
                     : "border-transparent bg-transparent"
                 }`}
@@ -445,7 +445,7 @@ export function ActionCalendar({ events }: ActionCalendarProps) {
                                 key={`${range.event.id ?? range.event.title}-${marker.day}-${marker.label}`}
                                 type="button"
                                 onClick={() => setSelectedDay(marker.day)}
-                                className="z-10 my-auto ml-2 flex min-h-10 items-center rounded-[12px] border border-relic/35 bg-[#173222]/95 px-3 text-left text-xs font-bold text-white shadow-[0_0_22px_rgba(200,154,61,0.14)] transition hover:border-relic"
+                                className="z-10 my-auto ml-2 flex min-h-10 items-center rounded-[12px] border border-relic/35 bg-[#173222]/95 px-3 text-left text-xs font-bold text-white shadow-[0_0_22px_rgba(47,124,255,0.14)] transition hover:border-relic"
                                 style={{ gridColumn: `${markerColumn} / ${markerColumn + 1}` }}
                               >
                                 <span className="min-w-0">

@@ -69,7 +69,7 @@ export function PortalOffers() {
           <p className="text-xs font-bold uppercase tracking-[0.34em] text-relic">{labels.eyebrow}</p>
           <h2 className="raid-title-metal mt-2 text-2xl">{labels.title}</h2>
         </div>
-        <Link href="/topup" className="text-xs font-bold uppercase tracking-[0.18em] text-relic transition hover:text-[#ffe0a0]">
+        <Link href="/topup" className="text-xs font-bold uppercase tracking-[0.18em] text-relic transition hover:text-[#b8d7ff]">
           {labels.viewAll}
         </Link>
       </div>

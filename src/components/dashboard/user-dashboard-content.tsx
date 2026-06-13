@@ -406,7 +406,7 @@ export function UserDashboardContent() {
               </p>
             </div>
             <div className="mt-3 h-3 overflow-hidden rounded-full bg-black/45">
-              <span className="block h-full rounded-full bg-gradient-to-r from-[#a97142] via-[#e7c16a] to-[#9ee7ff]" style={{ width: `${bpProgress.progressPercent}%` }} />
+              <span className="block h-full rounded-full bg-gradient-to-r from-[#1f5fbf] via-[#63a6ff] to-[#9ee7ff]" style={{ width: `${bpProgress.progressPercent}%` }} />
             </div>
             <div className="mt-4 grid grid-cols-4 gap-2 text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-500">
               <span>Bronze</span>
@@ -459,7 +459,7 @@ export function UserDashboardContent() {
                     onClick={() => setSelectedNicknameStyle(style.id)}
                     className={`rounded-xl border px-3 py-2 text-left text-sm font-black transition ${
                       selected
-                        ? "border-relic bg-relic/20 shadow-[0_0_24px_rgba(231,193,106,0.22)] ring-1 ring-relic/45"
+                        ? "border-relic bg-relic/20 shadow-[0_0_24px_rgba(99,166,255,0.22)] ring-1 ring-relic/45"
                         : "border-white/10 bg-black/45 opacity-55 saturate-50 hover:border-relic/35 hover:opacity-100 hover:saturate-100"
                     }`}
                   >
@@ -489,7 +489,7 @@ export function UserDashboardContent() {
                   onClick={() => setSelectedAvatarFrame(frame.id)}
                   className={`rounded-xl border p-3 text-left transition ${
                     selected
-                      ? "border-relic bg-relic/20 shadow-[0_0_26px_rgba(231,193,106,0.22)] ring-1 ring-relic/45"
+                      ? "border-relic bg-relic/20 shadow-[0_0_26px_rgba(99,166,255,0.22)] ring-1 ring-relic/45"
                       : unlocked
                         ? "border-white/10 bg-black/45 opacity-55 saturate-50 hover:border-relic/35 hover:opacity-100 hover:saturate-100"
                         : "border-white/10 bg-black/30 opacity-35 grayscale"
@@ -498,7 +498,7 @@ export function UserDashboardContent() {
                   <span className="flex items-center gap-3">
                     <span
                       className={`relative grid h-11 w-11 place-items-center rounded-xl border-2 bg-gradient-to-br transition ${
-                        selected ? "scale-105 shadow-[0_0_18px_rgba(231,193,106,0.35)]" : "scale-95"
+                        selected ? "scale-105 shadow-[0_0_18px_rgba(99,166,255,0.35)]" : "scale-95"
                       } ${frame.previewClassName} ${frame.className}`}
                     >
                       {selected ? (
@@ -526,7 +526,7 @@ export function UserDashboardContent() {
           <button
             type="button"
             onClick={() => void saveProfileCosmetics()}
-            className="rounded-xl bg-relic px-5 py-3 font-black text-black transition hover:bg-[#f0c766]"
+            className="rounded-xl bg-relic px-5 py-3 font-black text-black transition hover:bg-[#8bbcff]"
           >
             Сохранить оформление
           </button>

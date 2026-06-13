@@ -154,7 +154,7 @@ export function LatestNewsRail() {
               <img src={getNewsImage(item)} alt="" loading="lazy" decoding="async" className="h-full w-full object-contain" />
             </span>
             <span className={`raid-word-wrap min-w-0 ${compact ? "" : "mt-3 block flex-1"}`}>
-              <span className={`raid-word-wrap block font-[var(--font-display)] font-light tracking-[0.01em] text-white transition group-hover:text-[#ffe1a0] ${compact ? "truncate text-lg sm:text-xl" : "line-clamp-3 text-lg leading-snug"}`}>
+              <span className={`raid-word-wrap block font-[var(--font-display)] font-light tracking-[0.01em] text-white transition group-hover:text-[#b8d7ff] ${compact ? "truncate text-lg sm:text-xl" : "line-clamp-3 text-lg leading-snug"}`}>
                 {getNewsTitle(item, language)}
               </span>
               <span className={`raid-word-wrap mt-1 block text-sm text-zinc-400 ${compact ? "truncate" : "line-clamp-2"}`}>{getNewsSummary(item, language)}</span>
