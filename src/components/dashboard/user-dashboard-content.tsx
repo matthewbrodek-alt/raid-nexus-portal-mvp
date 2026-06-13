@@ -463,7 +463,7 @@ export function UserDashboardContent() {
                         : "border-white/10 bg-black/45 opacity-55 saturate-50 hover:border-relic/35 hover:opacity-100 hover:saturate-100"
                     }`}
                   >
-                    <span className={selected ? style.className : "text-zinc-500"}>{style.label}</span>
+                    <span className={style.className}>{style.label}</span>
                   </button>
                 );
               })}

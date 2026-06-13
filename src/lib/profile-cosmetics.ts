@@ -138,73 +138,73 @@ export const nicknameStyles: Array<Unlockable & { id: NicknameStyleId; label: st
     id: "plain",
     label: "Telegram Rose",
     minStatus: "bronze",
-    className: "text-[#d9689f]"
+    className: "bp-nick-rose"
   },
   {
     id: "violet",
     label: "Violet",
     minStatus: "bronze",
-    className: "text-violet-300"
+    className: "bp-nick-violet"
   },
   {
     id: "purple",
     label: "Purple",
     minStatus: "bronze",
-    className: "text-purple-300"
+    className: "bp-nick-purple"
   },
   {
     id: "fuchsia",
     label: "Fuchsia",
     minStatus: "bronze",
-    className: "text-fuchsia-300"
+    className: "bp-nick-fuchsia"
   },
   {
     id: "blue",
     label: "Blue",
     minStatus: "bronze",
-    className: "text-blue-300"
+    className: "bp-nick-blue"
   },
   {
     id: "cyan",
     label: "Cyan",
     minStatus: "bronze",
-    className: "text-cyan-300"
+    className: "bp-nick-cyan"
   },
   {
     id: "emerald",
     label: "Emerald",
     minStatus: "bronze",
-    className: "text-emerald-300"
+    className: "bp-nick-emerald"
   },
   {
     id: "amber",
     label: "Amber",
     minStatus: "bronze",
-    className: "text-amber-300"
+    className: "bp-nick-amber"
   },
   {
     id: "orange",
     label: "Orange",
     minStatus: "bronze",
-    className: "text-orange-300"
+    className: "bp-nick-orange"
   },
   {
     id: "crimson",
     label: "Crimson",
     minStatus: "bronze",
-    className: "text-rose-300"
+    className: "bp-nick-crimson"
   },
   {
     id: "relic",
     label: "Relic Gold",
     minStatus: "silver",
-    className: "text-relic drop-shadow-[0_0_12px_rgba(99,166,255,0.34)]"
+    className: "bp-nick-relic"
   },
   {
     id: "ember",
     label: "Ember",
     minStatus: "gold",
-    className: "text-[#ff9b54] drop-shadow-[0_0_12px_rgba(255,122,47,0.38)]"
+    className: "bp-nick-ember"
   },
   {
     id: "rgb",

@@ -1,7 +1,7 @@
 "use client";
 
-import { MessageSquarePlus, Star, X } from "lucide-react";
-import { addDoc, collection, limit, onSnapshot, query, serverTimestamp, where } from "firebase/firestore";
+import { MessageSquarePlus, Star, Trash2, X } from "lucide-react";
+import { addDoc, collection, deleteDoc, doc, limit, onSnapshot, query, serverTimestamp, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { db } from "@/lib/firebase/client";
@@ -44,7 +44,21 @@ export function HomeTestimonials() {
   const [text, setText] = useState("");
   const [rating, setRating] = useState(5);
   const [saving, setSaving] = useState(false);
+  const [allReviewsOpen, setAllReviewsOpen] = useState(false);
+  const [hiddenFallbackIds, setHiddenFallbackIds] = useState<string[]>([]);
   const isAdmin = profile?.role === "admin" || profile?.role === "owner";
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem("bp-hidden-fallback-reviews");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setHiddenFallbackIds(Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : []);
+      }
+    } catch {
+      setHiddenFallbackIds([]);
+    }
+  }, []);
 
   useEffect(() => {
     const reviewsQuery = query(collection(db, collections.reviews), where("status", "==", "published"), limit(18));
@@ -61,8 +75,32 @@ export function HomeTestimonials() {
     );
   }, []);
 
-  const items = useMemo(() => (reviews.length > 0 ? reviews : fallbackReviews[language]), [language, reviews]);
+  const fallbackItems = useMemo(() => fallbackReviews[language].filter((item) => !hiddenFallbackIds.includes(item.id)), [hiddenFallbackIds, language]);
+  const items = useMemo(() => (reviews.length > 0 ? reviews : fallbackItems), [fallbackItems, reviews]);
   const marqueeItems = [...items, ...items];
+
+  function updateHiddenFallbackIds(nextIds: string[]) {
+    setHiddenFallbackIds(nextIds);
+
+    try {
+      window.localStorage.setItem("bp-hidden-fallback-reviews", JSON.stringify(nextIds));
+    } catch {
+      // Local demo review visibility is non-critical.
+    }
+  }
+
+  async function removeReview(item: ReviewItem) {
+    if (!isAdmin) {
+      return;
+    }
+
+    if (item.id.startsWith("fallback-")) {
+      updateHiddenFallbackIds([...new Set([...hiddenFallbackIds, item.id])]);
+      return;
+    }
+
+    await deleteDoc(doc(db, collections.reviews, item.id));
+  }
 
   async function submitReview(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -101,6 +139,13 @@ export function HomeTestimonials() {
         </div>
         <button
           type="button"
+          onClick={() => setAllReviewsOpen(true)}
+          className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-black/20 px-4 py-2 text-sm font-semibold text-zinc-100 transition hover:border-relic/50 hover:text-relic"
+        >
+          {isRu ? "Все отзывы" : "All reviews"}
+        </button>
+        <button
+          type="button"
           onClick={() => setOpen(true)}
           className="inline-flex items-center gap-2 rounded-xl border border-relic/35 bg-black/30 px-4 py-2 text-sm font-semibold text-relic transition hover:border-relic hover:bg-relic/10"
         >
@@ -112,7 +157,7 @@ export function HomeTestimonials() {
       <div className="raid-review-marquee overflow-hidden py-2">
         <div className="raid-review-track flex w-max gap-3">
           {marqueeItems.map((item, index) => (
-            <article key={`${item.id}-${index}`} className="flex min-w-[260px] max-w-[320px] items-center gap-3 rounded-2xl border border-relic/10 bg-black/22 px-4 py-3">
+            <article key={`${item.id}-${index}`} className="flex min-w-[260px] max-w-[320px] items-center gap-3 rounded-2xl border border-relic/10 bg-black/20 px-4 py-3">
               <div className="flex shrink-0 gap-0.5 text-relic">
                 {Array.from({ length: Math.max(1, Math.min(5, item.rating ?? 5)) }).map((_, starIndex) => (
                   <Star key={starIndex} size={12} fill="currentColor" />
@@ -122,6 +167,16 @@ export function HomeTestimonials() {
                 <p className="truncate text-sm text-zinc-200">{firstWords(item.text, 9)}</p>
                 <p className="mt-1 truncate text-xs font-semibold text-relic">{item.authorName || (isRu ? "Игрок" : "Player")}</p>
               </div>
+              {isAdmin ? (
+                <button
+                  type="button"
+                  onClick={() => void removeReview(item)}
+                  className="ml-auto grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-red-400/20 text-red-200/80 transition hover:border-red-300/60 hover:bg-red-500/10 hover:text-red-100"
+                  aria-label={isRu ? "Удалить отзыв" : "Delete review"}
+                >
+                  <Trash2 size={13} />
+                </button>
+              ) : null}
             </article>
           ))}
         </div>
@@ -129,7 +184,7 @@ export function HomeTestimonials() {
 
       {open ? (
         <div className="fixed inset-0 z-[80] grid place-items-center bg-black/70 px-4 backdrop-blur-sm" role="dialog" aria-modal="true">
-          <form onSubmit={submitReview} className="w-full max-w-lg rounded-[22px] border border-relic/25 bg-[#071019]/98 p-5 shadow-2xl">
+          <form onSubmit={submitReview} className="raid-review-modal w-full max-w-lg rounded-[22px] border border-relic/25 bg-[#071019]/98 p-5 shadow-2xl">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="font-[var(--font-display)] text-2xl font-light text-white">{isRu ? "Отзыв о сервисе" : "Service review"}</h2>
               <button type="button" onClick={() => setOpen(false)} className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 text-zinc-400 hover:text-white">
@@ -186,6 +241,61 @@ export function HomeTestimonials() {
               </p>
             ) : null}
           </form>
+        </div>
+      ) : null}
+
+      {allReviewsOpen ? (
+        <div className="fixed inset-0 z-[80] grid place-items-center bg-black/70 px-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+          <div className="raid-review-modal flex max-h-[82dvh] w-full max-w-3xl flex-col overflow-hidden rounded-[22px] border border-relic/25 bg-[#071019]/98 shadow-2xl">
+            <div className="flex items-center justify-between gap-3 border-b border-white/10 p-5">
+              <div>
+                <p className="text-xs font-bold tracking-[0.18em] text-relic">{isRu ? "Отзывы" : "Reviews"}</p>
+                <h2 className="mt-1 font-[var(--font-display)] text-2xl font-light text-white">{isRu ? "Все отзывы" : "All reviews"}</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAllReviewsOpen(false)}
+                className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 text-zinc-400 transition hover:text-white"
+                aria-label={isRu ? "Закрыть" : "Close"}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3 overflow-y-auto p-4">
+              {items.map((item) => (
+                <article key={item.id} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex gap-0.5 text-relic">
+                        {Array.from({ length: Math.max(1, Math.min(5, item.rating ?? 5)) }).map((_, starIndex) => (
+                          <Star key={starIndex} size={13} fill="currentColor" />
+                        ))}
+                      </div>
+                      <p className="mt-2 text-sm font-bold text-relic">{item.authorName || (isRu ? "Игрок" : "Player")}</p>
+                    </div>
+                    {isAdmin ? (
+                      <button
+                        type="button"
+                        onClick={() => void removeReview(item)}
+                        className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-red-400/20 text-red-200/80 transition hover:border-red-300/60 hover:bg-red-500/10 hover:text-red-100"
+                        aria-label={isRu ? "Удалить отзыв" : "Delete review"}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    ) : null}
+                  </div>
+                  <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-zinc-100">{item.text || ""}</p>
+                </article>
+              ))}
+
+              {items.length === 0 ? (
+                <p className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm text-zinc-400">
+                  {isRu ? "Отзывов пока нет." : "No reviews yet."}
+                </p>
+              ) : null}
+            </div>
+          </div>
         </div>
       ) : null}
     </section>
