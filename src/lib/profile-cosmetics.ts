@@ -2,17 +2,14 @@ import type { BpStatusId } from "@/lib/bp-status";
 
 export type AvatarFrameId =
   | "none"
-  | "bronze"
-  | "bronze-iron"
-  | "bronze-spikes"
-  | "silver"
-  | "silver-moon"
-  | "silver-guard"
-  | "gold"
-  | "gold-royal"
-  | "ember"
-  | "platinum"
-  | "void"
+  | "bronze-root"
+  | "bronze-blade"
+  | "silver-thorn"
+  | "silver-ice"
+  | "gold-crown"
+  | "gold-dragon"
+  | "platinum-crystal"
+  | "platinum-void"
   | "rgb"
   | "admin-blue";
 export type NicknameStyleId = "plain" | "relic" | "ember" | "rgb";
@@ -37,80 +34,59 @@ export const avatarFrames: Array<Unlockable & { id: AvatarFrameId; label: string
     previewClassName: "from-zinc-950 via-zinc-800 to-zinc-700"
   },
   {
-    id: "bronze",
-    label: "Bronze Relic",
+    id: "bronze-root",
+    label: "Root Relic",
     minStatus: "bronze",
-    className: "bp-frame-bronze bp-frame-style-relic",
+    className: "bp-frame-bronze bp-frame-art-root",
     previewClassName: "from-[#3b2417] via-[#a97142] to-[#f1b37a]"
   },
   {
-    id: "bronze-iron",
-    label: "Iron Guard",
+    id: "bronze-blade",
+    label: "Bronze Blades",
     minStatus: "bronze",
-    className: "bp-frame-bronze bp-frame-bronze-iron bp-frame-style-guard",
-    previewClassName: "from-[#1d1712] via-[#6f5a42] to-[#c08a54]"
-  },
-  {
-    id: "bronze-spikes",
-    label: "Ogre Spikes",
-    minStatus: "bronze",
-    className: "bp-frame-bronze bp-frame-bronze-spikes bp-frame-style-spikes",
+    className: "bp-frame-bronze bp-frame-bronze-iron bp-frame-art-blades",
     previewClassName: "from-[#241008] via-[#9f4f24] to-[#f1b37a]"
   },
   {
-    id: "silver",
-    label: "Silver Citadel",
+    id: "silver-thorn",
+    label: "Silver Thorns",
     minStatus: "silver",
-    className: "bp-frame-silver bp-frame-style-relic",
+    className: "bp-frame-silver bp-frame-silver-guard bp-frame-art-thorns",
     previewClassName: "from-[#5d6670] via-[#cfd8e3] to-[#ffffff]"
   },
   {
-    id: "silver-moon",
-    label: "Moonsteel",
+    id: "silver-ice",
+    label: "Moon Ice",
     minStatus: "silver",
-    className: "bp-frame-silver bp-frame-silver-moon bp-frame-style-crest",
+    className: "bp-frame-silver bp-frame-silver-moon bp-frame-art-ice",
     previewClassName: "from-[#172238] via-[#9db9d8] to-[#ffffff]"
   },
   {
-    id: "silver-guard",
-    label: "Knight Guard",
-    minStatus: "silver",
-    className: "bp-frame-silver bp-frame-silver-guard bp-frame-style-guard",
-    previewClassName: "from-[#202833] via-[#b7c2cf] to-[#e8f4ff]"
-  },
-  {
-    id: "gold",
-    label: "Gold Relic",
+    id: "gold-crown",
+    label: "Royal Crest",
     minStatus: "gold",
-    className: "bp-frame-gold bp-frame-style-relic",
+    className: "bp-frame-gold bp-frame-gold-royal bp-frame-art-crown",
     previewClassName: "from-[#704611] via-[#63a6ff] to-[#fff0a8]"
   },
   {
-    id: "gold-royal",
-    label: "Royal Crown",
+    id: "gold-dragon",
+    label: "Dragon Gold",
     minStatus: "gold",
-    className: "bp-frame-gold bp-frame-gold-royal bp-frame-style-crown",
-    previewClassName: "from-[#4b2507] via-[#8bbcff] to-[#fff3b0]"
-  },
-  {
-    id: "ember",
-    label: "Ember Forge",
-    minStatus: "gold",
-    className: "bp-frame-ember bp-frame-style-spikes",
+    className: "bp-frame-ember bp-frame-art-dragon",
     previewClassName: "from-[#42110a] via-[#ff7a2f] to-[#ffd28b]"
   },
   {
-    id: "platinum",
-    label: "Platinum Ice",
+    id: "platinum-crystal",
+    label: "Crystal Aegis",
     minStatus: "platinum",
-    className: "bp-frame-platinum bp-frame-style-crest",
+    className: "bp-frame-platinum bp-frame-art-crystal",
     previewClassName: "from-[#1d3f55] via-[#9ee7ff] to-[#ffffff]"
   },
   {
-    id: "void",
+    id: "platinum-void",
     label: "Void Rune",
     minStatus: "platinum",
-    className: "bp-frame-void bp-frame-style-rune",
+    className: "bp-frame-void bp-frame-art-void",
     previewClassName: "from-[#1b102d] via-[#7c3aed] to-[#d8b4fe]"
   },
   {
@@ -129,6 +105,20 @@ export const avatarFrames: Array<Unlockable & { id: AvatarFrameId; label: string
     previewClassName: "from-[#06111f] via-[#163a68] to-[#5d93d8]"
   }
 ];
+
+const legacyFrameMap: Record<string, AvatarFrameId> = {
+  bronze: "bronze-root",
+  "bronze-iron": "bronze-blade",
+  "bronze-spikes": "bronze-blade",
+  silver: "silver-thorn",
+  "silver-moon": "silver-ice",
+  "silver-guard": "silver-thorn",
+  gold: "gold-crown",
+  "gold-royal": "gold-crown",
+  ember: "gold-dragon",
+  platinum: "platinum-crystal",
+  void: "platinum-void"
+};
 
 export const nicknameStyles: Array<Unlockable & { id: NicknameStyleId; label: string; className: string }> = [
   {
@@ -170,8 +160,9 @@ export function getAvailableNicknameStyles(statusId: BpStatusId) {
 }
 
 export function normalizeAvatarFrame(frameId: string | undefined, statusId: BpStatusId, isAdmin = false): AvatarFrameId {
+  const mappedFrameId = frameId ? legacyFrameMap[frameId] ?? frameId : frameId;
   const available = getAvailableAvatarFrames(statusId, isAdmin);
-  return (available.find((frame) => frame.id === frameId)?.id ?? "none") as AvatarFrameId;
+  return (available.find((frame) => frame.id === mappedFrameId)?.id ?? "none") as AvatarFrameId;
 }
 
 export function normalizeNicknameStyle(styleId: string | undefined, statusId: BpStatusId): NicknameStyleId {
@@ -180,8 +171,9 @@ export function normalizeNicknameStyle(styleId: string | undefined, statusId: Bp
 }
 
 export function getAvatarFrameClass(frameId: string | undefined, statusId: BpStatusId) {
-  const direct = avatarFrames.find((frame) => frame.id === frameId);
-  const normalized = normalizeAvatarFrame(frameId, statusId);
+  const mappedFrameId = frameId ? legacyFrameMap[frameId] ?? frameId : frameId;
+  const direct = avatarFrames.find((frame) => frame.id === mappedFrameId);
+  const normalized = normalizeAvatarFrame(mappedFrameId, statusId);
   return direct?.className ?? avatarFrames.find((frame) => frame.id === normalized)?.className ?? "bp-frame-none";
 }
 

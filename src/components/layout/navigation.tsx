@@ -139,7 +139,7 @@ export function Navigation({ sections }: NavigationProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-white/8 bg-[#030609]/84 backdrop-blur-xl lg:border-relic/20 lg:bg-[#030609]/92">
+      <header className="fixed inset-x-0 top-0 z-[1000] border-b border-white/8 bg-[#030609]/84 pt-[env(safe-area-inset-top)] shadow-[0_12px_36px_rgba(0,0,0,0.28)] backdrop-blur-2xl lg:sticky lg:inset-x-auto lg:z-50 lg:border-relic/20 lg:bg-[#030609]/92 lg:pt-0">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:h-[82px] lg:px-8">
           <Link href="/" className="flex shrink-0 items-center gap-3 lg:mr-5 xl:mr-7">
             <RaidLogo compact imageClassName="!h-12 !max-w-none sm:!h-14 lg:!h-14 xl:!h-16" />
@@ -183,6 +183,7 @@ export function Navigation({ sections }: NavigationProps) {
           </button>
         </div>
       </header>
+      <div className="h-[calc(64px+env(safe-area-inset-top))] lg:hidden" aria-hidden="true" />
 
       {mounted && mobileMenu ? createPortal(mobileMenu, document.body) : null}
     </>
