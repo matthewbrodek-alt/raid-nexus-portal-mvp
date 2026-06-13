@@ -126,16 +126,6 @@ body::after {
   background-color: rgba(244, 249, 255, 0.84);
 }
 
-:root[data-theme="light"] .bp-brand-word {
-  background-image: linear-gradient(90deg, #0b4ea2, #1d77d2, #4aa3ff, #0b4ea2) !important;
-  background-size: 240% 100%;
-  text-shadow:
-    0 0 12px rgba(39, 118, 214, 0.36),
-    0 0 22px rgba(84, 169, 255, 0.28);
-  filter: drop-shadow(0 0 12px rgba(32, 116, 214, 0.28));
-  animation: bp-rgb-flow 4.8s linear infinite;
-}
-
 :root[data-theme="light"] .raid-chat-shell {
   border-color: rgba(88, 127, 172, 0.22) !important;
   background:

@@ -55,7 +55,7 @@ export function SiteSidebar() {
     <aside className="hidden min-h-screen flex-col border-r border-relic/18 bg-[#02070c]/74 backdrop-blur-md lg:sticky lg:top-0 lg:flex lg:h-screen">
       <div className="flex h-28 items-center border-b border-relic/12 px-4">
         <Link href="/" className="min-w-0">
-          <RaidLogo compact withBumpyPay className="-ml-1" />
+          <RaidLogo compact />
         </Link>
       </div>
 
