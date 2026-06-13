@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Coins, Paperclip, Send, ShieldCheck, WalletCards, X } from "lucide-react";
+import { Paperclip, Send, WalletCards, X } from "lucide-react";
 import { addDoc, collection, doc, getDocs, increment, query, serverTimestamp, setDoc, where, writeBatch } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -20,11 +20,8 @@ const MAX_SCREENSHOT_SIZE = 6 * 1024 * 1024;
 const copy = {
   ru: {
     title: "Написать менеджеру",
-    subtitle: "Короткая заявка сохранится в CRM-панели сайта, а ответ будет на странице заказа.",
-    telegram: "Контакт для связи",
+    subtitle: "Выберите набор, добавьте комментарий и отправьте заявку. Ответ будет на странице заказа.",
     package: "Набор",
-    payment: "Оплата",
-    manager: "Через менеджера",
     comment: "Комментарий",
     screenshot: "Скриншот",
     screenshotHint: "PNG, JPG или WEBP до 6 МБ",
@@ -40,11 +37,8 @@ const copy = {
   },
   en: {
     title: "Message manager",
-    subtitle: "A short request is saved in the site CRM panel, and the reply appears on the order page.",
-    telegram: "Contact",
+    subtitle: "Choose a pack, add a comment and send the request. The reply appears on the order page.",
     package: "Pack",
-    payment: "Payment",
-    manager: "Manager assisted",
     comment: "Comment",
     screenshot: "Screenshot",
     screenshotHint: "PNG, JPG or WEBP up to 6 MB",
@@ -103,9 +97,7 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
   const router = useRouter();
   const donationOffers = useDonationOffers();
   const t = copy[language];
-  const [telegram, setTelegram] = useState("");
   const [packageId, setPackageId] = useState(selectedPackageId ?? "");
-  const [paymentMethod, setPaymentMethod] = useState("manager");
   const [comment, setComment] = useState("");
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [useBumpyCoins, setUseBumpyCoins] = useState(false);
@@ -214,13 +206,13 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
         leadId: topupRef.id,
         managerUid: manager?.uid ?? "",
         threadId,
-        telegram,
+        telegram: profile?.displayName || user.email || "",
         packageId,
         packageName: getDonationOfferTitle(selectedPackage, isRu),
         baseAmountRub: selectedPackage.priceRub,
         bumpyCoinsDiscount,
         amountRub: finalAmountRub,
-        paymentMethod,
+        paymentMethod: "manager",
         comment,
         screenshotUrl: screenshot?.secureUrl ?? "",
         screenshotPublicId: screenshot?.publicId ?? "",
@@ -273,8 +265,8 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
 
         await addDoc(collection(db, "directThreads", threadId, "messages"), {
           uid: user.uid,
-          displayName: profile?.displayName || telegram || "Raid Player",
-          text: `Donation request sent.\nPack: ${payload.packageName}\nPayment: ${paymentMethod}\nComment: ${comment || "-"}\nScreenshot: ${payload.screenshotUrl || "-"}`,
+          displayName: profile?.displayName || user.email || "Raid Player",
+          text: `Donation request sent.\nPack: ${payload.packageName}\nPayment: manager\nComment: ${comment || "-"}\nScreenshot: ${payload.screenshotUrl || "-"}`,
           topupLeadId: topupRef.id,
           attachment: screenshot
             ? {
@@ -332,72 +324,35 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
 
       <form className="space-y-4" onSubmit={submitLead} onPaste={handlePasteImage}>
         <label className="block space-y-2">
-          <span className="text-sm text-zinc-300">{t.telegram}</span>
-          <input
-            required
-            value={telegram}
-            onChange={(event) => setTelegram(event.target.value)}
-            placeholder={isRu ? "@telegram, email или другой контакт" : "@telegram, email or another contact"}
-            className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
-          />
+          <span className="text-sm text-zinc-300">{t.package}</span>
+          <select
+            value={selectedPackage ? selectedPackage.id : ""}
+            onChange={(event) => setPackageId(event.target.value)}
+            disabled={donationOffers.length === 0}
+            className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic"
+          >
+            {donationOffers.length === 0 ? <option value="">{t.noPackages}</option> : null}
+            {donationOffers.map((pack) => (
+              <option key={pack.id} value={pack.id}>
+                {getDonationOfferTitle(pack, isRu)} - {t.from} {pack.priceRub.toLocaleString("ru-RU")} {t.rub}
+              </option>
+            ))}
+          </select>
         </label>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block space-y-2">
-            <span className="text-sm text-zinc-300">{t.package}</span>
-            <select
-              value={selectedPackage ? selectedPackage.id : ""}
-              onChange={(event) => setPackageId(event.target.value)}
-              disabled={donationOffers.length === 0}
-              className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic"
-            >
-              {donationOffers.length === 0 ? <option value="">{t.noPackages}</option> : null}
-              {donationOffers.map((pack) => (
-                <option key={pack.id} value={pack.id}>
-                  {getDonationOfferTitle(pack, isRu)} - {t.from} {pack.priceRub.toLocaleString("ru-RU")} {t.rub}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="block space-y-2">
-            <span className="text-sm text-zinc-300">{t.payment}</span>
-            <select
-              value={paymentMethod}
-              onChange={(event) => setPaymentMethod(event.target.value)}
-              className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic"
-            >
-              <option value="manager">{t.manager}</option>
-            </select>
-          </label>
-        </div>
-
         {selectedPackage ? (
-          <div className="rounded-xl border border-relic/20 bg-black/24 p-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-relic/25 bg-relic/10 text-relic">
-                  <Coins size={18} />
-                </span>
-                <div>
-                  <p className="font-bold text-white">Bumpy Coins: {bumpyCoinsBalance.toLocaleString("ru-RU")}</p>
-                  <p className="mt-1 text-xs leading-5 text-zinc-500">
-                    {isRu ? "1 Bumpy Coin = 1 рубль скидки. Лимит списания: 10 000 за заявку." : "1 Bumpy Coin = 1 ruble discount. Max use: 10,000 per request."}
-                  </p>
-                </div>
-              </div>
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm font-semibold text-zinc-300">
-                <input
-                  type="checkbox"
-                  checked={useBumpyCoins}
-                  disabled={bumpyCoinsBalance <= 0}
-                  onChange={(event) => setUseBumpyCoins(event.target.checked)}
-                  className="rounded border-relic/30 bg-black/40 text-relic focus:ring-relic"
-                />
-                {isRu ? "Списать доступные Bumpy Coins" : "Apply available Bumpy Coins"}
-              </label>
-            </div>
-            <div className="mt-4 grid gap-2 text-sm sm:grid-cols-3">
+          <div className="rounded-xl border border-relic/20 bg-black/20 p-3">
+            <label className="mb-3 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-black/24 px-3 py-2 text-sm font-semibold text-zinc-300">
+              <input
+                type="checkbox"
+                checked={useBumpyCoins}
+                disabled={bumpyCoinsBalance <= 0}
+                onChange={(event) => setUseBumpyCoins(event.target.checked)}
+                className="rounded border-relic/30 bg-black/40 text-relic focus:ring-relic"
+              />
+              {isRu ? "Списать Bumpy Coins" : "Apply Bumpy Coins"}
+            </label>
+            <div className="grid gap-2 text-sm sm:grid-cols-3">
               <div className="rounded-lg border border-white/10 bg-black/25 p-3">
                 <p className="text-xs text-zinc-500">{isRu ? "Цена набора" : "Pack price"}</p>
                 <p className="mt-1 font-black text-white">{selectedPackage.priceRub.toLocaleString("ru-RU")} {t.rub}</p>
@@ -488,13 +443,6 @@ export function TopupLeadForm({ selectedPackageId }: TopupLeadFormProps = {}) {
           </p>
         ) : null}
       </form>
-
-      <div className="mt-5 flex items-start gap-2 rounded-lg border border-white/10 bg-white/[0.035] p-3 text-sm leading-6 text-zinc-400">
-        <ShieldCheck className="mt-0.5 shrink-0 text-relic" size={18} />
-        {isRu
-          ? "Данные заявки передаются только менеджеру для покупки доступных в игровом магазине наборов."
-          : "Request data is shared only with the manager to buy packs available in the in-game shop."}
-      </div>
     </GlassPanel>
   );
 }
