@@ -82,8 +82,8 @@ export default function Home() {
 
       <div className="raid-dashboard-shell relative z-10 min-h-screen lg:grid lg:grid-cols-[300px_1fr]">
         <aside className="hidden min-h-screen flex-col border-r border-relic/18 bg-[#02070c]/72 backdrop-blur-md lg:sticky lg:top-0 lg:flex lg:h-screen">
-          <div className="flex h-28 items-center border-b border-relic/12 px-4">
-            <RaidLogo compact />
+          <div className="flex h-44 items-center justify-center overflow-visible border-b border-relic/12 px-4">
+            <RaidLogo compact className="translate-x-5" imageClassName="!h-40 !max-w-none sm:!h-44" />
           </div>
 
           <nav className="px-5 py-7">
