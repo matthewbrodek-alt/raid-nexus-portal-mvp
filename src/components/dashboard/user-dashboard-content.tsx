@@ -657,7 +657,7 @@ export function UserDashboardContent() {
                       const passed = currentIndex >= stageIndex && activeStage !== "cancelled";
 
                       return (
-                        <div key={stage.id} className={`rounded-lg border p-3 ${active ? "border-relic bg-relic/[0.12] text-white" : passed ? "border-emerald-400/25 bg-emerald-400/10 text-emerald-200" : "border-white/10 bg-black/18 text-zinc-500"}`}>
+                        <div key={stage.id} className={`rounded-lg border p-3 ${active ? "border-relic bg-relic/[0.12] text-white" : passed ? "border-emerald-300/45 bg-emerald-500/16 text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]" : "border-white/10 bg-black/18 text-zinc-500"}`}>
                           <p className="text-[11px] font-bold leading-4">{stage.clientLabel}</p>
                         </div>
                       );
