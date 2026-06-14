@@ -212,21 +212,61 @@ export default function RafflePage() {
           </Link>
         </header>
 
-        <section className="mt-6 grid flex-1 gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
-          <div className="raid-ornate-panel overflow-hidden p-5 sm:p-7">
-            <div className="flex flex-wrap items-start justify-between gap-4">
+        <section className="mt-6 flex flex-1 justify-center">
+          <div className="raid-ornate-panel w-full max-w-4xl overflow-hidden p-5 sm:p-7">
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.32em] text-relic">Ruby Giveaway</p>
-                <h1 className="raid-title-metal mt-4 max-w-2xl text-4xl font-black uppercase leading-tight sm:text-6xl">
-                  Потыкай мачехе в пузико 100 раз
+                <p className="text-xs font-bold tracking-[0.24em] text-relic">Розыгрыш месяца</p>
+                <h1 className="raid-title-metal mt-3 max-w-2xl text-3xl font-black leading-tight sm:text-5xl">
+                  5 паков рубинов
                 </h1>
                 <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-300">
-                  После сотого клика аккаунт попадает в список участников ближайшего розыгрыша. Участвовать могут только зарегистрированные игроки.
+                  Каждый месяц разыгрываем 5 паков рубинов. Один аккаунт дает одно участие в ближайшем розыгрыше: нажми на персонажа 100 раз, и заявка запишется автоматически.
                 </p>
               </div>
-              <div className="rounded-[18px] border border-relic/24 bg-black/32 px-4 py-3 text-right">
-                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Приз</p>
+
+              <div className="rounded-[22px] border border-relic/24 bg-black/28 p-4">
+                <p className="text-xs font-bold tracking-[0.2em] text-relic">До розыгрыша</p>
+                <div className="mt-3 grid grid-cols-4 gap-2 lg:grid-cols-2">
+                  {[
+                    [timeLeft.days, "дн"],
+                    [timeLeft.hours, "ч"],
+                    [timeLeft.minutes, "м"],
+                    [timeLeft.seconds, "с"]
+                  ].map(([value, label]) => (
+                    <div key={label} className="rounded-[14px] border border-white/10 bg-black/30 px-2 py-3 text-center">
+                      <p className="text-xl font-black text-white">{String(value).padStart(2, "0")}</p>
+                      <p className="mt-0.5 text-[10px] font-bold text-zinc-500">{label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-[18px] border border-relic/20 bg-black/24 px-4 py-3">
+                <p className="text-xs font-bold text-zinc-500">Приз</p>
                 <p className="mt-1 font-black text-relic">{RAFFLE_PRIZE}</p>
+              </div>
+              <div className="rounded-[18px] border border-relic/20 bg-black/24 px-4 py-3">
+                <p className="text-xs font-bold text-zinc-500">Условие</p>
+                <p className="mt-1 font-black text-white">{REQUIRED_CLICKS} кликов</p>
+              </div>
+              <div className="rounded-[18px] border border-relic/20 bg-black/24 px-4 py-3">
+                <p className="text-xs font-bold text-zinc-500">Статус</p>
+                {loading ? (
+                  <p className="mt-1 font-black text-zinc-300">Проверяем...</p>
+                ) : user ? (
+                  <p className="mt-1 inline-flex items-center gap-2 font-black text-white">
+                    <ShieldCheck className="text-relic" size={16} />
+                    {entryExists ? "Участвуешь" : "Можно участвовать"}
+                  </p>
+                ) : (
+                  <Link href="/login" className="mt-1 inline-flex items-center gap-2 font-black text-relic">
+                    <Sparkles size={16} />
+                    Войти
+                  </Link>
+                )}
               </div>
             </div>
 
@@ -296,59 +336,25 @@ export default function RafflePage() {
               </div>
             </div>
 
+            <div className="mt-5">
+              {entryExists ? (
+                <p className="inline-flex items-center gap-2 rounded-[16px] border border-emerald-400/25 bg-emerald-400/10 px-4 py-3 text-sm font-bold text-emerald-200">
+                  <CheckCircle2 size={18} />
+                  Спасибо за участие. Аккаунт уже записан в ближайший розыгрыш.
+                </p>
+              ) : null}
+
+              {error ? <p className="mt-3 rounded-[16px] border border-blood/35 bg-blood/10 px-4 py-3 text-sm text-red-200">{error}</p> : null}
+
+              {!loading && !user ? (
+                <p className="mt-3 rounded-[16px] border border-relic/18 bg-black/24 px-4 py-3 text-sm leading-6 text-zinc-400">
+                  Для записи участия нужен вход в аккаунт. Без входа клики не сохраняются.
+                </p>
+              ) : null}
+            </div>
+
             <audio ref={audioRef} src={MACHEHA_CRY_SOUND_SRC} preload="auto" />
           </div>
-
-          <aside className="space-y-5">
-            <div className="raid-ornate-panel p-5">
-              <p className="text-xs font-bold uppercase tracking-[0.28em] text-relic">Следующий розыгрыш через</p>
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                {[
-                  [timeLeft.days, "дней"],
-                  [timeLeft.hours, "часов"],
-                  [timeLeft.minutes, "минут"],
-                  [timeLeft.seconds, "секунд"]
-                ].map(([value, label]) => (
-                  <div key={label} className="rounded-[18px] border border-relic/18 bg-black/30 p-4 text-center">
-                    <p className="font-[var(--font-cinzel)] text-3xl font-black text-white">{String(value).padStart(2, "0")}</p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.14em] text-zinc-500">{label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="raid-ornate-panel p-5">
-              {loading ? (
-                <p className="text-sm text-zinc-400">Проверяем аккаунт...</p>
-              ) : user ? (
-                <div>
-                  <p className="inline-flex items-center gap-2 text-sm font-black text-white">
-                    <ShieldCheck className="text-relic" size={18} />
-                    {profile?.displayName || user.email}
-                  </p>
-                  <p className="mt-3 text-sm leading-6 text-zinc-400">
-                    Нажми на мачеху {REQUIRED_CLICKS} раз. После завершения участие будет записано автоматически.
-                  </p>
-                  {entryExists ? (
-                    <p className="mt-4 inline-flex items-center gap-2 rounded-[16px] border border-emerald-400/25 bg-emerald-400/10 px-4 py-3 text-sm font-bold text-emerald-200">
-                      <CheckCircle2 size={18} />
-                      Вы уже участвуете в ближайшем событии.
-                    </p>
-                  ) : null}
-                  {error ? <p className="mt-4 rounded-[16px] border border-blood/35 bg-blood/10 px-4 py-3 text-sm text-red-200">{error}</p> : null}
-                </div>
-              ) : (
-                <div>
-                  <p className="text-lg font-black text-white">Нужен вход в аккаунт</p>
-                  <p className="mt-2 text-sm leading-6 text-zinc-400">Розыгрыш доступен только зарегистрированным участникам портала.</p>
-                  <Link href="/login" className="raid-glow-button mt-4 inline-flex items-center gap-2 border border-relic/35 bg-relic px-5 py-3 text-sm font-black text-black">
-                    <Sparkles size={16} />
-                    Войти
-                  </Link>
-                </div>
-              )}
-            </div>
-          </aside>
         </section>
       </div>
     </main>
