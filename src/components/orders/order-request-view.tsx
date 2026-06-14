@@ -19,6 +19,8 @@ import {
   arrayUnion,
   collection,
   doc,
+  getDoc,
+  increment,
   limit,
   onSnapshot,
   orderBy,
@@ -55,6 +57,10 @@ type TopupLead = {
   managerNote?: string;
   comment?: string;
   amountRub?: number;
+  requestedBumpyCoinsUse?: boolean;
+  requestedBumpyCoinsAvailable?: number;
+  lastBumpyCoinsWrittenOff?: number;
+  bumpyCoinsWrittenOffTotal?: number;
   status?: string;
   screenshotUrl?: string;
   createdAt?: FirestoreTime;
@@ -84,6 +90,7 @@ type ManagerDraft = {
   status: OrderStageId;
   paymentDetails: string;
   managerNote: string;
+  writeOffBumpyCoins: string;
 };
 
 type OrderRequestViewProps = {
@@ -151,7 +158,8 @@ function draftFromLead(lead: TopupLead | null): ManagerDraft {
     amountRub: typeof lead?.amountRub === "number" ? String(lead.amountRub) : "",
     status: normalizeOrderStage(lead?.status),
     paymentDetails: lead?.paymentDetails ?? "",
-    managerNote: lead?.managerNote ?? ""
+    managerNote: lead?.managerNote ?? "",
+    writeOffBumpyCoins: ""
   };
 }
 
@@ -171,6 +179,52 @@ async function uploadOrderImage(file: File) {
   }
 
   return (await response.json()) as CloudinaryAsset;
+}
+
+async function writeOffBumpyCoinsForLead(lead: TopupLead, amountCoins: number, managerUid: string) {
+  if (!lead.uid || amountCoins <= 0) {
+    return 0;
+  }
+
+  const requestedCoins = Math.floor(amountCoins);
+
+  if (requestedCoins <= 0) {
+    return 0;
+  }
+
+  const userRef = doc(db, collections.users, lead.uid);
+  const userSnapshot = await getDoc(userRef);
+  const userData = userSnapshot.exists() ? (userSnapshot.data() as { bumpyCoinsBalance?: number }) : {};
+  const availableCoins = Math.max(0, Math.floor(userData.bumpyCoinsBalance ?? 0));
+  const safeCoins = Math.min(requestedCoins, availableCoins);
+
+  if (safeCoins <= 0) {
+    return 0;
+  }
+
+  await setDoc(doc(db, collections.bonusTransactions, `writeoff-${lead.id}-${Date.now()}`), {
+    amountCoins: -safeCoins,
+    createdAt: serverTimestamp(),
+    description: `Manager Bumpy Coins write-off: ${lead.packageName ?? lead.packageId ?? lead.id}`,
+    leadId: lead.id,
+    managerUid,
+    source: "manager_writeoff",
+    uid: lead.uid
+  });
+
+  await updateDoc(userRef, {
+    bumpyCoinsBalance: increment(-safeCoins),
+    bumpyCoinsSpentTotal: increment(safeCoins),
+    updatedAt: serverTimestamp()
+  });
+
+  await updateDoc(doc(db, collections.topupLeads, lead.id), {
+    lastBumpyCoinsWrittenOff: safeCoins,
+    bumpyCoinsWrittenOffTotal: increment(safeCoins),
+    updatedAt: serverTimestamp()
+  });
+
+  return safeCoins;
 }
 
 export function OrderRequestView({ leadId }: OrderRequestViewProps) {
@@ -366,6 +420,8 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
     try {
       const amountRub = Number(managerDraft.amountRub.replace(/[^\d.]/g, ""));
       const safeAmountRub = Number.isFinite(amountRub) ? amountRub : 0;
+      const writeOffCoins = Number((managerDraft.writeOffBumpyCoins ?? "").replace(/[^\d.]/g, ""));
+      const safeWriteOffCoins = Number.isFinite(writeOffCoins) ? writeOffCoins : 0;
       const nextStatus = managerDraft.status;
       const currentStatus = normalizeOrderStage(lead.status);
 
@@ -391,7 +447,18 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
         });
       }
 
-      setManagerStatus(isRu ? "Заявка обновлена. Клиент увидит новый статус на этой странице." : "Request updated. Client will see the new status on this page.");
+      const writtenOffCoins = await writeOffBumpyCoinsForLead(lead, safeWriteOffCoins, user.uid);
+      setManagerDraft((current) => ({ ...current, writeOffBumpyCoins: "" }));
+
+      setManagerStatus(
+        writtenOffCoins > 0
+          ? isRu
+            ? `Заявка обновлена. Списано ${writtenOffCoins} Bumpy Coins.`
+            : `Request updated. ${writtenOffCoins} Bumpy Coins written off.`
+          : isRu
+            ? "Заявка обновлена. Клиент увидит новый статус на этой странице."
+            : "Request updated. Client will see the new status on this page."
+      );
     } finally {
       savingOrderRef.current = false;
       setSavingOrder(false);
@@ -546,6 +613,16 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
             <div className="rounded-xl border border-white/10 bg-black/20 p-4">
               <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{isRu ? "Сумма заказа" : "Amount"}</p>
               <p className="mt-2 font-bold text-white">{(lead.amountRub ?? 0).toLocaleString("ru-RU")} ₽</p>
+              {lead.requestedBumpyCoinsUse ? (
+                <p className="mt-2 rounded-lg border border-relic/20 bg-relic/[0.08] px-2 py-1 text-xs leading-5 text-relic">
+                  {isRu ? "Клиент просит применить" : "Client requested"} {(lead.requestedBumpyCoinsAvailable ?? 0).toLocaleString("ru-RU")} Bumpy Coins
+                </p>
+              ) : null}
+              {lead.bumpyCoinsWrittenOffTotal ? (
+                <p className="mt-2 text-xs font-bold text-sky-300">
+                  {isRu ? "Списано" : "Written off"}: {lead.bumpyCoinsWrittenOffTotal.toLocaleString("ru-RU")} Bumpy Coins
+                </p>
+              ) : null}
             </div>
             <div className="rounded-xl border border-white/10 bg-black/20 p-4 sm:col-span-2">
               <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{isRu ? "Оплата и информация от менеджера" : "Payment and manager information"}</p>
@@ -617,6 +694,19 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
                     className="mt-2 w-full rounded-xl border-white/10 bg-black/35 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
                     placeholder={isRu ? "Ссылка, карта, комментарий по оплате" : "Link, card, payment comment"}
                   />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">{isRu ? "Списать Bumpy Coins" : "Write off Bumpy Coins"}</span>
+                  <input
+                    value={managerDraft.writeOffBumpyCoins}
+                    onChange={(event) => setManagerDraft((current) => ({ ...current, writeOffBumpyCoins: event.target.value }))}
+                    className="mt-2 w-full rounded-xl border-white/10 bg-black/35 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+                    placeholder="0"
+                    inputMode="numeric"
+                  />
+                  <span className="mt-1 block text-xs leading-5 text-zinc-500">
+                    {isRu ? "Списывается вручную после согласования с клиентом." : "Manual write-off after client confirmation."}
+                  </span>
                 </label>
                 <label className="block sm:col-span-2">
                   <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">{isRu ? "Сообщение клиенту / заметка" : "Client note"}</span>

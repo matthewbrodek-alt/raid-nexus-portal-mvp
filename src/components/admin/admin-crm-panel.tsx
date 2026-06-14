@@ -29,6 +29,10 @@ type TopupLead = {
   managerNote?: string;
   comment?: string;
   amountRub?: number;
+  requestedBumpyCoinsUse?: boolean;
+  requestedBumpyCoinsAvailable?: number;
+  lastBumpyCoinsWrittenOff?: number;
+  bumpyCoinsWrittenOffTotal?: number;
   lastManualBumpyCoinsAwarded?: number;
   manualBumpyCoinsAwardedTotal?: number;
   status?: string;
@@ -42,6 +46,7 @@ type Draft = {
   paymentDetails: string;
   managerNote: string;
   manualBumpyCoins: string;
+  writeOffBumpyCoins: string;
 };
 
 const serviceLabels: Record<ServiceType, string> = {
@@ -103,7 +108,8 @@ function draftFromLead(lead: TopupLead): Draft {
     status: getOrderStage(lead.status).id,
     paymentDetails: lead.paymentDetails ?? "",
     managerNote: lead.managerNote ?? "",
-    manualBumpyCoins: ""
+    manualBumpyCoins: "",
+    writeOffBumpyCoins: ""
   };
 }
 
@@ -121,7 +127,7 @@ function exportRows(leads: TopupLead[]) {
         lead.clientName ?? lead.email ?? lead.uid ?? "",
         lead.packageName ?? lead.packageId ?? "",
         `${lead.amountRub ?? 0} RUB`,
-        `${lead.manualBumpyCoinsAwardedTotal ?? 0} Bumpy Coins`,
+        `+${lead.manualBumpyCoinsAwardedTotal ?? 0} / -${lead.bumpyCoinsWrittenOffTotal ?? 0} Bumpy Coins`,
         getOrderStage(lead.status).clientLabel,
         lead.paymentDetails ?? "",
         lead.managerNote ?? "",
@@ -267,6 +273,52 @@ async function creditManualBumpyCoins(lead: TopupLead, amountCoins: number, mana
   return safeCoins;
 }
 
+async function writeOffBumpyCoins(lead: TopupLead, amountCoins: number, managerUid?: string) {
+  if (!lead.uid || amountCoins <= 0) {
+    return 0;
+  }
+
+  const requestedCoins = Math.floor(amountCoins);
+
+  if (requestedCoins <= 0) {
+    return 0;
+  }
+
+  const userRef = doc(db, collections.users, lead.uid);
+  const userSnapshot = await getDoc(userRef);
+  const userData = userSnapshot.exists() ? (userSnapshot.data() as Partial<UserProfile>) : {};
+  const availableCoins = Math.max(0, Math.floor(userData.bumpyCoinsBalance ?? 0));
+  const safeCoins = Math.min(requestedCoins, availableCoins);
+
+  if (safeCoins <= 0) {
+    return 0;
+  }
+
+  await setDoc(doc(db, collections.bonusTransactions, `writeoff-${lead.id}-${Date.now()}`), {
+    amountCoins: -safeCoins,
+    createdAt: serverTimestamp(),
+    description: `Manager Bumpy Coins write-off: ${lead.packageName ?? lead.packageId ?? lead.id}`,
+    leadId: lead.id,
+    managerUid: managerUid ?? "",
+    source: "manager_writeoff",
+    uid: lead.uid
+  });
+
+  await updateDoc(userRef, {
+    bumpyCoinsBalance: increment(-safeCoins),
+    bumpyCoinsSpentTotal: increment(safeCoins),
+    updatedAt: serverTimestamp()
+  });
+
+  await updateDoc(doc(db, collections.topupLeads, lead.id), {
+    lastBumpyCoinsWrittenOff: safeCoins,
+    bumpyCoinsWrittenOffTotal: increment(safeCoins),
+    updatedAt: serverTimestamp()
+  });
+
+  return safeCoins;
+}
+
 export function AdminCrmPanel() {
   const { profile } = useAuth();
   const router = useRouter();
@@ -324,14 +376,14 @@ export function AdminCrmPanel() {
     setDrafts((current) => ({
       ...current,
       [leadId]: {
-        ...(current[leadId] ?? { amountRub: "", status: "new", paymentDetails: "", managerNote: "", manualBumpyCoins: "" }),
+        ...(current[leadId] ?? { amountRub: "", status: "new", paymentDetails: "", managerNote: "", manualBumpyCoins: "", writeOffBumpyCoins: "" }),
         ...patch
       }
     }));
   }
 
   function updateStage(leadId: string, status: OrderStageId) {
-    const currentDraft = drafts[leadId] ?? { amountRub: "", status: "new", paymentDetails: "", managerNote: "", manualBumpyCoins: "" };
+    const currentDraft = drafts[leadId] ?? { amountRub: "", status: "new", paymentDetails: "", managerNote: "", manualBumpyCoins: "", writeOffBumpyCoins: "" };
     let nextAmount = currentDraft.amountRub;
 
     if (status === "completed" && currentDraft.status !== "completed") {
@@ -353,6 +405,8 @@ export function AdminCrmPanel() {
     const safeAmountRub = Number.isFinite(amountRub) ? amountRub : 0;
     const manualCoins = Number((draft.manualBumpyCoins ?? "").replace(/[^\d.]/g, ""));
     const safeManualCoins = Number.isFinite(manualCoins) ? manualCoins : 0;
+    const writeOffCoins = Number((draft.writeOffBumpyCoins ?? "").replace(/[^\d.]/g, ""));
+    const safeWriteOffCoins = Number.isFinite(writeOffCoins) ? writeOffCoins : 0;
 
     await updateDoc(doc(db, collections.topupLeads, lead.id), {
       amountRub: safeAmountRub,
@@ -366,20 +420,25 @@ export function AdminCrmPanel() {
     await updateCustomerBpTotal(lead, safeAmountRub, draft.status);
     const rewardCoins = isCompletedOrder(draft.status) ? await creditReferralReward(lead, safeAmountRub) : 0;
     const manualAwardedCoins = await creditManualBumpyCoins(lead, safeManualCoins, profile?.uid);
+    const writtenOffCoins = await writeOffBumpyCoins(lead, safeWriteOffCoins, profile?.uid);
 
-    updateDraft(lead.id, { manualBumpyCoins: "" });
+    updateDraft(lead.id, { manualBumpyCoins: "", writeOffBumpyCoins: "" });
 
-    if (manualAwardedCoins > 0 && rewardCoins > 0) {
-      setStatusText(`Заявка обновлена. Начислено клиенту: ${manualAwardedCoins} Bumpy Coins. Реферальный бонус: ${rewardCoins} Bumpy Coins.`);
-      return;
-    }
+    const statusParts = ["Заявка обновлена."];
 
     if (manualAwardedCoins > 0) {
-      setStatusText(`Заявка обновлена. Начислено клиенту: ${manualAwardedCoins} Bumpy Coins.`);
-      return;
+      statusParts.push(`Начислено клиенту: ${manualAwardedCoins} Bumpy Coins.`);
     }
 
-    setStatusText(rewardCoins > 0 ? `Заявка обновлена. Реферальный бонус: ${rewardCoins} Bumpy Coins.` : "Заявка обновлена.");
+    if (writtenOffCoins > 0) {
+      statusParts.push(`Списано с клиента: ${writtenOffCoins} Bumpy Coins.`);
+    }
+
+    if (rewardCoins > 0) {
+      statusParts.push(`Реферальный бонус: ${rewardCoins} Bumpy Coins.`);
+    }
+
+    setStatusText(statusParts.join(" "));
   }
 
   async function createManualLead(event: React.FormEvent<HTMLFormElement>) {
@@ -414,7 +473,7 @@ export function AdminCrmPanel() {
   }
 
   function downloadCsv() {
-    const header = "number;date;service;telegram;client;request;amountRub;manualBumpyCoins;stage;paymentDetails;managerNote;comment";
+    const header = "number;date;service;telegram;client;request;amountRub;manualBumpyCoins;bumpyCoinsWrittenOff;stage;paymentDetails;managerNote;comment";
     const rows = monthLeads.map((lead, index) =>
       [
         String(index + 1),
@@ -425,6 +484,7 @@ export function AdminCrmPanel() {
         lead.packageName ?? lead.packageId ?? "",
         String(lead.amountRub ?? 0),
         String(lead.manualBumpyCoinsAwardedTotal ?? 0),
+        String(lead.bumpyCoinsWrittenOffTotal ?? 0),
         getOrderStage(lead.status).clientLabel,
         lead.paymentDetails ?? "",
         lead.managerNote ?? "",
@@ -438,7 +498,7 @@ export function AdminCrmPanel() {
   }
 
   function downloadExcel() {
-    const headers = ["№", "Дата", "Услуга", "Telegram", "Клиент", "Заявка", "Сумма", "Bumpy Coins", "Этап", "Оплата", "Заметка", "Комментарий"];
+    const headers = ["№", "Дата", "Услуга", "Telegram", "Клиент", "Заявка", "Сумма", "Bumpy Coins +", "Bumpy Coins -", "Этап", "Оплата", "Заметка", "Комментарий"];
     const rows = monthLeads.map((lead, index) => [
       index + 1,
       formatDate(lead.createdAt?.seconds),
@@ -448,6 +508,7 @@ export function AdminCrmPanel() {
       lead.packageName ?? lead.packageId ?? "",
       lead.amountRub ?? 0,
       lead.manualBumpyCoinsAwardedTotal ?? 0,
+      lead.bumpyCoinsWrittenOffTotal ?? 0,
       getOrderStage(lead.status).clientLabel,
       lead.paymentDetails ?? "",
       lead.managerNote ?? "",
@@ -654,17 +715,41 @@ export function AdminCrmPanel() {
                     />
                   </td>
                   <td className="border-b border-r border-white/10 p-3 align-top">
-                    <input
-                      value={draft.manualBumpyCoins}
-                      onChange={(event) => updateDraft(lead.id, { manualBumpyCoins: event.target.value })}
-                      className="w-32 rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic"
-                      placeholder="+ coins"
-                      inputMode="numeric"
-                    />
-                    <p className="mt-1 text-[11px] leading-4 text-zinc-500">разово клиенту</p>
+                    <div className="grid gap-2">
+                      {lead.requestedBumpyCoinsUse ? (
+                        <div className="rounded-md border border-relic/25 bg-relic/[0.08] px-2 py-1.5 text-[11px] leading-4 text-relic">
+                          Клиент просит применить бонусы. Доступно на момент заявки: {(lead.requestedBumpyCoinsAvailable ?? 0).toLocaleString("ru-RU")}
+                        </div>
+                      ) : null}
+                      <label className="block">
+                        <span className="mb-1 block text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-500">Начислить</span>
+                        <input
+                          value={draft.manualBumpyCoins}
+                          onChange={(event) => updateDraft(lead.id, { manualBumpyCoins: event.target.value })}
+                          className="w-32 rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic"
+                          placeholder="+ coins"
+                          inputMode="numeric"
+                        />
+                      </label>
+                      <label className="block">
+                        <span className="mb-1 block text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-500">Списать</span>
+                        <input
+                          value={draft.writeOffBumpyCoins}
+                          onChange={(event) => updateDraft(lead.id, { writeOffBumpyCoins: event.target.value })}
+                          className="w-32 rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic"
+                          placeholder="- coins"
+                          inputMode="numeric"
+                        />
+                      </label>
+                    </div>
                     {lead.manualBumpyCoinsAwardedTotal ? (
                       <p className="mt-1 text-[11px] font-semibold leading-4 text-relic">
                         уже +{lead.manualBumpyCoinsAwardedTotal.toLocaleString("ru-RU")}
+                      </p>
+                    ) : null}
+                    {lead.bumpyCoinsWrittenOffTotal ? (
+                      <p className="mt-1 text-[11px] font-semibold leading-4 text-sky-300">
+                        уже -{lead.bumpyCoinsWrittenOffTotal.toLocaleString("ru-RU")}
                       </p>
                     ) : null}
                   </td>

@@ -12,24 +12,26 @@ import { useLanguage } from "@/lib/i18n/use-language";
 const content = {
   ru: {
     title: "Донат RAID",
-    subtitle: "Выберите игровой набор и отправьте короткую заявку менеджеру.",
+    subtitle: "Напишите менеджеру, что нужно купить. Готовые наборы ниже работают как витрина и подсказки, но не ограничивают заказ.",
     coinsTitle: "Ваш баланс Bumpy Coins",
     coinsNote: "1 Bumpy Coin = 1 рубль скидки. Списать можно при отправке заявки.",
-    packsTitle: "Готовые наборы",
+    packsTitle: "Витрина готовых наборов",
+    packsHint: "Набор можно выбрать одним кликом, но можно отправить и нестандартный заказ: два набора, редкий оффер, скриншот из магазина или просьбу уточнить цену.",
     instructionTitle: "Как оформить",
-    instructionText: "Выберите набор, при желании приложите скриншот магазина и нажмите «Отправить заявку». После этого откроется страница заказа, где менеджер обновит статус, сумму и ответит в чате.",
+    instructionText: "Оставьте комментарий менеджеру, при необходимости приложите скриншот магазина и нажмите «Отправить заявку». После этого откроется страница заказа, где менеджер обновит этап, сумму, реквизиты и ответит в чате.",
     from: "от",
     rub: "₽",
     noOffers: "Наборы пока не добавлены. Админ может добавить их в разделе управления донатом."
   },
   en: {
     title: "RAID Donate",
-    subtitle: "Choose a game pack and send a short request to the manager.",
+    subtitle: "Message the manager with what you need. Ready packs below are a showcase and quick hints, not a required choice.",
     coinsTitle: "Your Bumpy Coins balance",
     coinsNote: "1 Bumpy Coin = 1 ruble discount. You can apply it when submitting the request.",
-    packsTitle: "Ready packs",
+    packsTitle: "Ready pack showcase",
+    packsHint: "You can pick a pack in one click, or send a custom request: two packs, a rare offer, a shop screenshot, or a price check.",
     instructionTitle: "How it works",
-    instructionText: "Choose a pack, optionally attach an in-game shop screenshot and press Send request. A dedicated order page opens where the manager updates status, amount and replies in chat.",
+    instructionText: "Leave a comment for the manager, optionally attach an in-game shop screenshot and press Send request. A dedicated order page opens where the manager updates stage, amount, payment details and replies in chat.",
     from: "from",
     rub: "RUB",
     noOffers: "No packs yet. An admin can add them in donation management."
@@ -52,12 +54,6 @@ export function DonatePageContent() {
       setSelectedPackageId(packageFromUrl);
     }
   }, []);
-
-  useEffect(() => {
-    if (!selectedPackageId && donationOffers[0]?.id) {
-      setSelectedPackageId(donationOffers[0].id);
-    }
-  }, [donationOffers, selectedPackageId]);
 
   return (
     <div className="space-y-5">
@@ -91,6 +87,7 @@ export function DonatePageContent() {
               <ShoppingBag size={18} className="text-relic" />
               <h2 className="font-[var(--font-display)] text-2xl font-light text-white">{t.packsTitle}</h2>
             </div>
+            <p className="mb-4 text-sm leading-6 text-zinc-400">{t.packsHint}</p>
 
             {donationOffers.length === 0 ? (
               <p className="rounded-xl border border-relic/20 bg-black/20 p-4 text-sm leading-6 text-zinc-400">{t.noOffers}</p>
@@ -104,7 +101,7 @@ export function DonatePageContent() {
                     <button
                       key={pack.id}
                       type="button"
-                      onClick={() => setSelectedPackageId(pack.id)}
+                      onClick={() => setSelectedPackageId((current) => (current === pack.id ? "" : pack.id))}
                       className={`group flex min-h-[74px] items-center gap-3 rounded-2xl border p-2.5 text-left transition hover:-translate-y-0.5 hover:border-relic/70 ${
                         selected ? "border-relic/80 bg-relic/[0.08] ring-1 ring-relic/35" : "border-relic/18 bg-black/18"
                       }`}
@@ -138,7 +135,7 @@ export function DonatePageContent() {
           </GlassPanel>
         </div>
 
-        <TopupLeadForm selectedPackageId={selectedPackageId} />
+        <TopupLeadForm selectedPackageId={selectedPackageId} onSelectedPackageIdChange={setSelectedPackageId} />
       </section>
     </div>
   );

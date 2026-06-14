@@ -427,7 +427,7 @@ export function ChatWindow() {
       return;
     }
 
-    const usersQuery = query(collection(db, collections.users), orderBy("displayName"), limit(120));
+    const usersQuery = query(collection(db, collections.users), orderBy("displayName"), limit(80));
     return onSnapshot(
       usersQuery,
       (snapshot) => {
@@ -443,7 +443,7 @@ export function ChatWindow() {
       return;
     }
 
-    const threadsQuery = query(collection(db, "directThreads"), where("participants", "array-contains", user.uid), limit(80));
+    const threadsQuery = query(collection(db, "directThreads"), where("participants", "array-contains", user.uid), limit(60));
     return onSnapshot(
       threadsQuery,
       (snapshot) => {
@@ -477,7 +477,7 @@ export function ChatWindow() {
       return;
     }
 
-    const groupsQuery = query(collection(db, collections.userGroups), limit(120));
+    const groupsQuery = query(collection(db, collections.userGroups), limit(80));
 
     return onSnapshot(
       groupsQuery,
@@ -542,12 +542,12 @@ export function ChatWindow() {
         : selectedUser && user
           ? collection(db, "directThreads", directThreadId(user.uid, selectedUser.uid), "messages")
           : collection(db, collections.chatRooms, "global", "messages");
-      const messagesQuery = query(messagesRef, orderBy("createdAt", "asc"), limit(80));
+      const messagesQuery = query(messagesRef, orderBy("createdAt", "desc"), limit(60));
 
       unsubscribe = onSnapshot(
         messagesQuery,
         (snapshot) => {
-          setMessages(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<ChatMessage, "id">) })));
+          setMessages(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<ChatMessage, "id">) })).reverse());
         },
         () => setMessages([])
       );

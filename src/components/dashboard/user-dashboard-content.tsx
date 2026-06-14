@@ -545,7 +545,7 @@ export function UserDashboardContent() {
             </div>
           </div>
           <p className="text-sm leading-6 text-zinc-400">
-            Приглашай игроков на портал. Когда приглашенный игрок оплачивает и менеджер переводит заявку в статус выполнена, тебе начисляется {Math.round(REFERRAL_REWARD_RATE * 100)}% от суммы заказа в Bumpy Coins. Скидка списывается по курсу 1 coin = 1 рубль, максимум {BUMPY_COINS_DISCOUNT_CAP.toLocaleString("ru-RU")} coins на одну заявку.
+            Приглашай игроков на портал. Когда приглашенный игрок оплачивает и менеджер переводит заявку в статус выполнена, тебе начисляется {Math.round(REFERRAL_REWARD_RATE * 100)}% от суммы заказа в Bumpy Coins. По заявке менеджер может вручную применить Coins как скидку по курсу 1 coin = 1 рубль, максимум {BUMPY_COINS_DISCOUNT_CAP.toLocaleString("ru-RU")} coins на одну заявку.
           </p>
           <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]">
             <div className="rounded-xl border border-relic/20 bg-black/25 p-4">
@@ -578,7 +578,7 @@ export function UserDashboardContent() {
             <div className="rounded-xl border border-relic/20 bg-relic/[0.08] p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Доступно</p>
               <p className="mt-2 text-3xl font-black text-relic">{bumpyBalance.toLocaleString("ru-RU")}</p>
-              <p className="mt-1 text-xs text-zinc-500">1 Bumpy Coin = 1 рубль скидки, до {BUMPY_COINS_DISCOUNT_CAP.toLocaleString("ru-RU")} за заявку</p>
+              <p className="mt-1 text-xs text-zinc-500">1 Bumpy Coin = 1 рубль скидки. Списание подтверждает менеджер, до {BUMPY_COINS_DISCOUNT_CAP.toLocaleString("ru-RU")} за заявку.</p>
             </div>
             <div className="rounded-xl border border-white/10 bg-black/22 p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Начислено всего</p>

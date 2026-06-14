@@ -17,7 +17,7 @@ type FirestoreMarketplaceAccount = MarketplaceAccount & {
 
 type AccountCategory = NonNullable<MarketplaceAccount["category"]>;
 
-const accountPageSize = 6;
+const accountPageSize = 9;
 const initialSectionPages: Record<AccountCategory, number> = {
   starter: 1,
   progressed: 1,
