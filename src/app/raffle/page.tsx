@@ -12,16 +12,49 @@ import { getNextRaffleInfo, getRaffleTimeLeft, RAFFLE_PRIZE, type RaffleInfo } f
 
 const CRY_LINES = ["Ай-ай-ай!", "Хнык...", "Не по пузику!", "Еще чуть-чуть...", "Мачеха терпит ради рубинов", "Уже почти участник!"];
 const REQUIRED_CLICKS = 100;
-const MACHEHA_WEBM_VIDEO_SRC = "/videos/raffle/macheha.webm";
-const MACHEHA_IOS_VIDEO_SRC = "/videos/raffle/macheha.mov";
 const MACHEHA_CRY_SOUND_SRC = "/sounds/macheha-cry.mp3";
+const HIT_VIDEO_KEYS = ["hit1", "hit2", "hit3"] as const;
 
-function getMachehaVideoSrc() {
-  const userAgent = navigator.userAgent;
-  const isIos = /iPad|iPhone|iPod/.test(userAgent);
-  const isSafari = /^((?!chrome|android|crios|fxios|edgios).)*safari/i.test(userAgent);
+type RaffleVideoKey = "idle" | (typeof HIT_VIDEO_KEYS)[number];
+type RaffleVideoSource = {
+  src: string;
+  type: string;
+};
 
-  return isIos || isSafari ? MACHEHA_IOS_VIDEO_SRC : MACHEHA_WEBM_VIDEO_SRC;
+const MACHEHA_VIDEOS: Record<RaffleVideoKey, RaffleVideoSource[]> = {
+  idle: [
+    { src: "/videos/raffle/macheha-idle.mp4", type: "video/mp4" },
+    { src: "/videos/raffle/macheha-idle.webm", type: "video/webm" },
+    { src: "/videos/raffle/macheha-idle.mov", type: "video/quicktime" },
+    { src: "/videos/raffle/macheha.webm", type: "video/webm" },
+    { src: "/videos/raffle/macheha.mov", type: "video/quicktime" }
+  ],
+  hit1: [
+    { src: "/videos/raffle/macheha-hit-1.mp4", type: "video/mp4" },
+    { src: "/videos/raffle/macheha-hit-1.webm", type: "video/webm" },
+    { src: "/videos/raffle/macheha-hit-1.mov", type: "video/quicktime" },
+    { src: "/videos/raffle/macheha.webm", type: "video/webm" },
+    { src: "/videos/raffle/macheha.mov", type: "video/quicktime" }
+  ],
+  hit2: [
+    { src: "/videos/raffle/macheha-hit-2.mp4", type: "video/mp4" },
+    { src: "/videos/raffle/macheha-hit-2.webm", type: "video/webm" },
+    { src: "/videos/raffle/macheha-hit-2.mov", type: "video/quicktime" },
+    { src: "/videos/raffle/macheha.webm", type: "video/webm" },
+    { src: "/videos/raffle/macheha.mov", type: "video/quicktime" }
+  ],
+  hit3: [
+    { src: "/videos/raffle/macheha-hit-3.mp4", type: "video/mp4" },
+    { src: "/videos/raffle/macheha-hit-3.webm", type: "video/webm" },
+    { src: "/videos/raffle/macheha-hit-3.mov", type: "video/quicktime" },
+    { src: "/videos/raffle/macheha.webm", type: "video/webm" },
+    { src: "/videos/raffle/macheha.mov", type: "video/quicktime" }
+  ]
+};
+
+function pickHitVideo(previous: RaffleVideoKey) {
+  const available = HIT_VIDEO_KEYS.filter((item) => item !== previous);
+  return available[Math.floor(Math.random() * available.length)] ?? HIT_VIDEO_KEYS[0];
 }
 
 export default function RafflePage() {
@@ -33,20 +66,58 @@ export default function RafflePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [cryIndex, setCryIndex] = useState(0);
-  const [videoSrc, setVideoSrc] = useState("");
+  const [activeVideo, setActiveVideo] = useState<RaffleVideoKey>("idle");
+  const [videoNonce, setVideoNonce] = useState(0);
+  const [videoSourceIndex, setVideoSourceIndex] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const shouldPlayReactionRef = useRef(false);
+  const lastHitVideoRef = useRef<RaffleVideoKey>("idle");
+  const activeVideoSources = MACHEHA_VIDEOS[activeVideo];
+  const activeVideoSource = activeVideoSources[videoSourceIndex] ?? activeVideoSources[0];
   const timeLeft = useMemo(() => (raffle && now ? getRaffleTimeLeft(raffle.date, now) : { days: 0, hours: 0, minutes: 0, seconds: 0 }), [now, raffle]);
   const progress = Math.min(100, Math.round((clicks / REQUIRED_CLICKS) * 100));
   const entryId = user && raffle ? `${user.uid}_${raffle.drawKey}` : "";
 
   useEffect(() => {
-    setVideoSrc(getMachehaVideoSrc());
     setRaffle(getNextRaffleInfo());
     setNow(new Date());
     const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+
+    if (!video) {
+      return;
+    }
+
+    if (activeVideo === "idle") {
+      video.muted = true;
+      void video.play().catch(() => undefined);
+      return;
+    }
+
+    if (!shouldPlayReactionRef.current) {
+      return;
+    }
+
+    video.pause();
+
+    try {
+      video.currentTime = 0;
+    } catch {
+      // Some mobile browsers reject seeking before metadata is ready.
+    }
+
+    void video
+      .play()
+      .then(() => {
+        shouldPlayReactionRef.current = false;
+      })
+      .catch(() => undefined);
+  }, [activeVideo, videoNonce, videoSourceIndex]);
 
   useEffect(() => {
     if (!user || !entryId) {
@@ -103,19 +174,12 @@ export default function RafflePage() {
       return;
     }
 
-    if (videoRef.current) {
-      const video = videoRef.current;
-
-      video.pause();
-
-      try {
-        video.currentTime = 0;
-      } catch {
-        // Some mobile browsers reject seeking before metadata is ready.
-      }
-
-      void video.play().catch(() => undefined);
-    }
+    const nextVideo = pickHitVideo(lastHitVideoRef.current);
+    lastHitVideoRef.current = nextVideo;
+    shouldPlayReactionRef.current = true;
+    setVideoSourceIndex(0);
+    setActiveVideo(nextVideo);
+    setVideoNonce((current) => current + 1);
 
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
@@ -174,37 +238,53 @@ export default function RafflePage() {
                 className="group relative block min-h-[520px] w-full overflow-hidden text-left"
                 aria-label="Потыкай мачеху в пузико"
               >
-                <span className="pointer-events-none absolute left-[44%] top-[48%] h-[74%] w-[72%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(3,4,7,0.04),rgba(3,4,7,0.42)_54%,rgba(3,4,7,0.84)_78%,transparent_88%)] blur-xl" />
-                <span className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_44%_52%,transparent_0_35%,rgba(3,4,7,0.28)_56%,rgba(3,4,7,0.68)_82%)]" />
-                {videoSrc ? (
-                  <video
-                    key={videoSrc}
-                    ref={videoRef}
-                    src={videoSrc}
-                    className="pointer-events-none absolute inset-y-0 left-[44%] z-[2] h-full w-[112%] max-w-none -translate-x-1/2 object-contain object-center drop-shadow-[0_28px_55px_rgba(0,0,0,0.72)] [mask-image:radial-gradient(ellipse_at_44%_52%,black_0_54%,rgba(0,0,0,0.72)_64%,transparent_82%)] [mask-repeat:no-repeat] [mask-size:100%_100%]"
-                    muted
-                    playsInline
-                    preload="auto"
-                    onEnded={(event) => {
-                      event.currentTarget.pause();
+                <span className="pointer-events-none absolute left-[42%] top-[49%] h-[74%] w-[74%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(3,4,7,0.02),rgba(3,4,7,0.22)_58%,rgba(3,4,7,0.5)_82%,transparent_92%)] blur-xl" />
+                <span className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_42%_52%,transparent_0_46%,rgba(3,4,7,0.18)_70%,rgba(3,4,7,0.46)_100%)]" />
+                <video
+                  key={`${activeVideo}-${videoNonce}-${videoSourceIndex}`}
+                  ref={videoRef}
+                  src={activeVideoSource?.src}
+                  className="raffle-character-video pointer-events-none absolute inset-y-0 left-[42%] z-[4] h-full w-[118%] -translate-x-1/2 object-contain object-center opacity-100"
+                  muted
+                  playsInline
+                  preload="auto"
+                  autoPlay={activeVideo === "idle"}
+                  loop={activeVideo === "idle"}
+                  onEnded={(event) => {
+                    if (activeVideo === "idle") {
+                      return;
+                    }
+
+                    event.currentTarget.pause();
+
+                    try {
                       event.currentTarget.currentTime = 0;
-                    }}
-                  />
-                ) : null}
+                    } catch {
+                      // Some mobile browsers reject seeking before metadata is ready.
+                    }
+
+                    setVideoSourceIndex(0);
+                    setActiveVideo("idle");
+                    setVideoNonce((current) => current + 1);
+                  }}
+                  onError={() => {
+                    setVideoSourceIndex((current) => (current + 1 < activeVideoSources.length ? current + 1 : current));
+                  }}
+                />
 
                 <button
                   type="button"
                   onClick={tapMacheha}
                   disabled={!user || entryExists || saving}
-                  className="absolute left-[45%] top-[38%] z-[4] h-[37%] w-[31%] -translate-x-1/2 rounded-full bg-transparent text-transparent outline-none disabled:cursor-default"
+                  className="absolute left-[44%] top-[38%] z-[8] h-[37%] w-[31%] -translate-x-1/2 rounded-full bg-transparent text-transparent outline-none disabled:cursor-default"
                   aria-label="РџРѕС‚С‹РєР°Р№ РјР°С‡РµС…Сѓ РІ РїСѓР·РёРєРѕ"
                 />
 
-                <span className="pointer-events-none absolute left-4 top-4 z-[5] grid min-w-20 place-items-center rounded-[14px] border border-relic/40 bg-black/58 px-3 py-2 font-[var(--font-cinzel)] text-lg font-black text-relic shadow-[0_0_28px_rgba(47,124,255,0.2)] backdrop-blur-sm">
+                <span className="pointer-events-none absolute left-4 top-4 z-[9] grid min-w-20 place-items-center rounded-[14px] border border-relic/40 bg-black/58 px-3 py-2 font-[var(--font-cinzel)] text-lg font-black text-relic shadow-[0_0_28px_rgba(47,124,255,0.2)] backdrop-blur-sm">
                   {clicks}/{REQUIRED_CLICKS}
                 </span>
 
-                <span className="pointer-events-none absolute bottom-5 left-5 right-5 z-[3] rounded-[20px] border border-relic/24 bg-black/68 p-4 backdrop-blur-sm">
+                <span className="pointer-events-none absolute bottom-5 left-5 right-5 z-[7] rounded-[20px] border border-relic/24 bg-black/68 p-4 backdrop-blur-sm">
                   <span className="flex items-center justify-between gap-3">
                     <span className="font-black text-white">{entryExists ? "Спасибо за участие в розыгрыше" : CRY_LINES[cryIndex]}</span>
                     <span className="text-sm font-bold text-relic">{progress}%</span>
