@@ -73,16 +73,32 @@ export function Navigation({ sections }: NavigationProps) {
     setMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, [open]);
+
   const mobileMenu = open ? (
     <div
-      className="fixed inset-0 bg-black/92 backdrop-blur-2xl lg:hidden"
+      className="fixed inset-0 overflow-hidden bg-black/92 backdrop-blur-2xl lg:hidden"
       role="dialog"
       aria-modal="true"
       style={{ zIndex: 2147483647 }}
     >
-      <div className="min-h-dvh w-[84vw] max-w-sm overflow-y-auto bg-[#02060b]/96 p-4 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-2xl backdrop-blur-2xl">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <RaidLogo compact imageClassName="!h-24 !max-w-none sm:!h-28" />
+      <div className="raid-mobile-menu-panel w-[86vw] max-w-sm bg-[#02060b]/96 p-3 shadow-2xl backdrop-blur-2xl sm:p-4">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <RaidLogo compact imageClassName="!h-20 !max-w-none sm:!h-24" />
           <button
             type="button"
             onClick={() => setOpen(false)}
@@ -93,18 +109,18 @@ export function Navigation({ sections }: NavigationProps) {
           </button>
         </div>
 
-        <div className="mb-4">
+        <div className="mb-3">
           <HomeSearch />
         </div>
 
-        <nav className="space-y-2">
+        <nav className="space-y-1.5">
           {sections.map((section) => {
             const Icon = iconMap[section.icon];
             return (
               <Link
                 key={section.href}
                 href={section.href}
-                className="raid-side-link flex h-14 items-center gap-4 border border-white/5 bg-black/55 px-4 text-sm font-semibold tracking-[0.04em] text-zinc-300 transition hover:border-relic/35 hover:text-relic"
+                className="raid-side-link flex h-12 items-center gap-3 border border-white/5 bg-black/55 px-3 text-sm font-semibold tracking-[0.03em] text-zinc-300 transition hover:border-relic/35 hover:text-relic sm:h-14 sm:gap-4 sm:px-4"
                 onClick={() => setOpen(false)}
               >
                 <Icon className="relative z-10 h-5 w-5 shrink-0" />
@@ -114,7 +130,7 @@ export function Navigation({ sections }: NavigationProps) {
           })}
           <Link
             href="/dashboard"
-            className="raid-side-link flex h-14 items-center gap-4 border border-relic/30 bg-relic/10 px-4 text-sm font-semibold tracking-[0.04em] text-relic"
+            className="raid-side-link flex h-12 items-center gap-3 border border-relic/30 bg-relic/10 px-3 text-sm font-semibold tracking-[0.03em] text-relic sm:h-14 sm:gap-4 sm:px-4"
             onClick={() => setOpen(false)}
           >
             <UserRound className="relative z-10 h-5 w-5 shrink-0" />
@@ -122,7 +138,7 @@ export function Navigation({ sections }: NavigationProps) {
           </Link>
         </nav>
 
-        <div className="mt-5 border-t border-white/10 pt-4">
+        <div className="mt-4 border-t border-white/10 pt-3">
           <p className="text-xs font-bold tracking-[0.08em] text-zinc-400">
             {language === "ru" ? "\u041f\u0440\u0438\u0441\u043e\u0435\u0434\u0438\u043d\u044f\u0439\u0441\u044f \u043a \u0441\u043e\u043e\u0431\u0449\u0435\u0441\u0442\u0432\u0443" : "Join the community"}
           </p>

@@ -1602,6 +1602,22 @@ b {
     radial-gradient(circle at 50% 0%, rgba(47, 124, 255, 0.12), transparent 34%);
 }
 
+.raid-mobile-menu-panel {
+  height: 100vh;
+  height: 100svh;
+  max-height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
+}
+
+@supports not (height: 100svh) {
+  .raid-mobile-menu-panel {
+    max-height: calc(100vh - env(safe-area-inset-bottom));
+  }
+}
+
 .raid-ornate-panel {
   position: relative;
   border-radius: 22px;
