@@ -33,10 +33,10 @@ function CommunityIcon({ icon, title, variant }: { icon: string; title: string; 
     <img
       src={icon}
       alt={title}
-      className={`z-10 max-w-none brightness-110 contrast-105 saturate-125 transition duration-200 group-hover:scale-110 group-hover:brightness-125 ${
+      className={`z-10 max-w-none rounded-[7px] brightness-110 contrast-105 saturate-125 transition duration-200 group-hover:scale-110 group-hover:brightness-125 ${
         variant === "mobile"
-          ? "h-6 w-6 object-contain opacity-100 drop-shadow-none"
-          : "h-6 w-6 object-contain opacity-95 drop-shadow-none"
+          ? "h-6 w-6 object-cover opacity-100 drop-shadow-none"
+          : "h-6 w-6 object-cover opacity-95 drop-shadow-none"
       }`}
     />
   );
@@ -70,7 +70,7 @@ export function HomeCommunityLinks({ variant = "desktop" }: HomeCommunityLinksPr
       {communityLinks.map((item) => {
         const href = links[item.key];
         const className =
-          `group relative z-20 min-h-0 overflow-hidden bg-transparent transition duration-200 hover:-translate-y-0.5 ${
+          `group relative z-20 min-h-0 overflow-hidden rounded-[9px] bg-transparent transition duration-200 hover:-translate-y-0.5 ${
             variant === "mobile"
               ? "grid h-8 w-8 place-items-center opacity-100 hover:scale-105"
               : "grid h-7 w-7 place-items-center opacity-95 hover:scale-105"
