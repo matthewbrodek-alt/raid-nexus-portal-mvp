@@ -230,21 +230,21 @@ export default function RafflePage() {
               </div>
             </div>
 
-            <div className="relative mt-7 overflow-hidden rounded-[28px] border border-relic/30 bg-[#030407] shadow-[0_28px_90px_rgba(0,0,0,0.55)]">
+            <div className="relative mx-auto mt-7 max-w-[760px] overflow-hidden rounded-[28px] border border-relic/30 bg-[#030407] shadow-[0_28px_90px_rgba(0,0,0,0.55)]">
               <div className="absolute inset-0 bg-[url('/images/raid-castle-bg.png')] bg-cover bg-center opacity-62" />
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_44%_54%,rgba(99,166,255,0.12),transparent_30%),linear-gradient(90deg,rgba(3,4,7,0.9),rgba(3,4,7,0.34),rgba(3,4,7,0.92))]" />
 
               <div
-                className="group relative block min-h-[520px] w-full overflow-hidden text-left"
+                className="group relative block aspect-[16/10] min-h-[420px] w-full overflow-hidden text-left sm:min-h-[500px]"
                 aria-label="Потыкай мачеху в пузико"
               >
-                <span className="pointer-events-none absolute left-1/2 top-[50%] h-[78%] w-[78%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(3,4,7,0.02),rgba(3,4,7,0.2)_58%,rgba(3,4,7,0.48)_82%,transparent_92%)] blur-xl" />
+                <span className="pointer-events-none absolute left-1/2 top-[50%] h-[88%] w-[88%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(3,4,7,0.02),rgba(3,4,7,0.18)_58%,rgba(3,4,7,0.42)_82%,transparent_92%)] blur-xl" />
                 <span className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_50%_52%,transparent_0_48%,rgba(3,4,7,0.16)_70%,rgba(3,4,7,0.44)_100%)]" />
                 <video
                   key={`${activeVideo}-${videoNonce}-${videoSourceIndex}`}
                   ref={videoRef}
                   src={activeVideoSource?.src}
-                  className="raffle-character-video pointer-events-none absolute left-1/2 top-[47%] z-[4] h-[116%] w-[128%] -translate-x-1/2 -translate-y-1/2 object-contain object-center opacity-100"
+                  className="raffle-character-video pointer-events-none absolute left-1/2 top-[54%] z-[4] h-[112%] w-[112%] -translate-x-1/2 -translate-y-1/2 object-cover object-center opacity-100"
                   muted
                   playsInline
                   preload="auto"
@@ -276,7 +276,7 @@ export default function RafflePage() {
                   type="button"
                   onClick={tapMacheha}
                   disabled={!user || entryExists || saving}
-                  className="absolute left-1/2 top-[36%] z-[8] h-[40%] w-[34%] -translate-x-1/2 rounded-full bg-transparent text-transparent outline-none disabled:cursor-default"
+                  className="absolute left-1/2 top-[28%] z-[8] h-[46%] w-[36%] -translate-x-1/2 rounded-full bg-transparent text-transparent outline-none disabled:cursor-default"
                   aria-label="РџРѕС‚С‹РєР°Р№ РјР°С‡РµС…Сѓ РІ РїСѓР·РёРєРѕ"
                 />
 
