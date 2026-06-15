@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { CheckCircle2, ChevronLeft, ShieldCheck, Sparkles } from "lucide-react";
+import { CheckCircle2, ChevronLeft } from "lucide-react";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { RaidLogo } from "@/components/brand/raid-logo";
 import { useAuth } from "@/components/auth/auth-provider";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
-import { getNextRaffleInfo, getRaffleTimeLeft, RAFFLE_PRIZE, type RaffleInfo } from "@/lib/raffle";
+import { getNextRaffleInfo, RAFFLE_PRIZE, type RaffleInfo } from "@/lib/raffle";
 
 const CRY_LINES = ["Ай-ай-ай!", "Хнык...", "Не по пузику!", "Еще чуть-чуть...", "Мачеха терпит ради рубинов", "Уже почти участник!"];
 const REQUIRED_CLICKS = 100;
@@ -60,7 +60,6 @@ function pickHitVideo(previous: RaffleVideoKey) {
 export default function RafflePage() {
   const { loading, profile, user } = useAuth();
   const [raffle, setRaffle] = useState<RaffleInfo | null>(null);
-  const [now, setNow] = useState<Date | null>(null);
   const [clicks, setClicks] = useState(0);
   const [entryExists, setEntryExists] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -75,15 +74,11 @@ export default function RafflePage() {
   const lastHitVideoRef = useRef<RaffleVideoKey>("idle");
   const activeVideoSources = MACHEHA_VIDEOS[activeVideo];
   const activeVideoSource = activeVideoSources[videoSourceIndex] ?? activeVideoSources[0];
-  const timeLeft = useMemo(() => (raffle && now ? getRaffleTimeLeft(raffle.date, now) : { days: 0, hours: 0, minutes: 0, seconds: 0 }), [now, raffle]);
   const progress = Math.min(100, Math.round((clicks / REQUIRED_CLICKS) * 100));
   const entryId = user && raffle ? `${user.uid}_${raffle.drawKey}` : "";
 
   useEffect(() => {
     setRaffle(getNextRaffleInfo());
-    setNow(new Date());
-    const timer = window.setInterval(() => setNow(new Date()), 1000);
-    return () => window.clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -214,77 +209,32 @@ export default function RafflePage() {
 
         <section className="mt-6 flex flex-1 justify-center">
           <div className="raid-ornate-panel w-full max-w-4xl overflow-hidden p-5 sm:p-7">
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
-              <div>
-                <p className="text-xs font-bold tracking-[0.24em] text-relic">Розыгрыш месяца</p>
-                <h1 className="raid-title-metal mt-3 max-w-2xl text-3xl font-black leading-tight sm:text-5xl">
-                  5 паков рубинов
-                </h1>
-                <p className="mt-4 max-w-2xl text-base leading-7 text-zinc-300">
-                  Каждый месяц разыгрываем 5 паков рубинов. Один аккаунт дает одно участие в ближайшем розыгрыше: нажми на персонажа 100 раз, и заявка запишется автоматически.
-                </p>
-              </div>
+            <p className="text-xs font-bold tracking-[0.24em] text-relic">Ruby giveaway</p>
+            <h1 className="mt-3 max-w-3xl text-4xl font-black leading-[1.05] text-white sm:text-6xl">
+              Потыкай мачехе в пузико 100 раз
+            </h1>
+            <p className="mt-5 max-w-3xl text-base font-semibold leading-7 text-zinc-300">
+              После сотого клика аккаунт попадает в список участников ближайшего розыгрыша. Участвовать могут только зарегистрированные игроки.
+            </p>
 
-              <div className="rounded-[22px] border border-relic/24 bg-black/28 p-4">
-                <p className="text-xs font-bold tracking-[0.2em] text-relic">До розыгрыша</p>
-                <div className="mt-3 grid grid-cols-4 gap-2 lg:grid-cols-2">
-                  {[
-                    [timeLeft.days, "дн"],
-                    [timeLeft.hours, "ч"],
-                    [timeLeft.minutes, "м"],
-                    [timeLeft.seconds, "с"]
-                  ].map(([value, label]) => (
-                    <div key={label} className="rounded-[14px] border border-white/10 bg-black/30 px-2 py-3 text-center">
-                      <p className="text-xl font-black text-white">{String(value).padStart(2, "0")}</p>
-                      <p className="mt-0.5 text-[10px] font-bold text-zinc-500">{label}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-[18px] border border-relic/20 bg-black/24 px-4 py-3">
-                <p className="text-xs font-bold text-zinc-500">Приз</p>
-                <p className="mt-1 font-black text-relic">{RAFFLE_PRIZE}</p>
-              </div>
-              <div className="rounded-[18px] border border-relic/20 bg-black/24 px-4 py-3">
-                <p className="text-xs font-bold text-zinc-500">Условие</p>
-                <p className="mt-1 font-black text-white">{REQUIRED_CLICKS} кликов</p>
-              </div>
-              <div className="rounded-[18px] border border-relic/20 bg-black/24 px-4 py-3">
-                <p className="text-xs font-bold text-zinc-500">Статус</p>
-                {loading ? (
-                  <p className="mt-1 font-black text-zinc-300">Проверяем...</p>
-                ) : user ? (
-                  <p className="mt-1 inline-flex items-center gap-2 font-black text-white">
-                    <ShieldCheck className="text-relic" size={16} />
-                    {entryExists ? "Участвуешь" : "Можно участвовать"}
-                  </p>
-                ) : (
-                  <Link href="/login" className="mt-1 inline-flex items-center gap-2 font-black text-relic">
-                    <Sparkles size={16} />
-                    Войти
-                  </Link>
-                )}
-              </div>
+            <div className="mt-5 inline-flex min-w-[178px] flex-col rounded-[18px] border border-white/80 bg-black/18 px-5 py-3">
+              <span className="text-center text-[11px] font-bold tracking-[0.28em] text-zinc-500">Приз</span>
+              <span className="mt-1 text-lg font-black text-relic">{RAFFLE_PRIZE}</span>
             </div>
 
             <div className="relative mx-auto mt-7 max-w-[760px] overflow-hidden rounded-[28px] border border-relic/30 bg-[#030407] shadow-[0_28px_90px_rgba(0,0,0,0.55)]">
-              <div className="absolute inset-0 bg-[url('/images/raid-castle-bg.png')] bg-cover bg-center opacity-62" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_44%_54%,rgba(99,166,255,0.12),transparent_30%),linear-gradient(90deg,rgba(3,4,7,0.9),rgba(3,4,7,0.34),rgba(3,4,7,0.92))]" />
+              <div className="absolute inset-0 bg-[#02050a]" />
 
               <div
-                className="group relative block aspect-video w-full overflow-hidden text-left"
+                className="group relative block aspect-[4/5] min-h-[560px] w-full overflow-hidden text-left sm:min-h-[640px]"
                 aria-label="Потыкай мачеху в пузико"
               >
-                <span className="pointer-events-none absolute left-1/2 top-1/2 h-[96%] w-[96%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(3,4,7,0.02),rgba(3,4,7,0.16)_58%,rgba(3,4,7,0.36)_84%,transparent_94%)] blur-xl" />
-                <span className="pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_50%_52%,transparent_0_48%,rgba(3,4,7,0.16)_70%,rgba(3,4,7,0.44)_100%)]" />
+                <span className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(90deg,rgba(2,5,10,0.82),transparent_18%,transparent_82%,rgba(2,5,10,0.82))]" />
                 <video
                   key={`${activeVideo}-${videoNonce}-${videoSourceIndex}`}
                   ref={videoRef}
                   src={activeVideoSource?.src}
-                  className="raffle-character-video pointer-events-none absolute left-1/2 top-1/2 z-[4] h-[112%] w-[112%] -translate-x-1/2 -translate-y-1/2 object-cover object-center opacity-100"
+                  className="raffle-character-video pointer-events-none absolute left-1/2 top-1/2 z-[4] h-full w-full -translate-x-1/2 -translate-y-1/2 object-contain object-center opacity-100"
                   muted
                   playsInline
                   preload="auto"
