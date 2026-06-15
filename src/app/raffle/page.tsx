@@ -203,7 +203,7 @@ export default function RafflePage() {
           <RaidLogo compact />
           <Link href="/" className="raid-glow-button inline-flex items-center gap-2 border border-relic/35 bg-black/35 px-4 py-3 text-xs font-black uppercase tracking-[0.16em] text-relic">
             <ChevronLeft size={16} />
-            На главную
+            На главнyю
           </Link>
         </header>
 
