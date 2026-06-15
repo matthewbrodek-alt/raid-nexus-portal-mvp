@@ -234,7 +234,7 @@ export default function RafflePage() {
                   key={`${activeVideo}-${videoNonce}-${videoSourceIndex}`}
                   ref={videoRef}
                   src={activeVideoSource?.src}
-                  className="raffle-character-video pointer-events-none absolute left-1/2 top-1/2 z-[4] h-full w-full -translate-x-1/2 -translate-y-1/2 object-contain object-center opacity-100"
+                  className="raffle-character-video pointer-events-none absolute left-1/2 top-[30%] z-[4] h-full w-full -translate-x-1/2 -translate-y-1/2 object-contain object-center opacity-100"
                   muted
                   playsInline
                   preload="auto"
