@@ -50,7 +50,7 @@ export function LoginForm() {
   }
 
   return (
-    <GlassPanel className="p-6">
+    <GlassPanel className="w-full p-5 sm:p-6">
       <form onSubmit={handleSubmit} className="space-y-4">
         <label className="space-y-2">
           <span className="text-sm text-zinc-300">Email</span>

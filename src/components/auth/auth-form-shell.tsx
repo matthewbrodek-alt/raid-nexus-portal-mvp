@@ -8,24 +8,21 @@ type AuthFormShellProps = {
 
 export function AuthFormShell({ children, mode }: AuthFormShellProps) {
   return (
-    <main className="min-h-screen bg-raid-radial px-4 py-10 text-pale">
-      <div className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-6xl items-center gap-8 lg:grid-cols-[0.85fr_1fr]">
-        <section>
-          <Link href="/" className="inline-flex items-center gap-3">
-            <RaidLogo compact imageClassName="!h-[280px] !max-w-none sm:!h-[320px]" />
+    <main className="min-h-dvh overflow-x-hidden bg-raid-radial px-4 py-6 text-pale sm:py-8">
+      <div className="mx-auto grid min-h-[calc(100dvh-3rem)] w-full max-w-6xl items-center gap-6 lg:grid-cols-[0.78fr_minmax(0,1fr)]">
+        <section className="min-w-0 text-center lg:text-left">
+          <Link href="/" className="inline-flex max-w-full items-center justify-center">
+            <RaidLogo compact imageClassName="!h-[140px] !max-w-full sm:!h-[160px]" />
           </Link>
-          <p className="mt-8 text-xs uppercase tracking-[0.28em] text-relic">
+          <p className="mt-4 text-xs font-bold tracking-[0.22em] text-relic">
             {mode === "login" ? "Возвращение в цитадель" : "Регистрация игрока"}
           </p>
-          <h1 className="mt-4 text-4xl font-black tracking-tight text-white md:text-5xl">
+          <h1 className="mx-auto mt-3 max-w-xl text-3xl font-black leading-tight tracking-tight text-white sm:text-4xl md:text-5xl lg:mx-0">
             {mode === "login" ? "Вход в личный кабинет" : "Создание аккаунта портала"}
           </h1>
-          <p className="mt-5 max-w-xl text-sm leading-7 text-zinc-400">
-            Один вход открывает личный кабинет, историю заявок, чат, будущие форумные треды и админ-панель для
-            пользователей с повышенной ролью.
-          </p>
         </section>
-        {children}
+
+        <div className="min-w-0 w-full max-w-xl justify-self-center lg:max-w-2xl">{children}</div>
       </div>
     </main>
   );
