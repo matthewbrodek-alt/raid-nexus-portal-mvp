@@ -226,7 +226,7 @@ export default function RafflePage() {
               <div className="absolute inset-0 bg-[#02050a]" />
 
               <div
-                className="group relative block aspect-[4/5] w-full overflow-hidden text-left"
+                className="group relative block aspect-square w-full overflow-hidden text-left"
                 aria-label="Потыкай мачеху в пузико"
               >
                 <span className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(90deg,rgba(2,5,10,0.82),transparent_18%,transparent_82%,rgba(2,5,10,0.82))]" />
@@ -234,7 +234,7 @@ export default function RafflePage() {
                   key={`${activeVideo}-${videoNonce}-${videoSourceIndex}`}
                   ref={videoRef}
                   src={activeVideoSource?.src}
-                  className="raffle-character-video pointer-events-none absolute left-1/2 top-[6%] z-[4] h-full w-full -translate-x-1/2 -translate-y-1/2 object-contain object-center opacity-100"
+                  className="raffle-character-video pointer-events-none absolute left-0 top-0 z-[4] h-full w-full object-cover object-top opacity-100"
                   muted
                   playsInline
                   preload="auto"
