@@ -226,7 +226,7 @@ export default function RafflePage() {
               <div className="absolute inset-0 bg-[#02050a]" />
 
               <div
-                className="group relative block aspect-[4/5] min-h-[560px] w-full overflow-hidden text-left sm:min-h-[640px]"
+                className="group relative block aspect-[4/5] min-h-[500px] w-full overflow-hidden text-left sm:min-h-[580px]"
                 aria-label="Потыкай мачеху в пузико"
               >
                 <span className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(90deg,rgba(2,5,10,0.82),transparent_18%,transparent_82%,rgba(2,5,10,0.82))]" />
