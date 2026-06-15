@@ -8,7 +8,6 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import {
-  markNotificationSeen,
   notificationSeenStateEvent,
   notificationSeenStorageKey,
   readNotificationSeenState,
@@ -202,22 +201,9 @@ export function HomeUnreadBell({ label }: { label: string }) {
   const notificationCount = unreadCount + topupNotificationCount + hotOfferCount;
   const hasActiveSignal = notificationCount > 0;
 
-  function markVisibleOffersSeen() {
-    if (!user?.uid) {
-      return;
-    }
-
-    for (const offer of hotOffers) {
-      markNotificationSeen(user.uid, "offerById", offer.id, getSeconds(offer.updatedAt) || getSeconds(offer.createdAt) || 1);
-    }
-
-    setSeenState(readNotificationSeenState(user.uid));
-  }
-
   return (
     <Link
       href="/notifications"
-      onClick={markVisibleOffersSeen}
       className="group relative grid h-12 w-12 place-items-center overflow-visible rounded-2xl border border-relic/35 bg-[linear-gradient(145deg,rgba(9,14,22,0.96),rgba(24,17,9,0.88))] text-relic shadow-[inset_0_0_18px_rgba(99,166,255,0.08),0_0_24px_rgba(47,124,255,0.13)] transition duration-200 hover:-translate-y-0.5 hover:border-[#63a6ff] hover:text-[#b8d7ff] hover:shadow-[inset_0_0_22px_rgba(99,166,255,0.14),0_0_34px_rgba(47,124,255,0.28)]"
       aria-label={label}
     >

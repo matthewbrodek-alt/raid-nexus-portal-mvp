@@ -2,7 +2,7 @@
 
 import { Bell, MessageCircle, ShoppingBag, X } from "lucide-react";
 import { collection, limit, onSnapshot, orderBy, query, where } from "firebase/firestore";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { db } from "@/lib/firebase/client";
@@ -12,7 +12,6 @@ import {
   notificationSeenStateEvent,
   notificationSeenStorageKey,
   readNotificationSeenState,
-  writeNotificationSeenState,
   type NotificationSeenState
 } from "@/lib/notifications/seen-state";
 
@@ -62,7 +61,6 @@ function isActiveOrderNotification(status?: string) {
 export function SiteNotificationToast() {
   const { profile, user } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
   const [threads, setThreads] = useState<DirectThread[]>([]);
   const [topupLeads, setTopupLeads] = useState<TopupLead[]>([]);
   const [seenState, setSeenState] = useState<NotificationSeenState>({});
@@ -142,31 +140,6 @@ export function SiteNotificationToast() {
       () => setTopupLeads([])
     );
   }, [isAdmin, userUid]);
-
-  useEffect(() => {
-    if (!userUid || !pathname?.startsWith("/chat")) {
-      return;
-    }
-
-    const uid = userUid;
-    const nextThreadById = { ...(seenState.threadById ?? {}) };
-    let changed = false;
-
-    for (const thread of threads) {
-      const seconds = getSeconds(thread.lastMessageAt);
-
-      if (seconds && (nextThreadById[thread.id] ?? 0) < seconds) {
-        nextThreadById[thread.id] = seconds;
-        changed = true;
-      }
-    }
-
-    if (changed) {
-      const next = { ...seenState, threadById: nextThreadById };
-      setSeenState(next);
-      writeNotificationSeenState(uid, next);
-    }
-  }, [pathname, seenState, threads, userUid]);
 
   const toast = useMemo<Toast | null>(() => {
     if (!userUid) {
