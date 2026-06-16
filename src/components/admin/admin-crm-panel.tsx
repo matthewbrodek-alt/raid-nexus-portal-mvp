@@ -210,8 +210,11 @@ async function creditReferralReward(lead: TopupLead, amountRub: number) {
 
   const rewardRef = doc(db, collections.referralRewards, lead.id);
   const existingReward = await getDoc(rewardRef);
+  const existingRewardData = existingReward.exists() ? (existingReward.data() as { amountRub?: number }) : null;
+  const alreadyRewardedRub = Math.max(0, existingRewardData?.amountRub ?? 0);
+  const rewardableRub = Math.max(0, amountRub - alreadyRewardedRub);
 
-  if (existingReward.exists()) {
+  if (rewardableRub <= 0) {
     return 0;
   }
 
@@ -222,24 +225,29 @@ async function creditReferralReward(lead: TopupLead, amountRub: number) {
     return 0;
   }
 
-  const rewardCoins = calculateReferralReward(amountRub);
+  const rewardCoins = calculateReferralReward(rewardableRub);
 
   if (rewardCoins <= 0) {
     return 0;
   }
 
-  await setDoc(rewardRef, {
+  await setDoc(
+    rewardRef,
+    {
     amountRub,
-    createdAt: serverTimestamp(),
+    ...(existingReward.exists() ? {} : { createdAt: serverTimestamp() }),
     leadId: lead.id,
     ownerUid: referralUser.referredByUid,
     packageName: lead.packageName ?? lead.packageId ?? "",
     referralUid: lead.uid,
-    rewardCoins,
-    serviceType: lead.serviceType ?? "donation"
-  });
+    rewardCoins: increment(rewardCoins),
+    serviceType: lead.serviceType ?? "donation",
+    updatedAt: serverTimestamp()
+    },
+    { merge: true }
+  );
 
-  await setDoc(doc(db, collections.bonusTransactions, `ref-${lead.id}`), {
+  await setDoc(doc(db, collections.bonusTransactions, `ref-${lead.id}-${Date.now()}`), {
     amountCoins: rewardCoins,
     createdAt: serverTimestamp(),
     description: `Referral reward: ${lead.packageName ?? lead.packageId ?? lead.id}`,
@@ -350,6 +358,7 @@ export function AdminCrmPanel() {
   const [manualNote, setManualNote] = useState("");
   const [statusText, setStatusText] = useState("");
   const [editingLeadId, setEditingLeadId] = useState("");
+  const [savingLeadId, setSavingLeadId] = useState("");
 
   useEffect(() => {
     const leadsQuery = query(collection(db, collections.topupLeads), orderBy("createdAt", "desc"), limit(240));
@@ -418,6 +427,10 @@ export function AdminCrmPanel() {
   }
 
   async function saveLead(lead: TopupLead) {
+    if (savingLeadId === lead.id) {
+      return;
+    }
+
     const draft = drafts[lead.id] ?? draftFromLead(lead);
     const amountRub = Number(draft.amountRub.replace(/[^\d.]/g, ""));
     const safeAmountRub = Number.isFinite(amountRub) ? amountRub : 0;
@@ -425,39 +438,51 @@ export function AdminCrmPanel() {
     const safeManualCoins = Number.isFinite(manualCoins) ? manualCoins : 0;
     const writeOffCoins = Number((draft.writeOffBumpyCoins ?? "").replace(/[^\d.]/g, ""));
     const safeWriteOffCoins = Number.isFinite(writeOffCoins) ? writeOffCoins : 0;
+    const hasLinkedClient = Boolean(lead.uid);
 
-    await updateDoc(doc(db, collections.topupLeads, lead.id), {
-      amountRub: safeAmountRub,
-      status: draft.status,
-      paymentDetails: draft.paymentDetails.trim(),
-      managerNote: draft.managerNote.trim(),
-      processedBy: profile?.uid ?? "",
-      updatedAt: serverTimestamp()
-    });
-
-    await updateCustomerBpTotal(lead, safeAmountRub, draft.status);
-    const rewardCoins = isCompletedOrder(draft.status) ? await creditReferralReward(lead, safeAmountRub) : 0;
-    const manualAwardedCoins = await creditManualBumpyCoins(lead, safeManualCoins, profile?.uid);
-    const writtenOffCoins = await writeOffBumpyCoins(lead, safeWriteOffCoins, profile?.uid);
-
-    updateDraft(lead.id, { manualBumpyCoins: "", writeOffBumpyCoins: "" });
-    setEditingLeadId("");
-
-    const statusParts = ["Заявка обновлена."];
-
-    if (manualAwardedCoins > 0) {
-      statusParts.push(`Начислено клиенту: ${manualAwardedCoins} Bumpy Coins.`);
+    if (!hasLinkedClient && (safeManualCoins > 0 || safeWriteOffCoins > 0)) {
+      setStatusText("Bumpy Coins нельзя начислить или списать: ручная заявка не связана с аккаунтом на сайте.");
+      return;
     }
 
-    if (writtenOffCoins > 0) {
-      statusParts.push(`Списано с клиента: ${writtenOffCoins} Bumpy Coins.`);
-    }
+    setSavingLeadId(lead.id);
 
-    if (rewardCoins > 0) {
-      statusParts.push(`Реферальный бонус: ${rewardCoins} Bumpy Coins.`);
-    }
+    try {
+      await updateDoc(doc(db, collections.topupLeads, lead.id), {
+        amountRub: safeAmountRub,
+        status: draft.status,
+        paymentDetails: draft.paymentDetails.trim(),
+        managerNote: draft.managerNote.trim(),
+        processedBy: profile?.uid ?? "",
+        updatedAt: serverTimestamp()
+      });
 
-    setStatusText(statusParts.join(" "));
+      await updateCustomerBpTotal(lead, safeAmountRub, draft.status);
+      const rewardCoins = isCompletedOrder(draft.status) ? await creditReferralReward(lead, safeAmountRub) : 0;
+      const manualAwardedCoins = await creditManualBumpyCoins(lead, safeManualCoins, profile?.uid);
+      const writtenOffCoins = await writeOffBumpyCoins(lead, safeWriteOffCoins, profile?.uid);
+
+      updateDraft(lead.id, { manualBumpyCoins: "", writeOffBumpyCoins: "" });
+      setEditingLeadId("");
+
+      const statusParts = ["Заявка обновлена."];
+
+      if (manualAwardedCoins > 0) {
+        statusParts.push(`Начислено клиенту: ${manualAwardedCoins} Bumpy Coins.`);
+      }
+
+      if (writtenOffCoins > 0) {
+        statusParts.push(`Списано с клиента: ${writtenOffCoins} Bumpy Coins.`);
+      }
+
+      if (rewardCoins > 0) {
+        statusParts.push(`Реферальный бонус: ${rewardCoins} Bumpy Coins.`);
+      }
+
+      setStatusText(statusParts.join(" "));
+    } finally {
+      setSavingLeadId("");
+    }
   }
 
   async function createManualLead(event: React.FormEvent<HTMLFormElement>) {
@@ -559,6 +584,8 @@ export function AdminCrmPanel() {
 
   function renderLeadEditor(lead: TopupLead) {
     const draft = drafts[lead.id] ?? draftFromLead(lead);
+    const hasLinkedClient = Boolean(lead.uid);
+    const saving = savingLeadId === lead.id;
 
     return (
       <div className="rounded-2xl border border-relic/20 bg-[#07101d]/92 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
@@ -592,7 +619,8 @@ export function AdminCrmPanel() {
             <input
               value={draft.manualBumpyCoins}
               onChange={(event) => updateDraft(lead.id, { manualBumpyCoins: event.target.value })}
-              className="mt-2 w-full rounded-xl border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+              disabled={!hasLinkedClient}
+              className="mt-2 w-full rounded-xl border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic disabled:cursor-not-allowed disabled:opacity-45"
               placeholder="+ coins"
               inputMode="numeric"
             />
@@ -602,7 +630,8 @@ export function AdminCrmPanel() {
             <input
               value={draft.writeOffBumpyCoins}
               onChange={(event) => updateDraft(lead.id, { writeOffBumpyCoins: event.target.value })}
-              className="mt-2 w-full rounded-xl border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+              disabled={!hasLinkedClient}
+              className="mt-2 w-full rounded-xl border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic disabled:cursor-not-allowed disabled:opacity-45"
               placeholder="- coins"
               inputMode="numeric"
             />
@@ -629,15 +658,26 @@ export function AdminCrmPanel() {
           </label>
         </div>
 
+        {!hasLinkedClient ? (
+          <p className="mt-3 rounded-xl border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-xs font-semibold leading-5 text-amber-100">
+            Ручная заявка хранит имя только для таблицы. Чат, списание и начисление Bumpy Coins доступны только у заявок, созданных аккаунтом на сайте.
+          </p>
+        ) : null}
+
         <div className="mt-4 flex flex-wrap gap-2">
-          <button type="button" onClick={() => void saveLead(lead)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-relic px-4 py-2.5 font-black text-black">
+          <button
+            type="button"
+            onClick={() => void saveLead(lead)}
+            disabled={saving}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-relic px-4 py-2.5 font-black text-black transition disabled:cursor-wait disabled:opacity-60"
+          >
             <CheckCircle2 size={16} />
-            Сохранить
+            {saving ? "Сохраняю..." : "Сохранить"}
           </button>
           <button type="button" onClick={() => setEditingLeadId("")} className="rounded-xl border border-white/10 bg-black/25 px-4 py-2.5 font-bold text-zinc-300 transition hover:border-relic/30 hover:text-relic">
             Закрыть
           </button>
-          {lead.uid ? (
+          {hasLinkedClient ? (
             <button
               type="button"
               onClick={() => router.push(`/orders/${lead.id}`)}
@@ -792,6 +832,7 @@ export function AdminCrmPanel() {
                 const stage = getOrderStage(draft.status);
                 const completed = isCompletedOrder(draft.status);
                 const editing = editingLeadId === lead.id;
+                const hasLinkedClient = Boolean(lead.uid);
 
                 return (
                   <Fragment key={lead.id}>
@@ -799,10 +840,14 @@ export function AdminCrmPanel() {
                       <td className="border-b border-white/10 p-3 text-center align-middle font-semibold text-zinc-500">{index + 1}</td>
                       <td className="whitespace-nowrap border-b border-white/10 p-3 align-middle text-zinc-400">{formatDate(lead.createdAt?.seconds)}</td>
                       <td className="border-b border-white/10 p-3 align-middle">
-                        <button type="button" onClick={() => router.push(`/orders/${lead.id}`)} className="block max-w-full truncate text-left font-black text-white transition hover:text-relic">
+                        <button
+                          type="button"
+                          onClick={() => (hasLinkedClient ? router.push(`/orders/${lead.id}`) : setEditingLeadId(lead.id))}
+                          className="block max-w-full truncate text-left font-black text-white transition hover:text-relic"
+                        >
                           {clientDisplayName(lead)}
                         </button>
-                        <p className="mt-0.5 text-xs text-zinc-500">{lead.uid ? "аккаунт на сайте" : "ручная заявка"}</p>
+                        <p className="mt-0.5 text-xs text-zinc-500">{hasLinkedClient ? "аккаунт на сайте" : "ручная заявка без чата"}</p>
                       </td>
                       <td className="whitespace-nowrap border-b border-white/10 p-3 align-middle font-semibold text-zinc-300">{serviceLabel(lead.serviceType)}</td>
                       <td className="border-b border-white/10 p-3 align-middle">
@@ -827,10 +872,11 @@ export function AdminCrmPanel() {
                           <button
                             type="button"
                             onClick={() => router.push(`/orders/${lead.id}`)}
-                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-relic/30 bg-relic/10 px-3 py-2 text-xs font-bold text-relic"
+                            disabled={!hasLinkedClient}
+                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-relic/30 bg-relic/10 px-3 py-2 text-xs font-bold text-relic transition disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/[0.03] disabled:text-zinc-600"
                           >
                             <MessageSquare size={14} />
-                            Детали
+                            {hasLinkedClient ? "Детали" : "Без чата"}
                           </button>
                         </div>
                       </td>
@@ -855,16 +901,21 @@ export function AdminCrmPanel() {
             const stage = getOrderStage(draft.status);
             const completed = isCompletedOrder(draft.status);
             const editing = editingLeadId === lead.id;
+            const hasLinkedClient = Boolean(lead.uid);
 
             return (
               <article key={lead.id} className={`${completed ? "border-emerald-400/25 bg-emerald-400/[0.05]" : "border-white/10 bg-black/22"} rounded-xl border p-3`}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-xs font-bold text-zinc-500">№ {index + 1} · {formatDate(lead.createdAt?.seconds)}</p>
-                    <button type="button" onClick={() => router.push(`/orders/${lead.id}`)} className="mt-0.5 max-w-full text-left text-base font-black text-white transition hover:text-relic">
+                    <button
+                      type="button"
+                      onClick={() => (hasLinkedClient ? router.push(`/orders/${lead.id}`) : setEditingLeadId(lead.id))}
+                      className="mt-0.5 max-w-full text-left text-base font-black text-white transition hover:text-relic"
+                    >
                       {clientDisplayName(lead)}
                     </button>
-                    <p className="mt-0.5 text-xs font-semibold text-zinc-400">{serviceLabel(lead.serviceType)}</p>
+                    <p className="mt-0.5 text-xs font-semibold text-zinc-400">{serviceLabel(lead.serviceType)} · {hasLinkedClient ? "аккаунт" : "без чата"}</p>
                   </div>
                   <span className={`${completed ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200" : "border-relic/25 bg-relic/[0.08] text-relic"} shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-bold`}>
                     {draft.status === "completed" ? "Выполнено" : stage.clientLabel}
@@ -883,10 +934,11 @@ export function AdminCrmPanel() {
                   <button
                     type="button"
                     onClick={() => router.push(`/orders/${lead.id}`)}
-                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-relic/30 bg-relic/10 px-3 py-2 text-xs font-bold text-relic"
+                    disabled={!hasLinkedClient}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-relic/30 bg-relic/10 px-3 py-2 text-xs font-bold text-relic transition disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/[0.03] disabled:text-zinc-600"
                   >
                     <MessageSquare size={15} />
-                    Детали
+                    {hasLinkedClient ? "Детали" : "Без чата"}
                   </button>
                   <button
                     type="button"

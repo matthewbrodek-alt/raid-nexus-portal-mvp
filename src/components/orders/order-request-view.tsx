@@ -301,6 +301,7 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
   const savingOrderRef = useRef(false);
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const canManageOrder = profile?.role === "admin" || profile?.role === "owner";
+  const hasLinkedClient = Boolean(lead?.uid);
   const activeStage = normalizeOrderStage(lead?.status);
   const activeLabel = stageCopy[activeStage][isRu ? "ru" : "en"];
   const canSend = Boolean(user?.uid && profile && (lead?.threadId || (canManageOrder && lead?.uid)) && (message.trim() || attachmentFile)) && !sending;
@@ -494,6 +495,15 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
       const safeCreditCoins = Number.isFinite(creditCoins) ? creditCoins : 0;
       const nextStatus = statusOverride ?? managerDraft.status;
       const currentStatus = normalizeOrderStage(lead.status);
+
+      if (!lead.uid && (safeWriteOffCoins > 0 || safeCreditCoins > 0)) {
+        setManagerStatus(
+          isRu
+            ? "Bumpy Coins нельзя начислить или списать: заявка не связана с аккаунтом на сайте."
+            : "Bumpy Coins cannot be credited or written off: this request is not linked to a site account."
+        );
+        return;
+      }
 
       await updateDoc(doc(db, collections.topupLeads, lead.id), {
         amountRub: safeAmountRub,
@@ -751,7 +761,8 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
                   <input
                     value={managerDraft.writeOffBumpyCoins}
                     onChange={(event) => setManagerDraft((current) => ({ ...current, writeOffBumpyCoins: event.target.value }))}
-                    className="mt-2 w-full rounded-xl border-white/10 bg-black/35 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+                    disabled={!hasLinkedClient}
+                    className="mt-2 w-full rounded-xl border-white/10 bg-black/35 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic disabled:cursor-not-allowed disabled:opacity-45"
                     placeholder={isRu ? `до ${clientCoinsBalance}` : `up to ${clientCoinsBalance}`}
                     inputMode="numeric"
                   />
@@ -761,7 +772,8 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
                   <input
                     value={managerDraft.creditBumpyCoins}
                     onChange={(event) => setManagerDraft((current) => ({ ...current, creditBumpyCoins: event.target.value }))}
-                    className="mt-2 w-full rounded-xl border-white/10 bg-black/35 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+                    disabled={!hasLinkedClient}
+                    className="mt-2 w-full rounded-xl border-white/10 bg-black/35 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic disabled:cursor-not-allowed disabled:opacity-45"
                     placeholder="0"
                     inputMode="numeric"
                   />
@@ -786,6 +798,14 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
                   />
                 </label>
               </div>
+
+              {!hasLinkedClient ? (
+                <p className="mt-3 rounded-xl border border-amber-400/25 bg-amber-400/10 px-3 py-2 text-xs font-semibold leading-5 text-amber-100">
+                  {isRu
+                    ? "Это ручная заявка без аккаунта на сайте. Диалог и операции Bumpy Coins для нее недоступны."
+                    : "This is a manual request without a linked site account. Chat and Bumpy Coins operations are unavailable."}
+                </p>
+              ) : null}
 
               <div className="mt-4 grid gap-2 sm:grid-cols-3">
                 <button
