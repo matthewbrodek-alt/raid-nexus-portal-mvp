@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { CheckCircle2, ChevronLeft } from "lucide-react";
+import { browserLocalPersistence, browserSessionPersistence, setPersistence, signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
 import { RaidLogo } from "@/components/brand/raid-logo";
 import { useAuth } from "@/components/auth/auth-provider";
-import { db } from "@/lib/firebase/client";
+import { normalizeEmail } from "@/lib/auth/role-utils";
+import { auth, db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import { getNextRaffleInfo, RAFFLE_PRIZE, type RaffleInfo } from "@/lib/raffle";
 
@@ -64,16 +66,23 @@ export default function RafflePage() {
   const [entryExists, setEntryExists] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginRemember, setLoginRemember] = useState(true);
+  const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
   const [cryIndex, setCryIndex] = useState(0);
-  const [activeVideo, setActiveVideo] = useState<RaffleVideoKey>("idle");
-  const [videoNonce, setVideoNonce] = useState(0);
-  const [videoSourceIndex, setVideoSourceIndex] = useState(0);
+  const [reactionVideo, setReactionVideo] = useState<(typeof HIT_VIDEO_KEYS)[number] | null>(null);
+  const [reactionVisible, setReactionVisible] = useState(false);
+  const [reactionNonce, setReactionNonce] = useState(0);
+  const [reactionSourceIndex, setReactionSourceIndex] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const reactionVideoRef = useRef<HTMLVideoElement | null>(null);
   const shouldPlayReactionRef = useRef(false);
   const lastHitVideoRef = useRef<RaffleVideoKey>("idle");
-  const activeVideoSources = MACHEHA_VIDEOS[activeVideo];
-  const activeVideoSource = activeVideoSources[videoSourceIndex] ?? activeVideoSources[0];
+  const reactionVideoSources = reactionVideo ? MACHEHA_VIDEOS[reactionVideo] : [];
+  const reactionVideoSource = reactionVideoSources[reactionSourceIndex] ?? reactionVideoSources[0];
   const progress = Math.min(100, Math.round((clicks / REQUIRED_CLICKS) * 100));
   const entryId = user && raffle ? `${user.uid}_${raffle.drawKey}` : "";
 
@@ -88,13 +97,18 @@ export default function RafflePage() {
       return;
     }
 
-    if (activeVideo === "idle") {
-      video.muted = true;
-      void video.play().catch(() => undefined);
+    video.muted = true;
+    void video.play().catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    if (!reactionVideo || !shouldPlayReactionRef.current) {
       return;
     }
 
-    if (!shouldPlayReactionRef.current) {
+    const video = reactionVideoRef.current;
+
+    if (!video) {
       return;
     }
 
@@ -111,8 +125,12 @@ export default function RafflePage() {
       .then(() => {
         shouldPlayReactionRef.current = false;
       })
-      .catch(() => undefined);
-  }, [activeVideo, videoNonce, videoSourceIndex]);
+      .catch(() => {
+        shouldPlayReactionRef.current = false;
+        setReactionVisible(false);
+        setReactionVideo(null);
+      });
+  }, [reactionNonce, reactionSourceIndex, reactionVideo]);
 
   useEffect(() => {
     if (!user || !entryId) {
@@ -164,6 +182,22 @@ export default function RafflePage() {
     }
   }
 
+  async function handleInlineLogin(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoginError("");
+    setError("");
+    setLoginLoading(true);
+
+    try {
+      await setPersistence(auth, loginRemember ? browserLocalPersistence : browserSessionPersistence);
+      await signInWithEmailAndPassword(auth, normalizeEmail(loginEmail), loginPassword);
+    } catch (caughtError) {
+      setLoginError(caughtError instanceof Error ? caughtError.message : "Не удалось войти в аккаунт.");
+    } finally {
+      setLoginLoading(false);
+    }
+  }
+
   function tapMacheha() {
     if (!user || entryExists || saving) {
       return;
@@ -172,9 +206,10 @@ export default function RafflePage() {
     const nextVideo = pickHitVideo(lastHitVideoRef.current);
     lastHitVideoRef.current = nextVideo;
     shouldPlayReactionRef.current = true;
-    setVideoSourceIndex(0);
-    setActiveVideo(nextVideo);
-    setVideoNonce((current) => current + 1);
+    setReactionVisible(false);
+    setReactionSourceIndex(0);
+    setReactionVideo(nextVideo);
+    setReactionNonce((current) => current + 1);
 
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
@@ -203,14 +238,13 @@ export default function RafflePage() {
           <RaidLogo compact />
           <Link href="/" className="raid-glow-button inline-flex items-center gap-2 border border-relic/35 bg-black/35 px-4 py-3 text-xs font-black uppercase tracking-[0.16em] text-relic">
             <ChevronLeft size={16} />
-            На главнyю
+            На главную
           </Link>
         </header>
 
         <section className="mt-6 flex flex-1 justify-center">
           <div className="raid-ornate-panel w-full max-w-4xl overflow-hidden p-5 sm:p-7">
-            <p className="text-xs font-bold tracking-[0.24em] text-relic">Ruby giveaway</p>
-            <h1 className="mt-3 max-w-3xl text-4xl font-black leading-[1.05] text-white sm:text-6xl">
+            <h1 className="max-w-3xl text-4xl font-black leading-[1.05] text-white sm:text-6xl">
               Потыкай мачехе в пузико 100 раз
             </h1>
             <p className="mt-5 max-w-3xl text-base font-semibold leading-7 text-zinc-300">
@@ -231,36 +265,51 @@ export default function RafflePage() {
               >
                 <span className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(90deg,rgba(2,5,10,0.82),transparent_18%,transparent_82%,rgba(2,5,10,0.82))]" />
                 <video
-                  key={`${activeVideo}-${videoNonce}-${videoSourceIndex}`}
                   ref={videoRef}
-                  src={activeVideoSource?.src}
-                  className="raffle-character-video pointer-events-none absolute left-[50%] top-0 z-[4] h-full w-full object-cover object-top opacity-100"
+                  className="raffle-character-video pointer-events-none absolute left-0 top-0 z-[4] h-full w-full object-cover object-top opacity-100"
                   muted
                   playsInline
                   preload="auto"
-                  autoPlay={activeVideo === "idle"}
-                  loop={activeVideo === "idle"}
-                  onEnded={(event) => {
-                    if (activeVideo === "idle") {
-                      return;
-                    }
+                  autoPlay
+                  loop
+                >
+                  {MACHEHA_VIDEOS.idle.map((source) => (
+                    <source key={source.src} src={source.src} type={source.type} />
+                  ))}
+                </video>
 
-                    event.currentTarget.pause();
+                {reactionVideo && reactionVideoSource ? (
+                  <video
+                    key={`${reactionVideo}-${reactionNonce}-${reactionSourceIndex}`}
+                    ref={reactionVideoRef}
+                    src={reactionVideoSource.src}
+                    className={`raffle-character-video pointer-events-none absolute left-0 top-0 z-[5] h-full w-full object-cover object-top transition-opacity duration-200 ${
+                      reactionVisible ? "opacity-100" : "opacity-0"
+                    }`}
+                    muted
+                    playsInline
+                    preload="auto"
+                    onPlaying={() => setReactionVisible(true)}
+                    onEnded={(event) => {
+                      event.currentTarget.pause();
 
-                    try {
-                      event.currentTarget.currentTime = 0;
-                    } catch {
-                      // Some mobile browsers reject seeking before metadata is ready.
-                    }
+                      try {
+                        event.currentTarget.currentTime = 0;
+                      } catch {
+                        // Some mobile browsers reject seeking before metadata is ready.
+                      }
 
-                    setVideoSourceIndex(0);
-                    setActiveVideo("idle");
-                    setVideoNonce((current) => current + 1);
-                  }}
-                  onError={() => {
-                    setVideoSourceIndex((current) => (current + 1 < activeVideoSources.length ? current + 1 : current));
-                  }}
-                />
+                      setReactionVisible(false);
+                      window.setTimeout(() => {
+                        setReactionSourceIndex(0);
+                        setReactionVideo(null);
+                      }, 180);
+                    }}
+                    onError={() => {
+                      setReactionSourceIndex((current) => (current + 1 < reactionVideoSources.length ? current + 1 : current));
+                    }}
+                  />
+                ) : null}
 
                 <button
                   type="button"
@@ -297,9 +346,53 @@ export default function RafflePage() {
               {error ? <p className="mt-3 rounded-[16px] border border-blood/35 bg-blood/10 px-4 py-3 text-sm text-red-200">{error}</p> : null}
 
               {!loading && !user ? (
-                <p className="mt-3 rounded-[16px] border border-relic/18 bg-black/24 px-4 py-3 text-sm leading-6 text-zinc-400">
-                  Для записи участия нужен вход в аккаунт. Без входа клики не сохраняются.
-                </p>
+                <form onSubmit={handleInlineLogin} className="mt-3 rounded-[18px] border border-relic/22 bg-black/28 p-4 text-sm text-zinc-300">
+                  <p className="font-bold text-white">Войдите, чтобы записать участие в розыгрыше.</p>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <input
+                      type="email"
+                      value={loginEmail}
+                      onChange={(event) => setLoginEmail(event.target.value)}
+                      className="min-w-0 rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-white outline-none transition focus:border-relic"
+                      placeholder="Email"
+                      autoComplete="email"
+                      required
+                    />
+                    <input
+                      type="password"
+                      value={loginPassword}
+                      onChange={(event) => setLoginPassword(event.target.value)}
+                      className="min-w-0 rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-white outline-none transition focus:border-relic"
+                      placeholder="Пароль"
+                      autoComplete="current-password"
+                      required
+                    />
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                    <label className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-400">
+                      <input
+                        type="checkbox"
+                        checked={loginRemember}
+                        onChange={(event) => setLoginRemember(event.target.checked)}
+                        className="rounded border-white/20 bg-black/30 text-relic focus:ring-relic"
+                      />
+                      Запомнить меня
+                    </label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link href="/register" className="rounded-xl border border-white/10 px-4 py-2 text-xs font-black text-relic transition hover:border-relic">
+                        Регистрация
+                      </Link>
+                      <button
+                        type="submit"
+                        disabled={loginLoading}
+                        className="rounded-xl bg-relic px-5 py-2 text-xs font-black text-black transition hover:bg-[#8bbcff] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {loginLoading ? "Вход..." : "Войти"}
+                      </button>
+                    </div>
+                  </div>
+                  {loginError ? <p className="mt-3 rounded-xl border border-blood/35 bg-blood/10 px-3 py-2 text-xs text-red-200">{loginError}</p> : null}
+                </form>
               ) : null}
             </div>
 
