@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { CheckCircle2, ChevronLeft } from "lucide-react";
-import { browserLocalPersistence, browserSessionPersistence, setPersistence, signInWithEmailAndPassword } from "firebase/auth";
+import { browserLocalPersistence, setPersistence, signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
 import { RaidLogo } from "@/components/brand/raid-logo";
@@ -68,9 +68,9 @@ export default function RafflePage() {
   const [error, setError] = useState("");
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  const [loginRemember, setLoginRemember] = useState(true);
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
+  const [showLoginForm, setShowLoginForm] = useState(false);
   const [cryIndex, setCryIndex] = useState(0);
   const [reactionVideo, setReactionVideo] = useState<(typeof HIT_VIDEO_KEYS)[number] | null>(null);
   const [reactionVisible, setReactionVisible] = useState(false);
@@ -189,8 +189,9 @@ export default function RafflePage() {
     setLoginLoading(true);
 
     try {
-      await setPersistence(auth, loginRemember ? browserLocalPersistence : browserSessionPersistence);
+      await setPersistence(auth, browserLocalPersistence);
       await signInWithEmailAndPassword(auth, normalizeEmail(loginEmail), loginPassword);
+      setShowLoginForm(false);
     } catch (caughtError) {
       setLoginError(caughtError instanceof Error ? caughtError.message : "Не удалось войти в аккаунт.");
     } finally {
@@ -244,17 +245,15 @@ export default function RafflePage() {
 
         <section className="mt-6 flex flex-1 justify-center">
           <div className="raid-ornate-panel w-full max-w-4xl overflow-hidden p-5 sm:p-7">
+            <div className="mx-auto mb-4 w-fit rounded-[18px] border border-relic/35 bg-black/22 px-6 py-3 text-center text-sm font-black text-relic shadow-[0_0_26px_rgba(47,124,255,0.14)]">
+              Розыгрыш рубинов
+            </div>
             <h1 className="max-w-3xl text-4xl font-black leading-[1.05] text-white sm:text-6xl">
               Потыкай мачехе в пузико 100 раз
             </h1>
             <p className="mt-5 max-w-3xl text-base font-semibold leading-7 text-zinc-300">
               После сотого клика аккаунт попадает в список участников ближайшего розыгрыша. Участвовать могут только зарегистрированные игроки.
             </p>
-
-            <div className="mt-5 inline-flex min-w-[178px] flex-col rounded-[18px] border border-white/80 bg-black/18 px-5 py-3">
-              <span className="text-center text-[11px] font-bold tracking-[0.28em] text-zinc-500">Приз</span>
-              <span className="mt-1 text-lg font-black text-relic">{RAFFLE_PRIZE}</span>
-            </div>
 
             <div className="relative mx-auto mt-7 w-full max-w-[520px] overflow-hidden rounded-[28px] border border-relic/30 bg-[#030407] shadow-[0_28px_90px_rgba(0,0,0,0.55)]">
               <div className="absolute inset-0 bg-[#02050a]" />
@@ -266,7 +265,7 @@ export default function RafflePage() {
                 <span className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(90deg,rgba(2,5,10,0.82),transparent_18%,transparent_82%,rgba(2,5,10,0.82))]" />
                 <video
                   ref={videoRef}
-                  className="raffle-character-video pointer-events-none absolute left-0 top-0 z-[4] h-full w-full object-cover object-top opacity-100"
+                  className="raffle-character-video pointer-events-none absolute left-[50%] top-0 z-[4] h-full w-full object-cover object-top opacity-100"
                   muted
                   playsInline
                   preload="auto"
@@ -283,7 +282,7 @@ export default function RafflePage() {
                     key={`${reactionVideo}-${reactionNonce}-${reactionSourceIndex}`}
                     ref={reactionVideoRef}
                     src={reactionVideoSource.src}
-                    className={`raffle-character-video pointer-events-none absolute left-0 top-0 z-[5] h-full w-full object-cover object-top transition-opacity duration-200 ${
+                    className={`raffle-character-video pointer-events-none absolute left-[50%] top-0 z-[5] h-full w-full object-cover object-top transition-opacity duration-200 ${
                       reactionVisible ? "opacity-100" : "opacity-0"
                     }`}
                     muted
@@ -346,53 +345,61 @@ export default function RafflePage() {
               {error ? <p className="mt-3 rounded-[16px] border border-blood/35 bg-blood/10 px-4 py-3 text-sm text-red-200">{error}</p> : null}
 
               {!loading && !user ? (
-                <form onSubmit={handleInlineLogin} className="mt-3 rounded-[18px] border border-relic/22 bg-black/28 p-4 text-sm text-zinc-300">
-                  <p className="font-bold text-white">Войдите, чтобы записать участие в розыгрыше.</p>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    <input
-                      type="email"
-                      value={loginEmail}
-                      onChange={(event) => setLoginEmail(event.target.value)}
-                      className="min-w-0 rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-white outline-none transition focus:border-relic"
-                      placeholder="Email"
-                      autoComplete="email"
-                      required
-                    />
-                    <input
-                      type="password"
-                      value={loginPassword}
-                      onChange={(event) => setLoginPassword(event.target.value)}
-                      className="min-w-0 rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-white outline-none transition focus:border-relic"
-                      placeholder="Пароль"
-                      autoComplete="current-password"
-                      required
-                    />
-                  </div>
-                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                    <label className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-400">
-                      <input
-                        type="checkbox"
-                        checked={loginRemember}
-                        onChange={(event) => setLoginRemember(event.target.checked)}
-                        className="rounded border-white/20 bg-black/30 text-relic focus:ring-relic"
-                      />
-                      Запомнить меня
-                    </label>
-                    <div className="flex flex-wrap items-center gap-2">
+                <div className="mt-3 rounded-[18px] border border-relic/22 bg-black/28 p-4 text-sm text-zinc-300">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="max-w-xl font-semibold leading-6 text-zinc-300">
+                      Чтобы клики засчитались и аккаунт попал в список участников, войдите в личный кабинет или зарегистрируйтесь.
+                    </p>
+                    <div className="flex shrink-0 flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowLoginForm((current) => !current)}
+                        className="rounded-xl bg-relic px-5 py-2 text-xs font-black text-black transition hover:bg-[#8bbcff]"
+                      >
+                        Войти
+                      </button>
                       <Link href="/register" className="rounded-xl border border-white/10 px-4 py-2 text-xs font-black text-relic transition hover:border-relic">
                         Регистрация
                       </Link>
-                      <button
-                        type="submit"
-                        disabled={loginLoading}
-                        className="rounded-xl bg-relic px-5 py-2 text-xs font-black text-black transition hover:bg-[#8bbcff] disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {loginLoading ? "Вход..." : "Войти"}
-                      </button>
                     </div>
                   </div>
+
+                  {showLoginForm ? (
+                    <form onSubmit={handleInlineLogin} className="mt-4 rounded-[16px] border border-white/10 bg-black/32 p-3">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <input
+                          type="email"
+                          value={loginEmail}
+                          onChange={(event) => setLoginEmail(event.target.value)}
+                          className="min-w-0 rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-white outline-none transition focus:border-relic"
+                          placeholder="Email"
+                          autoComplete="email"
+                          required
+                        />
+                        <input
+                          type="password"
+                          value={loginPassword}
+                          onChange={(event) => setLoginPassword(event.target.value)}
+                          className="min-w-0 rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-white outline-none transition focus:border-relic"
+                          placeholder="Пароль"
+                          autoComplete="current-password"
+                          required
+                        />
+                      </div>
+                      <div className="mt-3 flex justify-end">
+                        <button
+                          type="submit"
+                          disabled={loginLoading}
+                          className="rounded-xl bg-relic px-5 py-2 text-xs font-black text-black transition hover:bg-[#8bbcff] disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {loginLoading ? "Вход..." : "Войти"}
+                        </button>
+                      </div>
+                    </form>
+                  ) : null}
+
                   {loginError ? <p className="mt-3 rounded-xl border border-blood/35 bg-blood/10 px-3 py-2 text-xs text-red-200">{loginError}</p> : null}
-                </form>
+                </div>
               ) : null}
             </div>
 
