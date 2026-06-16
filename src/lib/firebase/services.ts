@@ -4,6 +4,8 @@ import { collections } from "@/lib/firebase/collections";
 
 export type TopupLeadInput = {
   uid?: string;
+  clientName?: string;
+  email?: string;
   telegram: string;
   packageId: string;
   comment?: string;

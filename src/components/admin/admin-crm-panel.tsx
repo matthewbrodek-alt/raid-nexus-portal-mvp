@@ -3,7 +3,7 @@
 import { BellRing, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, ClipboardCopy, Download, FileSpreadsheet, MessageSquare, Save, Table2 } from "lucide-react";
 import { addDoc, collection, doc, getDoc, increment, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { bpStatuses, getBpStatus, getOrderStage, isCompletedOrder, orderStages, type OrderStageId } from "@/lib/bp-status";
@@ -117,6 +117,26 @@ function serviceLabel(type?: string) {
   return serviceLabels[(type as ServiceType) || "donation"] ?? "Донат";
 }
 
+function clientDisplayName(lead: TopupLead) {
+  if (lead.clientName?.trim()) {
+    return lead.clientName.trim();
+  }
+
+  if (lead.telegram?.trim()) {
+    return lead.telegram.trim();
+  }
+
+  if (lead.email?.trim()) {
+    return lead.email.trim();
+  }
+
+  return lead.uid ? `Игрок ${lead.uid.slice(-6)}` : "Клиент";
+}
+
+function formatRub(value?: number) {
+  return `${Math.max(0, Math.floor(value ?? 0)).toLocaleString("ru-RU")} ₽`;
+}
+
 function exportRows(leads: TopupLead[]) {
   return leads
     .map((lead) =>
@@ -124,7 +144,7 @@ function exportRows(leads: TopupLead[]) {
         formatDate(lead.createdAt?.seconds),
         serviceLabel(lead.serviceType),
         lead.telegram ?? "",
-        lead.clientName ?? lead.email ?? lead.uid ?? "",
+        clientDisplayName(lead),
         lead.packageName ?? lead.packageId ?? "",
         `${lead.amountRub ?? 0} RUB`,
         `+${lead.manualBumpyCoinsAwardedTotal ?? 0} / -${lead.bumpyCoinsWrittenOffTotal ?? 0} Bumpy Coins`,
@@ -331,6 +351,7 @@ export function AdminCrmPanel() {
   const [manualClient, setManualClient] = useState("");
   const [manualNote, setManualNote] = useState("");
   const [statusText, setStatusText] = useState("");
+  const [editingLeadId, setEditingLeadId] = useState("");
 
   useEffect(() => {
     const leadsQuery = query(collection(db, collections.topupLeads), orderBy("createdAt", "desc"), limit(240));
@@ -423,6 +444,7 @@ export function AdminCrmPanel() {
     const writtenOffCoins = await writeOffBumpyCoins(lead, safeWriteOffCoins, profile?.uid);
 
     updateDraft(lead.id, { manualBumpyCoins: "", writeOffBumpyCoins: "" });
+    setEditingLeadId("");
 
     const statusParts = ["Заявка обновлена."];
 
@@ -480,7 +502,7 @@ export function AdminCrmPanel() {
         formatDate(lead.createdAt?.seconds),
         serviceLabel(lead.serviceType),
         lead.telegram ?? "",
-        lead.clientName ?? lead.email ?? lead.uid ?? "",
+        clientDisplayName(lead),
         lead.packageName ?? lead.packageId ?? "",
         String(lead.amountRub ?? 0),
         String(lead.manualBumpyCoinsAwardedTotal ?? 0),
@@ -504,7 +526,7 @@ export function AdminCrmPanel() {
       formatDate(lead.createdAt?.seconds),
       serviceLabel(lead.serviceType),
       lead.telegram ?? "",
-      lead.clientName ?? lead.email ?? lead.uid ?? "",
+      clientDisplayName(lead),
       lead.packageName ?? lead.packageId ?? "",
       lead.amountRub ?? 0,
       lead.manualBumpyCoinsAwardedTotal ?? 0,
@@ -536,6 +558,101 @@ export function AdminCrmPanel() {
 </html>`;
 
     downloadFile(`raid-orders-${selectedMonth}.xls`, html, "application/vnd.ms-excel;charset=utf-8");
+  }
+
+  function renderLeadEditor(lead: TopupLead) {
+    const draft = drafts[lead.id] ?? draftFromLead(lead);
+
+    return (
+      <div className="rounded-2xl border border-relic/20 bg-[#07101d]/92 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <label className="block">
+            <span className="text-xs font-bold text-zinc-500">Сумма заказа</span>
+            <input
+              value={draft.amountRub}
+              onChange={(event) => updateDraft(lead.id, { amountRub: event.target.value })}
+              className="mt-2 w-full rounded-xl border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+              placeholder="0"
+              inputMode="numeric"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-bold text-zinc-500">Статус</span>
+            <select
+              value={draft.status}
+              onChange={(event) => updateStage(lead.id, event.target.value as OrderStageId)}
+              className="mt-2 w-full rounded-xl border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic"
+            >
+              {orderStages.map((stage) => (
+                <option key={stage.id} value={stage.id}>
+                  {stage.id === "completed" ? "Заявка выполнена" : stage.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className="text-xs font-bold text-zinc-500">Начислить Bumpy Coins</span>
+            <input
+              value={draft.manualBumpyCoins}
+              onChange={(event) => updateDraft(lead.id, { manualBumpyCoins: event.target.value })}
+              className="mt-2 w-full rounded-xl border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+              placeholder="+ coins"
+              inputMode="numeric"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-bold text-zinc-500">Списать Bumpy Coins</span>
+            <input
+              value={draft.writeOffBumpyCoins}
+              onChange={(event) => updateDraft(lead.id, { writeOffBumpyCoins: event.target.value })}
+              className="mt-2 w-full rounded-xl border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+              placeholder="- coins"
+              inputMode="numeric"
+            />
+          </label>
+          <label className="block sm:col-span-2">
+            <span className="text-xs font-bold text-zinc-500">Оплата / реквизиты</span>
+            <textarea
+              value={draft.paymentDetails}
+              onChange={(event) => updateDraft(lead.id, { paymentDetails: event.target.value })}
+              rows={3}
+              className="mt-2 w-full rounded-xl border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+              placeholder="Ссылка на оплату или реквизиты"
+            />
+          </label>
+          <label className="block sm:col-span-2">
+            <span className="text-xs font-bold text-zinc-500">Заметка менеджера</span>
+            <textarea
+              value={draft.managerNote}
+              onChange={(event) => updateDraft(lead.id, { managerNote: event.target.value })}
+              rows={3}
+              className="mt-2 w-full rounded-xl border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+              placeholder="Что увидит клиент или внутренняя заметка"
+            />
+          </label>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button type="button" onClick={() => void saveLead(lead)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-relic px-4 py-2.5 font-black text-black">
+            <CheckCircle2 size={16} />
+            Сохранить
+          </button>
+          <button type="button" onClick={() => setEditingLeadId("")} className="rounded-xl border border-white/10 bg-black/25 px-4 py-2.5 font-bold text-zinc-300 transition hover:border-relic/30 hover:text-relic">
+            Закрыть
+          </button>
+          {lead.uid ? (
+            <button
+              type="button"
+              onClick={() => router.push(`/orders/${lead.id}`)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-relic/30 bg-relic/10 px-4 py-2.5 font-bold text-relic"
+            >
+              <MessageSquare size={16} />
+              Открыть заявку
+            </button>
+          ) : null}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -651,166 +768,153 @@ export function AdminCrmPanel() {
       <div className="overflow-hidden rounded-xl border border-slate-500/25 bg-[#071019]/78 shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_18px_55px_rgba(0,0,0,0.28)]">
         <div className="flex flex-col gap-2 border-b border-slate-500/20 bg-[#0d1624]/92 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-relic">Spreadsheet view</p>
-            <p className="mt-1 text-sm text-zinc-400">Месячная таблица заявок: редактируй ячейки, сохраняй строку, скачивай Excel или CSV.</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-relic">Реестр заявок</p>
+            <p className="mt-1 text-sm text-zinc-400">Короткий список для работы менеджера. Клик по клиенту открывает страницу заявки, редактирование включается отдельно.</p>
           </div>
           <span className="rounded-full border border-white/10 bg-black/28 px-3 py-1 text-xs font-semibold text-zinc-300">
             {formatMonthLabel(selectedMonth)} · {monthLeads.length} строк
           </span>
         </div>
-        <div className="max-h-[620px] overflow-auto">
-        <table className="w-[1565px] min-w-[1565px] border-separate border-spacing-0 text-left text-[13px]">
-          <colgroup>
-            <col className="w-[60px]" />
-            <col className="w-[120px]" />
-            <col className="w-[135px]" />
-            <col className="w-[190px]" />
-            <col className="w-[220px]" />
-            <col className="w-[125px]" />
-            <col className="w-[145px]" />
-            <col className="w-[180px]" />
-            <col className="w-[230px]" />
-            <col className="w-[230px]" />
-            <col className="w-[150px]" />
-          </colgroup>
-          <thead className="sticky top-0 z-10 bg-[#0b1320]/98 text-[11px] uppercase tracking-[0.1em] text-relic backdrop-blur">
-            <tr>
-              <th className="sticky left-0 z-20 whitespace-nowrap border-b border-r border-white/10 bg-[#0b1320] p-3 text-center">№</th>
-              <th className="whitespace-nowrap border-b border-r border-white/10 p-3">Дата</th>
-              <th className="whitespace-nowrap border-b border-r border-white/10 p-3">Услуга</th>
-              <th className="whitespace-nowrap border-b border-r border-white/10 p-3">Клиент</th>
-              <th className="whitespace-nowrap border-b border-r border-white/10 p-3">Заявка</th>
-              <th className="whitespace-nowrap border-b border-r border-white/10 p-3">Сумма</th>
-              <th className="whitespace-nowrap border-b border-r border-white/10 p-3">Bumpy Coins</th>
-              <th className="whitespace-nowrap border-b border-r border-white/10 p-3">Этап</th>
-              <th className="whitespace-nowrap border-b border-r border-white/10 p-3">Оплата</th>
-              <th className="whitespace-nowrap border-b border-r border-white/10 p-3">Заметка</th>
-              <th className="whitespace-nowrap border-b border-white/10 p-3">Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            {monthLeads.map((lead, index) => {
-              const draft = drafts[lead.id] ?? draftFromLead(lead);
-              const completed = isCompletedOrder(draft.status);
+        <div className="hidden max-h-[620px] overflow-auto md:block">
+          <table className="min-w-full table-fixed border-separate border-spacing-0 text-left text-[13px]">
+            <colgroup>
+              <col className="w-[54px]" />
+              <col className="w-[136px]" />
+              <col className="w-[190px]" />
+              <col className="w-[130px]" />
+              <col />
+              <col className="w-[116px]" />
+              <col className="w-[148px]" />
+              <col className="w-[170px]" />
+            </colgroup>
+            <thead className="sticky top-0 z-10 bg-[#0b1320]/98 text-[11px] uppercase tracking-[0.1em] text-relic backdrop-blur">
+              <tr>
+                <th className="border-b border-white/10 p-3 text-center">№</th>
+                <th className="border-b border-white/10 p-3">Дата</th>
+                <th className="border-b border-white/10 p-3">Клиент</th>
+                <th className="border-b border-white/10 p-3">Услуга</th>
+                <th className="border-b border-white/10 p-3">Заявка</th>
+                <th className="border-b border-white/10 p-3">Сумма</th>
+                <th className="border-b border-white/10 p-3">Статус</th>
+                <th className="border-b border-white/10 p-3">Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {monthLeads.map((lead, index) => {
+                const draft = drafts[lead.id] ?? draftFromLead(lead);
+                const stage = getOrderStage(draft.status);
+                const completed = isCompletedOrder(draft.status);
+                const editing = editingLeadId === lead.id;
 
-              return (
-                <tr key={lead.id} className={`${completed ? "bg-emerald-400/[0.04]" : "bg-black/18"} transition hover:bg-relic/[0.06]`}>
-                  <td className="sticky left-0 z-[1] border-b border-r border-white/10 bg-[#071019] p-3 text-center align-top font-semibold text-zinc-500">{index + 1}</td>
-                  <td className="whitespace-nowrap border-b border-r border-white/10 p-3 align-top text-zinc-400">{formatDate(lead.createdAt?.seconds)}</td>
-                  <td className="whitespace-nowrap border-b border-r border-white/10 p-3 align-top font-semibold text-white">{serviceLabel(lead.serviceType)}</td>
-                  <td className="border-b border-r border-white/10 p-3 align-top">
-                    <p className="font-semibold text-white">{lead.clientName || lead.email || lead.uid || "Клиент"}</p>
-                    <p className="text-xs text-zinc-500">{lead.telegram || "telegram не указан"}</p>
-                  </td>
-                  <td className="border-b border-r border-white/10 p-3 align-top">
-                    <p className="line-clamp-2 font-semibold text-white">{lead.packageName || lead.packageId || "Заявка"}</p>
-                    {lead.comment ? <p className="mt-1 line-clamp-2 text-xs text-zinc-500">{lead.comment}</p> : null}
-                  </td>
-                  <td className="border-b border-r border-white/10 p-3 align-top">
-                    <input
-                      value={draft.amountRub}
-                      onChange={(event) => updateDraft(lead.id, { amountRub: event.target.value })}
-                      className="w-28 rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic"
-                      placeholder="0"
-                    />
-                  </td>
-                  <td className="border-b border-r border-white/10 p-3 align-top">
-                    <div className="grid gap-2">
-                      {lead.requestedBumpyCoinsUse ? (
-                        <div className="rounded-md border border-relic/25 bg-relic/[0.08] px-2 py-1.5 text-[11px] leading-4 text-relic">
-                          Клиент просит применить бонусы. Доступно на момент заявки: {(lead.requestedBumpyCoinsAvailable ?? 0).toLocaleString("ru-RU")}
-                        </div>
-                      ) : null}
-                      <label className="block">
-                        <span className="mb-1 block text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-500">Начислить</span>
-                        <input
-                          value={draft.manualBumpyCoins}
-                          onChange={(event) => updateDraft(lead.id, { manualBumpyCoins: event.target.value })}
-                          className="w-32 rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic"
-                          placeholder="+ coins"
-                          inputMode="numeric"
-                        />
-                      </label>
-                      <label className="block">
-                        <span className="mb-1 block text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-500">Списать</span>
-                        <input
-                          value={draft.writeOffBumpyCoins}
-                          onChange={(event) => updateDraft(lead.id, { writeOffBumpyCoins: event.target.value })}
-                          className="w-32 rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic"
-                          placeholder="- coins"
-                          inputMode="numeric"
-                        />
-                      </label>
-                    </div>
-                    {lead.manualBumpyCoinsAwardedTotal ? (
-                      <p className="mt-1 text-[11px] font-semibold leading-4 text-relic">
-                        уже +{lead.manualBumpyCoinsAwardedTotal.toLocaleString("ru-RU")}
-                      </p>
-                    ) : null}
-                    {lead.bumpyCoinsWrittenOffTotal ? (
-                      <p className="mt-1 text-[11px] font-semibold leading-4 text-sky-300">
-                        уже -{lead.bumpyCoinsWrittenOffTotal.toLocaleString("ru-RU")}
-                      </p>
-                    ) : null}
-                  </td>
-                  <td className="border-b border-r border-white/10 p-3 align-top">
-                    <select
-                      value={draft.status}
-                      onChange={(event) => updateStage(lead.id, event.target.value as OrderStageId)}
-                      className="w-44 rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic"
-                    >
-                      {orderStages.map((stage) => (
-                        <option key={stage.id} value={stage.id}>
-                          {stage.id === "completed" ? "Заявка выполнена" : stage.label}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="border-b border-r border-white/10 p-3 align-top">
-                    <textarea
-                      value={draft.paymentDetails}
-                      onChange={(event) => updateDraft(lead.id, { paymentDetails: event.target.value })}
-                      rows={2}
-                      className="w-56 rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
-                      placeholder="Ссылка на оплату или реквизиты"
-                    />
-                  </td>
-                  <td className="border-b border-r border-white/10 p-3 align-top">
-                    <textarea
-                      value={draft.managerNote}
-                      onChange={(event) => updateDraft(lead.id, { managerNote: event.target.value })}
-                      rows={2}
-                      className="w-56 rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
-                      placeholder="Внутренняя заметка"
-                    />
-                  </td>
-                  <td className="border-b border-white/10 p-3 align-top">
-                    <div className="flex flex-col gap-2">
-                      <button type="button" onClick={() => void saveLead(lead)} className="inline-flex items-center justify-center gap-2 rounded-md bg-relic px-3 py-2 font-bold text-black">
-                        <CheckCircle2 size={15} />
-                        Сохранить
-                      </button>
-                      {lead.uid ? (
-                        <button
-                          type="button"
-                          onClick={() => router.push(`/orders/${lead.id}`)}
-                          className="inline-flex items-center justify-center gap-2 rounded-md border border-relic/30 bg-relic/10 px-3 py-2 font-semibold text-relic"
-                        >
-                          <MessageSquare size={15} />
-                          Статус и чат
+                return (
+                  <Fragment key={lead.id}>
+                    <tr className={`${completed ? "bg-emerald-400/[0.04]" : "bg-black/18"} transition hover:bg-relic/[0.06]`}>
+                      <td className="border-b border-white/10 p-3 text-center align-middle font-semibold text-zinc-500">{index + 1}</td>
+                      <td className="whitespace-nowrap border-b border-white/10 p-3 align-middle text-zinc-400">{formatDate(lead.createdAt?.seconds)}</td>
+                      <td className="border-b border-white/10 p-3 align-middle">
+                        <button type="button" onClick={() => router.push(`/orders/${lead.id}`)} className="block max-w-full truncate text-left font-black text-white transition hover:text-relic">
+                          {clientDisplayName(lead)}
                         </button>
-                      ) : (
-                        <span className="text-xs text-zinc-500">Без аккаунта на сайте</span>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        {monthLeads.length === 0 ? <p className="p-5 text-sm text-zinc-500">За выбранный месяц заявок нет.</p> : null}
+                        <p className="mt-0.5 text-xs text-zinc-500">{lead.uid ? "аккаунт на сайте" : "ручная заявка"}</p>
+                      </td>
+                      <td className="whitespace-nowrap border-b border-white/10 p-3 align-middle font-semibold text-zinc-300">{serviceLabel(lead.serviceType)}</td>
+                      <td className="border-b border-white/10 p-3 align-middle">
+                        <p className="line-clamp-1 font-semibold text-white">{lead.packageName || lead.packageId || "Заявка"}</p>
+                        {lead.comment ? <p className="mt-1 line-clamp-1 text-xs text-zinc-500">{lead.comment}</p> : null}
+                      </td>
+                      <td className="whitespace-nowrap border-b border-white/10 p-3 align-middle font-black text-white">{formatRub(Number(draft.amountRub) || lead.amountRub)}</td>
+                      <td className="border-b border-white/10 p-3 align-middle">
+                        <span className={`${completed ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200" : "border-relic/25 bg-relic/[0.08] text-relic"} inline-flex rounded-full border px-3 py-1 text-xs font-bold`}>
+                          {draft.status === "completed" ? "Выполнено" : stage.clientLabel}
+                        </span>
+                      </td>
+                      <td className="border-b border-white/10 p-3 align-middle">
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setEditingLeadId(editing ? "" : lead.id)}
+                            className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs font-bold text-zinc-200 transition hover:border-relic/40 hover:text-relic"
+                          >
+                            {editing ? "Скрыть" : "Редактировать"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => router.push(`/orders/${lead.id}`)}
+                            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-relic/30 bg-relic/10 px-3 py-2 text-xs font-bold text-relic"
+                          >
+                            <MessageSquare size={14} />
+                            Детали
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {editing ? (
+                      <tr>
+                        <td colSpan={8} className="border-b border-white/10 bg-black/14 p-4">
+                          {renderLeadEditor(lead)}
+                        </td>
+                      </tr>
+                    ) : null}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
+
+        <div className="grid gap-3 p-3 md:hidden">
+          {monthLeads.map((lead, index) => {
+            const draft = drafts[lead.id] ?? draftFromLead(lead);
+            const stage = getOrderStage(draft.status);
+            const completed = isCompletedOrder(draft.status);
+            const editing = editingLeadId === lead.id;
+
+            return (
+              <article key={lead.id} className={`${completed ? "border-emerald-400/25 bg-emerald-400/[0.05]" : "border-white/10 bg-black/22"} rounded-2xl border p-4`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-zinc-500">№ {index + 1} · {formatDate(lead.createdAt?.seconds)}</p>
+                    <button type="button" onClick={() => router.push(`/orders/${lead.id}`)} className="mt-1 max-w-full text-left text-lg font-black text-white transition hover:text-relic">
+                      {clientDisplayName(lead)}
+                    </button>
+                    <p className="mt-1 text-sm font-semibold text-zinc-400">{serviceLabel(lead.serviceType)}</p>
+                  </div>
+                  <span className={`${completed ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200" : "border-relic/25 bg-relic/[0.08] text-relic"} shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-bold`}>
+                    {draft.status === "completed" ? "Выполнено" : stage.clientLabel}
+                  </span>
+                </div>
+
+                <div className="mt-3 rounded-xl border border-white/10 bg-black/18 p-3">
+                  <p className="font-bold text-white">{lead.packageName || lead.packageId || "Заявка"}</p>
+                  {lead.comment ? <p className="mt-1 line-clamp-2 text-sm text-zinc-500">{lead.comment}</p> : null}
+                  <p className="mt-2 text-lg font-black text-relic">{formatRub(Number(draft.amountRub) || lead.amountRub)}</p>
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/orders/${lead.id}`)}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-relic/30 bg-relic/10 px-3 py-2.5 text-sm font-bold text-relic"
+                  >
+                    <MessageSquare size={15} />
+                    Детали
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingLeadId(editing ? "" : lead.id)}
+                    className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm font-bold text-zinc-200"
+                  >
+                    {editing ? "Скрыть" : "Редактировать"}
+                  </button>
+                </div>
+
+                {editing ? <div className="mt-3">{renderLeadEditor(lead)}</div> : null}
+              </article>
+            );
+          })}
+        </div>
+
+        {monthLeads.length === 0 ? <p className="p-5 text-sm text-zinc-500">За выбранный месяц заявок нет.</p> : null}
       </div>
 
       <div className="mt-4 rounded-lg border border-relic/16 bg-black/22 p-4 text-sm leading-6 text-zinc-400">

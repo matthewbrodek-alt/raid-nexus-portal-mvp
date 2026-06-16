@@ -195,6 +195,8 @@ export function TopupLeadForm({ selectedPackageId, onSelectedPackageIdChange }: 
       const screenshot = screenshotFile ? await uploadScreenshot(screenshotFile) : null;
       const payload = {
         uid: user.uid,
+        email: user.email ?? "",
+        clientName: profile?.displayName || user.email || "Raid Player",
         leadId: topupRef.id,
         managerUid: manager?.uid ?? "",
         threadId,
