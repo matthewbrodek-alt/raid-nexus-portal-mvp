@@ -23,6 +23,7 @@ type FirestoreTime = {
 type DirectThread = {
   id: string;
   participants?: string[];
+  topupLeadIds?: string[];
   lastMessageText?: string;
   lastMessageUid?: string;
   lastMessageAt?: FirestoreTime;
@@ -61,6 +62,22 @@ const finishedOrderStatuses = new Set(["completed", "processed", "cancelled", "c
 function isActiveOrderNotification(status?: string) {
   const normalized = (status ?? "new").toLowerCase();
   return normalized !== "new" && !finishedOrderStatuses.has(normalized);
+}
+
+function getLinkedTopupLeadId(thread: DirectThread) {
+  const ids = thread.topupLeadIds?.filter(Boolean) ?? [];
+  return ids[ids.length - 1] ?? "";
+}
+
+function getMessageHref(thread: DirectThread, currentUid: string) {
+  const linkedTopupLeadId = getLinkedTopupLeadId(thread);
+
+  if (linkedTopupLeadId) {
+    return `/orders/${linkedTopupLeadId}`;
+  }
+
+  const otherUid = thread.participants?.find((uid) => uid !== currentUid);
+  return otherUid ? `/chat?thread=${thread.id}&user=${otherUid}` : `/chat?thread=${thread.id}`;
 }
 
 export function SiteNotificationToast() {
@@ -170,9 +187,9 @@ export function SiteNotificationToast() {
       const candidate: Toast = {
         id: unreadThread.id,
         icon: "message",
-        title: "Новое личное сообщение",
+        title: getLinkedTopupLeadId(unreadThread) ? "Новое сообщение по заявке" : "Новое личное сообщение",
         body: unreadThread.lastMessageText || "Откройте диалог, чтобы прочитать сообщение.",
-        href: "/chat",
+        href: getMessageHref(unreadThread, uid),
         seenKey: "threadById",
         seenValue: getSeconds(unreadThread.lastMessageAt)
       };

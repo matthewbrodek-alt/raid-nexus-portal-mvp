@@ -33,6 +33,7 @@ type FirestoreTime = {
 type DirectThread = {
   id: string;
   participants?: string[];
+  topupLeadIds?: string[];
   lastMessageText?: string;
   lastMessageUid?: string;
   lastMessageAt?: FirestoreTime;
@@ -95,6 +96,22 @@ function isActiveOrderNotification(status?: string) {
 function isProfitableOffer(offer: { tag?: string; comment?: string; description?: string; status?: string }) {
   const marker = `${offer.tag ?? ""} ${offer.comment ?? ""} ${offer.description ?? ""}`.toLowerCase();
   return (offer.status ?? "published") === "published" && (marker.includes("выгод") || marker.includes("hot") || marker.includes("deal") || marker.includes("best"));
+}
+
+function getLinkedTopupLeadId(thread: DirectThread) {
+  const ids = thread.topupLeadIds?.filter(Boolean) ?? [];
+  return ids[ids.length - 1] ?? "";
+}
+
+function getMessageHref(thread: DirectThread, currentUid: string) {
+  const linkedTopupLeadId = getLinkedTopupLeadId(thread);
+
+  if (linkedTopupLeadId) {
+    return `/orders/${linkedTopupLeadId}`;
+  }
+
+  const otherUid = thread.participants?.find((uid) => uid !== currentUid);
+  return otherUid ? `/chat?thread=${thread.id}&user=${otherUid}` : `/chat?thread=${thread.id}`;
 }
 
 function notificationIcon(kind: NotificationKind) {
@@ -192,18 +209,18 @@ export function NotificationCenter() {
           return null;
         }
 
-        const otherUid = thread.participants?.find((uid) => uid !== user.uid);
         const body = thread.lastMessageText?.trim() || (isRu ? "Откройте диалог, чтобы прочитать сообщение." : "Open the dialog to read the message.");
+        const linkedTopupLeadId = getLinkedTopupLeadId(thread);
 
         return {
           id: thread.id,
           bucket: "threadById",
           body,
-          href: otherUid ? `/chat?user=${otherUid}` : "/chat",
+          href: getMessageHref(thread, user.uid),
           kind: "message",
           meta: formatDate(seconds, isRu),
           read: isNotificationSeen(seenState, "threadById", thread.id, seconds),
-          title: isRu ? "Личное сообщение" : "Private message",
+          title: linkedTopupLeadId ? (isRu ? "Сообщение по заявке" : "Order message") : isRu ? "Личное сообщение" : "Private message",
           value: seconds
         };
       })

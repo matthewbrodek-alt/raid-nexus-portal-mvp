@@ -7,6 +7,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   limit,
   onSnapshot,
   orderBy,
@@ -92,6 +93,10 @@ type UserGroup = {
   lastMessageAt?: { seconds?: number };
   createdAt?: { seconds?: number };
   updatedAt?: { seconds?: number };
+};
+
+type DirectThread = {
+  participants?: string[];
 };
 
 const basicEmojis = ["\u{1F600}", "\u{1F602}", "\u{1F60D}", "\u{1F44D}", "\u{1F525}", "\u2764\uFE0F", "\u{1F64F}", "\u{1F389}", "\u{1F60E}", "\u{1F914}"];
@@ -241,6 +246,7 @@ export function ChatWindow() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [directContactIds, setDirectContactIds] = useState<string[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [selectedDirectThreadId, setSelectedDirectThreadId] = useState("");
   const [groups, setGroups] = useState<UserGroup[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<UserGroup | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -258,12 +264,14 @@ export function ChatWindow() {
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const sendingRef = useRef(false);
+  const lastOpenedThreadParamRef = useRef("");
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const canSend = Boolean(message.trim() || attachmentFile) && Boolean(user) && !sending;
   const canModerate = profile?.role === "admin" || profile?.role === "owner";
 
-  const activeThread = selectedGroup ? `group:${selectedGroup.id}` : selectedUser && user ? directThreadId(user.uid, selectedUser.uid) : "global";
+  const activeDirectThreadId = selectedUser && user ? selectedDirectThreadId || directThreadId(user.uid, selectedUser.uid) : "";
+  const activeThread = selectedGroup ? `group:${selectedGroup.id}` : activeDirectThreadId || "global";
   const directContactIdSet = useMemo(() => new Set(directContactIds), [directContactIds]);
   const searchTerm = search.trim().toLowerCase();
   const visibleGroups = useMemo(
@@ -503,9 +511,56 @@ export function ChatWindow() {
 
     if (targetUser) {
       setSelectedUser(targetUser);
+      setSelectedDirectThreadId("");
       setSelectedGroup(null);
     }
   }, [selectedUser?.uid, users]);
+
+  useEffect(() => {
+    if (!user?.uid) {
+      return;
+    }
+
+    const targetThreadId = new URLSearchParams(window.location.search).get("thread");
+
+    if (!targetThreadId || selectedDirectThreadId === targetThreadId || lastOpenedThreadParamRef.current === targetThreadId) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function openThreadFromUrl() {
+      const threadSnapshot = await getDoc(doc(db, "directThreads", targetThreadId));
+
+      if (cancelled || !threadSnapshot.exists()) {
+        return;
+      }
+
+      const thread = threadSnapshot.data() as DirectThread;
+      const otherUid = thread.participants?.find((participantUid) => participantUid !== user.uid);
+
+      if (!otherUid) {
+        return;
+      }
+
+      const targetUser = users.find((item) => item.uid === otherUid);
+
+      if (!targetUser) {
+        return;
+      }
+
+      setSelectedUser(targetUser);
+      setSelectedDirectThreadId(targetThreadId);
+      setSelectedGroup(null);
+      lastOpenedThreadParamRef.current = targetThreadId;
+    }
+
+    void openThreadFromUrl();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDirectThreadId, user?.uid, users]);
 
   useEffect(() => {
     const targetGroupId = new URLSearchParams(window.location.search).get("group");
@@ -519,12 +574,14 @@ export function ChatWindow() {
     if (targetGroup) {
       setSelectedGroup(targetGroup);
       setSelectedUser(null);
+      setSelectedDirectThreadId("");
     }
   }, [selectedGroup?.id, visibleGroups]);
 
   useEffect(() => {
     if (selectedGroup && !visibleGroups.some((group) => group.id === selectedGroup.id)) {
       setSelectedGroup(null);
+      setSelectedDirectThreadId("");
     }
   }, [selectedGroup, visibleGroups]);
 
@@ -539,8 +596,8 @@ export function ChatWindow() {
 
       const messagesRef = selectedGroup
         ? collection(db, collections.userGroups, selectedGroup.id, "messages")
-        : selectedUser && user
-          ? collection(db, "directThreads", directThreadId(user.uid, selectedUser.uid), "messages")
+        : activeDirectThreadId
+          ? collection(db, "directThreads", activeDirectThreadId, "messages")
           : collection(db, collections.chatRooms, "global", "messages");
       const messagesQuery = query(messagesRef, orderBy("createdAt", "desc"), limit(60));
 
@@ -559,7 +616,7 @@ export function ChatWindow() {
       cancelled = true;
       unsubscribe?.();
     };
-  }, [selectedGroup, selectedUser, user]);
+  }, [activeDirectThreadId, selectedGroup, user]);
 
   useEffect(() => {
     scrollToBottom();
@@ -636,6 +693,7 @@ export function ChatWindow() {
 
     if (targetUser) {
       setSelectedUser(targetUser);
+      setSelectedDirectThreadId("");
       setSelectedGroup(null);
     }
 
@@ -645,12 +703,14 @@ export function ChatWindow() {
 
   function selectGlobalRoom() {
     setSelectedUser(null);
+    setSelectedDirectThreadId("");
     setSelectedGroup(null);
     setChatMenuOpen(false);
   }
 
   function selectGroupRoom(group: UserGroup) {
     setSelectedUser(null);
+    setSelectedDirectThreadId("");
     setSelectedGroup(group);
     setChatMenuOpen(false);
   }
@@ -741,8 +801,8 @@ export function ChatWindow() {
 
     const messageRef = selectedGroup
       ? doc(db, collections.userGroups, selectedGroup.id, "messages", messageItem.id)
-      : selectedUser && user
-        ? doc(db, "directThreads", directThreadId(user.uid, selectedUser.uid), "messages", messageItem.id)
+      : activeDirectThreadId
+        ? doc(db, "directThreads", activeDirectThreadId, "messages", messageItem.id)
         : doc(db, collections.chatRooms, "global", "messages", messageItem.id);
 
     await deleteDoc(messageRef);
@@ -825,7 +885,7 @@ export function ChatWindow() {
           roomType: "group"
         });
       } else if (selectedUser) {
-        const threadId = directThreadId(user.uid, selectedUser.uid);
+        const threadId = activeDirectThreadId || directThreadId(user.uid, selectedUser.uid);
         await setDoc(
           doc(db, "directThreads", threadId),
           {
@@ -895,6 +955,7 @@ export function ChatWindow() {
         type="button"
         onClick={() => {
           setSelectedUser(item);
+          setSelectedDirectThreadId("");
           setSelectedGroup(null);
           setChatMenuOpen(false);
         }}
