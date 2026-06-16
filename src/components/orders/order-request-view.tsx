@@ -4,8 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
-  Check,
-  Clock,
   CreditCard,
   ImagePlus,
   MessageCircle,
@@ -29,10 +27,10 @@ import {
   setDoc,
   updateDoc
 } from "firebase/firestore";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { GlassPanel } from "@/components/ui/glass-panel";
-import { normalizeOrderStage, orderStages, type OrderStageId } from "@/lib/bp-status";
+import { normalizeOrderStage, type OrderStageId } from "@/lib/bp-status";
 import { getClipboardImageFile } from "@/lib/browser/clipboard-image";
 import type { CloudinaryAsset } from "@/lib/cloudinary/types";
 import { db } from "@/lib/firebase/client";
@@ -61,6 +59,8 @@ type TopupLead = {
   requestedBumpyCoinsAvailable?: number;
   lastBumpyCoinsWrittenOff?: number;
   bumpyCoinsWrittenOffTotal?: number;
+  lastBumpyCoinsCredited?: number;
+  bumpyCoinsCreditedTotal?: number;
   status?: string;
   screenshotUrl?: string;
   createdAt?: FirestoreTime;
@@ -91,10 +91,19 @@ type ManagerDraft = {
   paymentDetails: string;
   managerNote: string;
   writeOffBumpyCoins: string;
+  creditBumpyCoins: string;
 };
 
 type OrderRequestViewProps = {
   leadId: string;
+};
+
+type ClientWallet = {
+  bumpyCoinsBalance?: number;
+  bumpyCoinsEarnedTotal?: number;
+  bumpyCoinsSpentTotal?: number;
+  displayName?: string;
+  email?: string;
 };
 
 const stageCopy: Record<OrderStageId, { ru: string; en: string; hintRu: string; hintEn: string }> = {
@@ -130,8 +139,6 @@ const stageCopy: Record<OrderStageId, { ru: string; en: string; hintRu: string; 
   }
 };
 
-const visibleStages: OrderStageId[] = ["new", "payment", "in_progress", "completed"];
-
 function getSeconds(value?: FirestoreTime) {
   return value?.seconds ?? 0;
 }
@@ -159,8 +166,17 @@ function draftFromLead(lead: TopupLead | null): ManagerDraft {
     status: normalizeOrderStage(lead?.status),
     paymentDetails: lead?.paymentDetails ?? "",
     managerNote: lead?.managerNote ?? "",
-    writeOffBumpyCoins: ""
+    writeOffBumpyCoins: "",
+    creditBumpyCoins: ""
   };
+}
+
+function formatRub(value?: number) {
+  return `${Math.max(0, Math.floor(value ?? 0)).toLocaleString("ru-RU")} ₽`;
+}
+
+function formatCoins(value?: number) {
+  return `${Math.max(0, Math.floor(value ?? 0)).toLocaleString("ru-RU")} BC`;
 }
 
 async function uploadOrderImage(file: File) {
@@ -227,6 +243,44 @@ async function writeOffBumpyCoinsForLead(lead: TopupLead, amountCoins: number, m
   return safeCoins;
 }
 
+async function creditBumpyCoinsForLead(lead: TopupLead, amountCoins: number, managerUid: string) {
+  if (!lead.uid || amountCoins <= 0) {
+    return 0;
+  }
+
+  const safeCoins = Math.floor(amountCoins);
+
+  if (safeCoins <= 0) {
+    return 0;
+  }
+
+  const userRef = doc(db, collections.users, lead.uid);
+
+  await setDoc(doc(db, collections.bonusTransactions, `credit-${lead.id}-${Date.now()}`), {
+    amountCoins: safeCoins,
+    createdAt: serverTimestamp(),
+    description: `Manager Bumpy Coins credit: ${lead.packageName ?? lead.packageId ?? lead.id}`,
+    leadId: lead.id,
+    managerUid,
+    source: "manager_manual_credit",
+    uid: lead.uid
+  });
+
+  await updateDoc(userRef, {
+    bumpyCoinsBalance: increment(safeCoins),
+    bumpyCoinsEarnedTotal: increment(safeCoins),
+    updatedAt: serverTimestamp()
+  });
+
+  await updateDoc(doc(db, collections.topupLeads, lead.id), {
+    lastBumpyCoinsCredited: safeCoins,
+    bumpyCoinsCreditedTotal: increment(safeCoins),
+    updatedAt: serverTimestamp()
+  });
+
+  return safeCoins;
+}
+
 export function OrderRequestView({ leadId }: OrderRequestViewProps) {
   const { isRu } = useLanguage();
   const { profile, user } = useAuth();
@@ -241,23 +295,24 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
   const [imagePreview, setImagePreview] = useState<ImagePreview | null>(null);
   const [managerDraft, setManagerDraft] = useState<ManagerDraft>(() => draftFromLead(null));
   const [managerStatus, setManagerStatus] = useState("");
+  const [clientWallet, setClientWallet] = useState<ClientWallet | null>(null);
   const [savingOrder, setSavingOrder] = useState(false);
   const sendingRef = useRef(false);
   const savingOrderRef = useRef(false);
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const canManageOrder = profile?.role === "admin" || profile?.role === "owner";
   const activeStage = normalizeOrderStage(lead?.status);
-  const activeIndex = activeStage === "cancelled" ? -1 : visibleStages.indexOf(activeStage);
   const activeLabel = stageCopy[activeStage][isRu ? "ru" : "en"];
   const canSend = Boolean(user?.uid && profile && (lead?.threadId || (canManageOrder && lead?.uid)) && (message.trim() || attachmentFile)) && !sending;
-
-  const progressPercent = useMemo(() => {
-    if (activeStage === "cancelled") {
-      return 0;
-    }
-
-    return Math.max(0, Math.min(100, ((activeIndex + 1) / visibleStages.length) * 100));
-  }, [activeIndex, activeStage]);
+  const clientCoinsBalance = Math.max(0, Math.floor(clientWallet?.bumpyCoinsBalance ?? 0));
+  const clientCoinsEarned = Math.max(0, Math.floor(clientWallet?.bumpyCoinsEarnedTotal ?? 0));
+  const clientCoinsSpent = Math.max(0, Math.floor(clientWallet?.bumpyCoinsSpentTotal ?? 0));
+  const statusTone =
+    activeStage === "completed"
+      ? "border-emerald-400/35 bg-emerald-400/10 text-emerald-200"
+      : activeStage === "cancelled"
+        ? "border-red-400/35 bg-red-400/10 text-red-200"
+        : "border-relic/35 bg-relic/10 text-relic";
 
   useEffect(() => {
     const leadRef = doc(db, collections.topupLeads, leadId);
@@ -291,6 +346,19 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
       () => setMessages([])
     );
   }, [lead?.managerUid, lead?.threadId, user?.uid]);
+
+  useEffect(() => {
+    if (!lead?.uid) {
+      setClientWallet(null);
+      return;
+    }
+
+    return onSnapshot(
+      doc(db, collections.users, lead.uid),
+      (snapshot) => setClientWallet(snapshot.exists() ? (snapshot.data() as ClientWallet) : null),
+      () => setClientWallet(null)
+    );
+  }, [lead?.uid]);
 
   useEffect(() => {
     if (!attachmentFile) {
@@ -404,7 +472,7 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
     applySelectedFile(imageFile);
   }
 
-  async function saveOrderPanel() {
+  async function saveOrderPanel(statusOverride?: OrderStageId) {
     if (savingOrderRef.current) {
       return;
     }
@@ -422,7 +490,9 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
       const safeAmountRub = Number.isFinite(amountRub) ? amountRub : 0;
       const writeOffCoins = Number((managerDraft.writeOffBumpyCoins ?? "").replace(/[^\d.]/g, ""));
       const safeWriteOffCoins = Number.isFinite(writeOffCoins) ? writeOffCoins : 0;
-      const nextStatus = managerDraft.status;
+      const creditCoins = Number((managerDraft.creditBumpyCoins ?? "").replace(/[^\d.]/g, ""));
+      const safeCreditCoins = Number.isFinite(creditCoins) ? creditCoins : 0;
+      const nextStatus = statusOverride ?? managerDraft.status;
       const currentStatus = normalizeOrderStage(lead.status);
 
       await updateDoc(doc(db, collections.topupLeads, lead.id), {
@@ -448,13 +518,19 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
       }
 
       const writtenOffCoins = await writeOffBumpyCoinsForLead(lead, safeWriteOffCoins, user.uid);
-      setManagerDraft((current) => ({ ...current, writeOffBumpyCoins: "" }));
+      const creditedCoins = await creditBumpyCoinsForLead(lead, safeCreditCoins, user.uid);
+      setManagerDraft((current) => ({ ...current, status: nextStatus, writeOffBumpyCoins: "", creditBumpyCoins: "" }));
+
+      const coinNotes = [
+        writtenOffCoins > 0 ? (isRu ? `списано ${formatCoins(writtenOffCoins)}` : `${formatCoins(writtenOffCoins)} written off`) : "",
+        creditedCoins > 0 ? (isRu ? `начислено ${formatCoins(creditedCoins)}` : `${formatCoins(creditedCoins)} credited`) : ""
+      ].filter(Boolean);
 
       setManagerStatus(
-        writtenOffCoins > 0
+        coinNotes.length > 0
           ? isRu
-            ? `Заявка обновлена. Списано ${writtenOffCoins} Bumpy Coins.`
-            : `Request updated. ${writtenOffCoins} Bumpy Coins written off.`
+            ? `Заявка обновлена: ${coinNotes.join(", ")}.`
+            : `Request updated: ${coinNotes.join(", ")}.`
           : isRu
             ? "Заявка обновлена. Клиент увидит новый статус на этой странице."
             : "Request updated. Client will see the new status on this page."
@@ -570,165 +646,174 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
 
       <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <GlassPanel className="p-5 sm:p-6">
-          <p className="text-xs uppercase tracking-[0.24em] text-relic">{isRu ? "Игровой заказ RAID" : "RAID game order"}</p>
-          <h2 className="mt-2 font-[var(--font-cinzel)] text-3xl font-black text-white">
-            {lead.packageName || lead.packageId || (isRu ? "Заявка на донат" : "Donation request")}
-          </h2>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-bold tracking-[0.18em] text-relic">{isRu ? "Заказ RAID" : "RAID order"}</p>
+              <h2 className="mt-2 text-3xl font-black text-white">
+                {lead.packageName || lead.packageId || (isRu ? "Заявка на игровой набор" : "Game pack request")}
+              </h2>
+            </div>
+            <span className={`rounded-full border px-3 py-1 text-xs font-black ${statusTone}`}>{activeLabel}</span>
+          </div>
+
           <p className="mt-3 text-sm leading-6 text-zinc-400">
             {isRu
-              ? "Здесь собраны этапы заказа, сумма, детали оплаты и переписка по конкретной заявке."
-              : "This page contains order stages, amount, payment details and request-specific communication."}
+              ? "Заявка теперь работает как рабочий диалог с менеджером: детали заказа, сумма и Bumpy Coins обновляются здесь."
+              : "This request now works as a manager workspace: order details, amount and Bumpy Coins are updated here."}
           </p>
 
-          <div className="mt-6 rounded-2xl border border-relic/20 bg-black/25 p-4">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <span className="text-sm font-bold text-white">{isRu ? "Прогресс заказа" : "Order progress"}</span>
-              <span className="rounded-full border border-relic/30 bg-relic/10 px-3 py-1 text-xs font-bold text-relic">{activeLabel}</span>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <p className="text-xs font-bold tracking-[0.14em] text-zinc-500">{isRu ? "Сумма" : "Amount"}</p>
+              <p className="mt-2 text-2xl font-black text-white">{formatRub(lead.amountRub)}</p>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-white/10">
-              <div className="h-full rounded-full bg-gradient-to-r from-relic to-[#8bbcff]" style={{ width: `${progressPercent}%` }} />
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <p className="text-xs font-bold tracking-[0.14em] text-zinc-500">{isRu ? "Списано" : "Written off"}</p>
+              <p className="mt-2 text-2xl font-black text-sky-300">{formatCoins(lead.bumpyCoinsWrittenOffTotal)}</p>
             </div>
-            <div className="mt-5 grid gap-3 sm:grid-cols-4">
-              {visibleStages.map((stage, index) => {
-                const done = activeStage !== "cancelled" && index <= activeIndex;
-
-                return (
-                  <div key={stage} className={`rounded-xl border p-3 ${done ? "border-relic/45 bg-relic/10" : "border-white/10 bg-black/20"}`}>
-                    <span className={`mb-2 grid h-8 w-8 place-items-center rounded-full ${done ? "bg-relic text-black" : "bg-white/10 text-zinc-500"}`}>
-                      {done ? <Check size={15} /> : <Clock size={15} />}
-                    </span>
-                    <p className="text-sm font-bold text-white">{stageCopy[stage][isRu ? "ru" : "en"]}</p>
-                    <p className="mt-1 text-xs leading-5 text-zinc-500">{stageCopy[stage][isRu ? "hintRu" : "hintEn"]}</p>
-                  </div>
-                );
-              })}
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <p className="text-xs font-bold tracking-[0.14em] text-zinc-500">{isRu ? "Начислено" : "Credited"}</p>
+              <p className="mt-2 text-2xl font-black text-emerald-300">{formatCoins(lead.bumpyCoinsCreditedTotal)}</p>
             </div>
           </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">Telegram</p>
-              <p className="mt-2 font-bold text-white">{lead.telegram || "-"}</p>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{isRu ? "Сумма заказа" : "Amount"}</p>
-              <p className="mt-2 font-bold text-white">{(lead.amountRub ?? 0).toLocaleString("ru-RU")} ₽</p>
-              {lead.requestedBumpyCoinsUse ? (
-                <p className="mt-2 rounded-lg border border-relic/20 bg-relic/[0.08] px-2 py-1 text-xs leading-5 text-relic">
-                  {isRu ? "Клиент просит применить" : "Client requested"} {(lead.requestedBumpyCoinsAvailable ?? 0).toLocaleString("ru-RU")} Bumpy Coins
-                </p>
-              ) : null}
-              {lead.bumpyCoinsWrittenOffTotal ? (
-                <p className="mt-2 text-xs font-bold text-sky-300">
-                  {isRu ? "Списано" : "Written off"}: {lead.bumpyCoinsWrittenOffTotal.toLocaleString("ru-RU")} Bumpy Coins
-                </p>
-              ) : null}
-            </div>
-            <div className="rounded-xl border border-white/10 bg-black/20 p-4 sm:col-span-2">
-              <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{isRu ? "Оплата и информация от менеджера" : "Payment and manager information"}</p>
+          <div className="mt-5 space-y-3">
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <p className="text-xs font-bold tracking-[0.14em] text-zinc-500">{isRu ? "Информация для клиента" : "Client information"}</p>
               <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-zinc-300">
-                {lead.paymentDetails || lead.managerNote || (isRu ? "Менеджер скоро добавит детали заказа." : "Manager will add order details soon.")}
+                {lead.paymentDetails || lead.managerNote || (isRu ? "Менеджер ответит в диалоге и добавит детали заказа." : "Manager will answer in the dialog and add order details.")}
               </p>
             </div>
+
             {lead.comment ? (
-              <div className="rounded-xl border border-white/10 bg-black/20 p-4 sm:col-span-2">
-                <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{isRu ? "Комментарий клиента" : "Client comment"}</p>
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <p className="text-xs font-bold tracking-[0.14em] text-zinc-500">{isRu ? "Комментарий клиента" : "Client comment"}</p>
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-zinc-300">{lead.comment}</p>
               </div>
             ) : null}
+
             {lead.screenshotUrl ? (
               <button
                 type="button"
                 onClick={() => setImagePreview({ url: lead.screenshotUrl || "", alt: isRu ? "Скриншот заявки" : "Request screenshot" })}
-                className="rounded-xl border border-relic/20 bg-relic/10 p-4 text-left text-sm font-bold text-relic sm:col-span-2"
+                className="w-full rounded-2xl border border-relic/20 bg-relic/10 p-4 text-left text-sm font-bold text-relic transition hover:border-relic/45 hover:bg-relic/15"
               >
-                {isRu ? "Открыть прикрепленный скриншот" : "Open attached screenshot"}
+                {isRu ? "Открыть прикрепленный скриншот клиента" : "Open client screenshot"}
               </button>
             ) : null}
           </div>
 
           {canManageOrder ? (
             <div className="mt-5 rounded-2xl border border-relic/24 bg-[#070d16]/88 p-4">
-              <div className="mb-4 flex items-center gap-3">
-                <span className="grid h-10 w-10 place-items-center rounded-xl border border-relic/35 bg-relic/10 text-relic">
-                  <CreditCard size={18} />
-                </span>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-relic">{isRu ? "Панель менеджера" : "Manager panel"}</p>
-                  <h3 className="font-bold text-white">{isRu ? "Статус, сумма и реквизиты" : "Status, amount and payment details"}</h3>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="grid h-10 w-10 place-items-center rounded-xl border border-relic/35 bg-relic/10 text-relic">
+                    <CreditCard size={18} />
+                  </span>
+                  <div>
+                    <p className="text-xs font-bold tracking-[0.16em] text-relic">{isRu ? "Панель менеджера" : "Manager panel"}</p>
+                    <h3 className="font-bold text-white">{isRu ? "Решение по заявке" : "Request decision"}</h3>
+                  </div>
                 </div>
+                <span className="rounded-xl border border-sky-400/25 bg-sky-400/10 px-3 py-2 text-xs font-black text-sky-200">
+                  {isRu ? "Доступно" : "Available"}: {formatCoins(clientCoinsBalance)}
+                </span>
               </div>
 
-              <div className="grid gap-2 sm:grid-cols-2">
-                {orderStages.map((stage) => (
-                  <button
-                    key={stage.id}
-                    type="button"
-                    onClick={() => setManagerDraft((current) => ({ ...current, status: stage.id }))}
-                    className={`rounded-xl border px-3 py-3 text-left transition ${
-                      managerDraft.status === stage.id
-                        ? "border-relic bg-relic/15 text-white shadow-[0_0_18px_rgba(47,124,255,0.14)]"
-                        : "border-white/10 bg-black/25 text-zinc-400 hover:border-relic/35 hover:text-white"
-                    }`}
-                  >
-                    <span className="text-sm font-black">{stageCopy[stage.id][isRu ? "ru" : "en"]}</span>
-                  </button>
-                ))}
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-xl border border-white/10 bg-black/25 p-3">
+                  <p className="text-xs text-zinc-500">{isRu ? "Баланс клиента" : "Client balance"}</p>
+                  <p className="mt-1 text-lg font-black text-white">{formatCoins(clientCoinsBalance)}</p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/25 p-3">
+                  <p className="text-xs text-zinc-500">{isRu ? "Всего начислено" : "Total earned"}</p>
+                  <p className="mt-1 text-lg font-black text-emerald-300">{formatCoins(clientCoinsEarned)}</p>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/25 p-3">
+                  <p className="text-xs text-zinc-500">{isRu ? "Всего списано" : "Total spent"}</p>
+                  <p className="mt-1 text-lg font-black text-sky-300">{formatCoins(clientCoinsSpent)}</p>
+                </div>
               </div>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <label className="block">
-                  <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">{isRu ? "Сумма в BP-статус" : "BP amount"}</span>
+                  <span className="text-xs font-bold tracking-[0.14em] text-zinc-500">{isRu ? "Сумма заказа" : "Order amount"}</span>
                   <input
                     value={managerDraft.amountRub}
                     onChange={(event) => setManagerDraft((current) => ({ ...current, amountRub: event.target.value }))}
                     className="mt-2 w-full rounded-xl border-white/10 bg-black/35 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
                     placeholder="0"
+                    inputMode="numeric"
                   />
                 </label>
                 <label className="block">
-                  <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">{isRu ? "Реквизиты / ссылка оплаты" : "Payment link/details"}</span>
-                  <input
-                    value={managerDraft.paymentDetails}
-                    onChange={(event) => setManagerDraft((current) => ({ ...current, paymentDetails: event.target.value }))}
-                    className="mt-2 w-full rounded-xl border-white/10 bg-black/35 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
-                    placeholder={isRu ? "Ссылка, карта, комментарий по оплате" : "Link, card, payment comment"}
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">{isRu ? "Списать Bumpy Coins" : "Write off Bumpy Coins"}</span>
+                  <span className="text-xs font-bold tracking-[0.14em] text-zinc-500">{isRu ? "Списать Bumpy Coins" : "Write off Bumpy Coins"}</span>
                   <input
                     value={managerDraft.writeOffBumpyCoins}
                     onChange={(event) => setManagerDraft((current) => ({ ...current, writeOffBumpyCoins: event.target.value }))}
                     className="mt-2 w-full rounded-xl border-white/10 bg-black/35 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+                    placeholder={isRu ? `до ${clientCoinsBalance}` : `up to ${clientCoinsBalance}`}
+                    inputMode="numeric"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-bold tracking-[0.14em] text-zinc-500">{isRu ? "Начислить Bumpy Coins" : "Credit Bumpy Coins"}</span>
+                  <input
+                    value={managerDraft.creditBumpyCoins}
+                    onChange={(event) => setManagerDraft((current) => ({ ...current, creditBumpyCoins: event.target.value }))}
+                    className="mt-2 w-full rounded-xl border-white/10 bg-black/35 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
                     placeholder="0"
                     inputMode="numeric"
                   />
-                  <span className="mt-1 block text-xs leading-5 text-zinc-500">
-                    {isRu ? "Списывается вручную после согласования с клиентом." : "Manual write-off after client confirmation."}
-                  </span>
+                </label>
+                <label className="block">
+                  <span className="text-xs font-bold tracking-[0.14em] text-zinc-500">{isRu ? "Реквизиты / оплата" : "Payment details"}</span>
+                  <input
+                    value={managerDraft.paymentDetails}
+                    onChange={(event) => setManagerDraft((current) => ({ ...current, paymentDetails: event.target.value }))}
+                    className="mt-2 w-full rounded-xl border-white/10 bg-black/35 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+                    placeholder={isRu ? "Ссылка, карта или короткая инструкция" : "Link, card or short instruction"}
+                  />
                 </label>
                 <label className="block sm:col-span-2">
-                  <span className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">{isRu ? "Сообщение клиенту / заметка" : "Client note"}</span>
+                  <span className="text-xs font-bold tracking-[0.14em] text-zinc-500">{isRu ? "Заметка клиенту" : "Client note"}</span>
                   <textarea
                     value={managerDraft.managerNote}
                     onChange={(event) => setManagerDraft((current) => ({ ...current, managerNote: event.target.value }))}
                     rows={3}
                     className="mt-2 w-full rounded-xl border-white/10 bg-black/35 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
-                    placeholder={isRu ? "Что клиент должен увидеть на странице заявки" : "What client should see on the request page"}
+                    placeholder={isRu ? "Что клиент увидит на странице заявки" : "What client will see on this request page"}
                   />
                 </label>
               </div>
 
-              <button
-                type="button"
-                onClick={() => void saveOrderPanel()}
-                disabled={savingOrder}
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-relic px-4 py-3 font-black text-black transition hover:bg-[#8bbcff] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <Save size={17} />
-                {savingOrder ? (isRu ? "Сохраняю..." : "Saving...") : isRu ? "Сохранить статус заявки" : "Save request status"}
-              </button>
+              <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                <button
+                  type="button"
+                  onClick={() => void saveOrderPanel()}
+                  disabled={savingOrder}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-relic/35 bg-relic/10 px-4 py-3 font-black text-relic transition hover:bg-relic/15 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Save size={17} />
+                  {savingOrder ? (isRu ? "Сохраняю..." : "Saving...") : isRu ? "Сохранить" : "Save"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void saveOrderPanel("completed")}
+                  disabled={savingOrder}
+                  className="rounded-xl bg-emerald-400 px-4 py-3 font-black text-black transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isRu ? "Завершить" : "Complete"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void saveOrderPanel("cancelled")}
+                  disabled={savingOrder}
+                  className="rounded-xl border border-red-400/35 bg-red-400/10 px-4 py-3 font-black text-red-200 transition hover:bg-red-400/15 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isRu ? "Отменить" : "Cancel"}
+                </button>
+              </div>
             </div>
           ) : null}
         </GlassPanel>

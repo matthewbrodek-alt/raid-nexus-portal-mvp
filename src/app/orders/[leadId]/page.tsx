@@ -14,11 +14,11 @@ export default async function OrderPage({ params }: OrderPageProps) {
   return (
     <ProtectedRoute>
       <PageShell
-        eyebrow={{ ru: "Заказ RAID", en: "RAID order" }}
-        title={{ ru: "Страница заявки", en: "Request page" }}
+        eyebrow={{ ru: "Связь по заказу", en: "Order support" }}
+        title={{ ru: "Заявка и менеджер", en: "Request and manager" }}
         description={{
-          ru: "Этапы выполнения, сумма, реквизиты и переписка с менеджером по конкретному игровому набору.",
-          en: "Stages, amount, payment details and manager communication for a specific game pack."
+          ru: "Переписка, сумма, статус и Bumpy Coins по конкретному игровому заказу.",
+          en: "Messages, amount, status and Bumpy Coins for a specific game order."
         }}
       >
         <OrderRequestView leadId={leadId} />
