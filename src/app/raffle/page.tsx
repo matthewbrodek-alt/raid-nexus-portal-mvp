@@ -4,7 +4,7 @@ import Link from "next/link";
 import { CheckCircle2, ChevronLeft } from "lucide-react";
 import { browserLocalPersistence, setPersistence, signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { RaidLogo } from "@/components/brand/raid-logo";
 import { useAuth } from "@/components/auth/auth-provider";
 import { normalizeEmail } from "@/lib/auth/role-utils";
@@ -86,6 +86,20 @@ export default function RafflePage() {
   const progress = Math.min(100, Math.round((clicks / REQUIRED_CLICKS) * 100));
   const entryId = user && raffle ? `${user.uid}_${raffle.drawKey}` : "";
 
+  const resetIdleVideo = useCallback((video: HTMLVideoElement | null = videoRef.current) => {
+    if (!video) {
+      return;
+    }
+
+    video.pause();
+
+    try {
+      video.currentTime = 0;
+    } catch {
+      // Some mobile browsers reject seeking before metadata is ready.
+    }
+  }, []);
+
   useEffect(() => {
     setRaffle(getNextRaffleInfo());
   }, []);
@@ -98,8 +112,8 @@ export default function RafflePage() {
     }
 
     video.muted = true;
-    void video.play().catch(() => undefined);
-  }, []);
+    resetIdleVideo(video);
+  }, [resetIdleVideo]);
 
   useEffect(() => {
     if (!reactionVideo || !shouldPlayReactionRef.current) {
@@ -112,6 +126,7 @@ export default function RafflePage() {
       return;
     }
 
+    resetIdleVideo();
     video.pause();
 
     try {
@@ -130,7 +145,7 @@ export default function RafflePage() {
         setReactionVisible(false);
         setReactionVideo(null);
       });
-  }, [reactionNonce, reactionSourceIndex, reactionVideo]);
+  }, [reactionNonce, reactionSourceIndex, reactionVideo, resetIdleVideo]);
 
   useEffect(() => {
     if (!user || !entryId) {
@@ -207,6 +222,7 @@ export default function RafflePage() {
     const nextVideo = pickHitVideo(lastHitVideoRef.current);
     lastHitVideoRef.current = nextVideo;
     shouldPlayReactionRef.current = true;
+    resetIdleVideo();
     setReactionVisible(false);
     setReactionSourceIndex(0);
     setReactionVideo(nextVideo);
@@ -269,8 +285,7 @@ export default function RafflePage() {
                   muted
                   playsInline
                   preload="auto"
-                  autoPlay
-                  loop
+                  onLoadedMetadata={(event) => resetIdleVideo(event.currentTarget)}
                 >
                   {MACHEHA_VIDEOS.idle.map((source) => (
                     <source key={source.src} src={source.src} type={source.type} />
@@ -298,6 +313,7 @@ export default function RafflePage() {
                         // Some mobile browsers reject seeking before metadata is ready.
                       }
 
+                      resetIdleVideo();
                       setReactionVisible(false);
                       window.setTimeout(() => {
                         setReactionSourceIndex(0);
@@ -315,7 +331,7 @@ export default function RafflePage() {
                   onClick={tapMacheha}
                   disabled={!user || entryExists || saving}
                   className="absolute left-1/2 top-[24%] z-[8] h-[48%] w-[34%] -translate-x-1/2 rounded-full bg-transparent text-transparent outline-none disabled:cursor-default"
-                  aria-label="РџРѕС‚С‹РєР°Р№ РјР°С‡РµС…Сѓ РІ РїСѓР·РёРєРѕ"
+                  aria-label="Потыкай мачеху в пузико"
                 />
 
                 <span className="pointer-events-none absolute left-4 top-4 z-[9] grid min-w-20 place-items-center rounded-[14px] border border-relic/40 bg-black/58 px-3 py-2 font-[var(--font-cinzel)] text-lg font-black text-relic shadow-[0_0_28px_rgba(47,124,255,0.2)] backdrop-blur-sm">
