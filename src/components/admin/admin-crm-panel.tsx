@@ -1,6 +1,6 @@
 "use client";
 
-import { BellRing, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, ClipboardCopy, Download, FileSpreadsheet, MessageSquare, Save, Table2 } from "lucide-react";
+import { CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, ClipboardCopy, Download, FileSpreadsheet, MessageSquare, Save, Table2 } from "lucide-react";
 import { addDoc, collection, doc, getDoc, increment, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useMemo, useState } from "react";
@@ -346,8 +346,6 @@ export function AdminCrmPanel() {
   const [selectedMonth, setSelectedMonth] = useState(currentMonthValue);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [manualService, setManualService] = useState<ServiceType>("donation");
-  const [manualTelegram, setManualTelegram] = useState("");
-  const [manualTitle, setManualTitle] = useState("");
   const [manualClient, setManualClient] = useState("");
   const [manualNote, setManualNote] = useState("");
   const [statusText, setStatusText] = useState("");
@@ -387,7 +385,6 @@ export function AdminCrmPanel() {
     return Array.from(months).sort((a, b) => b.localeCompare(a));
   }, [leads, selectedMonth]);
   const monthLeads = useMemo(() => leads.filter((lead) => leadMonth(lead) === selectedMonth), [leads, selectedMonth]);
-  const unprocessedCount = useMemo(() => monthLeads.filter((lead) => !isCompletedOrder(lead.status)).length, [monthLeads]);
   const completedAmount = useMemo(
     () => monthLeads.filter((lead) => isCompletedOrder(lead.status)).reduce((sum, lead) => sum + (lead.amountRub ?? 0), 0),
     [monthLeads]
@@ -466,11 +463,13 @@ export function AdminCrmPanel() {
   async function createManualLead(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    const manualRequestTitle = serviceLabel(manualService);
+
     await addDoc(collection(db, collections.topupLeads), {
       clientName: manualClient.trim(),
-      telegram: manualTelegram.trim(),
-      packageId: manualTitle.trim(),
-      packageName: manualTitle.trim(),
+      telegram: "",
+      packageId: `manual-${manualService}`,
+      packageName: manualRequestTitle,
       serviceType: manualService,
       paymentMethod: "manager",
       managerNote: manualNote.trim(),
@@ -482,8 +481,6 @@ export function AdminCrmPanel() {
     });
 
     setManualClient("");
-    setManualTelegram("");
-    setManualTitle("");
     setManualNote("");
     setManualService("donation");
     setStatusText("Внутренняя заявка создана.");
@@ -729,35 +726,26 @@ export function AdminCrmPanel() {
         ))}
       </div>
 
-      <div className="mb-5 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-relic/20 bg-black/25 p-4">
-          <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Заявок за месяц</p>
-          <p className="mt-2 text-3xl font-black text-white">{monthLeads.length}</p>
+      <div className="mb-4 grid gap-2 sm:grid-cols-2">
+        <div className="rounded-xl border border-relic/18 bg-black/22 p-3">
+          <p className="text-[11px] font-bold tracking-[0.12em] text-zinc-500">Заявок за месяц</p>
+          <p className="mt-1 text-2xl font-black text-white">{monthLeads.length}</p>
         </div>
-        <div className="rounded-lg border border-ember/30 bg-ember/[0.08] p-4">
-          <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">В работе</p>
-          <p className="mt-2 inline-flex items-center gap-2 text-3xl font-black text-ember">
-            <BellRing size={24} />
-            {unprocessedCount}
-          </p>
-        </div>
-        <div className="rounded-lg border border-emerald-400/20 bg-emerald-400/[0.08] p-4">
-          <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Выполнено на сумму</p>
-          <p className="mt-2 text-3xl font-black text-emerald-300">{completedAmount.toLocaleString("ru-RU")} ₽</p>
+        <div className="rounded-xl border border-emerald-400/18 bg-emerald-400/[0.07] p-3">
+          <p className="text-[11px] font-bold tracking-[0.12em] text-zinc-500">Выполнено на сумму</p>
+          <p className="mt-1 text-2xl font-black text-emerald-300">{completedAmount.toLocaleString("ru-RU")} ₽</p>
         </div>
       </div>
 
-      <form onSubmit={createManualLead} className="mb-5 grid gap-3 rounded-xl border border-white/10 bg-black/20 p-4 lg:grid-cols-[0.8fr_1fr_1fr_1fr]">
+      <form onSubmit={createManualLead} className="mb-4 grid gap-2 rounded-xl border border-white/10 bg-black/20 p-3 lg:grid-cols-[0.8fr_1fr_2fr_auto]">
         <select value={manualService} onChange={(event) => setManualService(event.target.value as ServiceType)} className="rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
           <option value="donation">Донат</option>
           <option value="account_purchase">Покупка аккаунта</option>
           <option value="game_help">Помощь по игре</option>
         </select>
         <input value={manualClient} onChange={(event) => setManualClient(event.target.value)} placeholder="Клиент" className="rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
-        <input value={manualTelegram} onChange={(event) => setManualTelegram(event.target.value)} placeholder="Telegram" className="rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
-        <input value={manualTitle} onChange={(event) => setManualTitle(event.target.value)} required placeholder="Услуга / набор / помощь" className="rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
-        <textarea value={manualNote} onChange={(event) => setManualNote(event.target.value)} rows={2} placeholder="Заметка менеджера" className="rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic lg:col-span-3" />
-        <button className="inline-flex items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black">
+        <textarea value={manualNote} onChange={(event) => setManualNote(event.target.value)} rows={1} placeholder="Заметка менеджера / детали заявки" className="min-h-11 rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+        <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-relic px-4 py-2 font-bold text-black">
           <Save size={16} />
           Создать
         </button>
@@ -769,13 +757,12 @@ export function AdminCrmPanel() {
         <div className="flex flex-col gap-2 border-b border-slate-500/20 bg-[#0d1624]/92 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-relic">Реестр заявок</p>
-            <p className="mt-1 text-sm text-zinc-400">Короткий список для работы менеджера. Клик по клиенту открывает страницу заявки, редактирование включается отдельно.</p>
           </div>
           <span className="rounded-full border border-white/10 bg-black/28 px-3 py-1 text-xs font-semibold text-zinc-300">
             {formatMonthLabel(selectedMonth)} · {monthLeads.length} строк
           </span>
         </div>
-        <div className="hidden max-h-[620px] overflow-auto md:block">
+        <div className="hidden max-h-[480px] overflow-auto md:block">
           <table className="min-w-full table-fixed border-separate border-spacing-0 text-left text-[13px]">
             <colgroup>
               <col className="w-[54px]" />
@@ -862,7 +849,7 @@ export function AdminCrmPanel() {
           </table>
         </div>
 
-        <div className="grid gap-3 p-3 md:hidden">
+        <div className="grid max-h-[520px] gap-2 overflow-y-auto p-2 md:hidden">
           {monthLeads.map((lead, index) => {
             const draft = drafts[lead.id] ?? draftFromLead(lead);
             const stage = getOrderStage(draft.status);
@@ -870,31 +857,33 @@ export function AdminCrmPanel() {
             const editing = editingLeadId === lead.id;
 
             return (
-              <article key={lead.id} className={`${completed ? "border-emerald-400/25 bg-emerald-400/[0.05]" : "border-white/10 bg-black/22"} rounded-2xl border p-4`}>
-                <div className="flex items-start justify-between gap-3">
+              <article key={lead.id} className={`${completed ? "border-emerald-400/25 bg-emerald-400/[0.05]" : "border-white/10 bg-black/22"} rounded-xl border p-3`}>
+                <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-xs font-bold text-zinc-500">№ {index + 1} · {formatDate(lead.createdAt?.seconds)}</p>
-                    <button type="button" onClick={() => router.push(`/orders/${lead.id}`)} className="mt-1 max-w-full text-left text-lg font-black text-white transition hover:text-relic">
+                    <button type="button" onClick={() => router.push(`/orders/${lead.id}`)} className="mt-0.5 max-w-full text-left text-base font-black text-white transition hover:text-relic">
                       {clientDisplayName(lead)}
                     </button>
-                    <p className="mt-1 text-sm font-semibold text-zinc-400">{serviceLabel(lead.serviceType)}</p>
+                    <p className="mt-0.5 text-xs font-semibold text-zinc-400">{serviceLabel(lead.serviceType)}</p>
                   </div>
                   <span className={`${completed ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200" : "border-relic/25 bg-relic/[0.08] text-relic"} shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-bold`}>
                     {draft.status === "completed" ? "Выполнено" : stage.clientLabel}
                   </span>
                 </div>
 
-                <div className="mt-3 rounded-xl border border-white/10 bg-black/18 p-3">
-                  <p className="font-bold text-white">{lead.packageName || lead.packageId || "Заявка"}</p>
-                  {lead.comment ? <p className="mt-1 line-clamp-2 text-sm text-zinc-500">{lead.comment}</p> : null}
-                  <p className="mt-2 text-lg font-black text-relic">{formatRub(Number(draft.amountRub) || lead.amountRub)}</p>
+                <div className="mt-2 rounded-lg border border-white/10 bg-black/18 px-3 py-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="line-clamp-1 font-bold text-white">{lead.packageName || lead.packageId || "Заявка"}</p>
+                    <p className="shrink-0 font-black text-relic">{formatRub(Number(draft.amountRub) || lead.amountRub)}</p>
+                  </div>
+                  {lead.comment ? <p className="mt-1 line-clamp-1 text-xs text-zinc-500">{lead.comment}</p> : null}
                 </div>
 
-                <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="mt-2 grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => router.push(`/orders/${lead.id}`)}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-relic/30 bg-relic/10 px-3 py-2.5 text-sm font-bold text-relic"
+                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-relic/30 bg-relic/10 px-3 py-2 text-xs font-bold text-relic"
                   >
                     <MessageSquare size={15} />
                     Детали
@@ -902,7 +891,7 @@ export function AdminCrmPanel() {
                   <button
                     type="button"
                     onClick={() => setEditingLeadId(editing ? "" : lead.id)}
-                    className="rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm font-bold text-zinc-200"
+                    className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-xs font-bold text-zinc-200"
                   >
                     {editing ? "Скрыть" : "Редактировать"}
                   </button>
@@ -915,10 +904,6 @@ export function AdminCrmPanel() {
         </div>
 
         {monthLeads.length === 0 ? <p className="p-5 text-sm text-zinc-500">За выбранный месяц заявок нет.</p> : null}
-      </div>
-
-      <div className="mt-4 rounded-lg border border-relic/16 bg-black/22 p-4 text-sm leading-6 text-zinc-400">
-        Этапы видит клиент в личном кабинете. Сумма выполненных заявок автоматически участвует в BP-статусе: 100 000 ₽ - Silver, 300 000 ₽ - Gold, 777 777 ₽ - Platinum.
       </div>
     </GlassPanel>
   );
