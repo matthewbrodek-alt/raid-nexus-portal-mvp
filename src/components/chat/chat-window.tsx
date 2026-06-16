@@ -527,17 +527,19 @@ export function ChatWindow() {
       return;
     }
 
+    const threadIdFromUrl = targetThreadId;
+    const currentUid = user.uid;
     let cancelled = false;
 
     async function openThreadFromUrl() {
-      const threadSnapshot = await getDoc(doc(db, "directThreads", targetThreadId));
+      const threadSnapshot = await getDoc(doc(db, "directThreads", threadIdFromUrl));
 
       if (cancelled || !threadSnapshot.exists()) {
         return;
       }
 
       const thread = threadSnapshot.data() as DirectThread;
-      const otherUid = thread.participants?.find((participantUid) => participantUid !== user.uid);
+      const otherUid = thread.participants?.find((participantUid) => participantUid !== currentUid);
 
       if (!otherUid) {
         return;
@@ -550,9 +552,9 @@ export function ChatWindow() {
       }
 
       setSelectedUser(targetUser);
-      setSelectedDirectThreadId(targetThreadId);
+      setSelectedDirectThreadId(threadIdFromUrl);
       setSelectedGroup(null);
-      lastOpenedThreadParamRef.current = targetThreadId;
+      lastOpenedThreadParamRef.current = threadIdFromUrl;
     }
 
     void openThreadFromUrl();
