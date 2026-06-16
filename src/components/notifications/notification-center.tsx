@@ -12,16 +12,19 @@ import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import { useLanguage } from "@/lib/i18n/use-language";
 import {
+  hydrateNotificationSeenState,
+  isNotificationSeen,
+  markManyNotificationsSeen,
   markNotificationSeen,
   notificationSeenStateEvent,
   notificationSeenStorageKey,
   readNotificationSeenState,
-  writeNotificationSeenState,
   type NotificationSeenBucket,
   type NotificationSeenState
 } from "@/lib/notifications/seen-state";
 
-type NotificationStep = "messages" | "orders";
+type NotificationView = "new" | "history";
+type NotificationKind = "message" | "order" | "offer";
 
 type FirestoreTime = {
   seconds?: number;
@@ -44,6 +47,18 @@ type TopupLead = {
   updatedAt?: FirestoreTime;
 };
 
+type NotificationItem = {
+  id: string;
+  bucket: NotificationSeenBucket;
+  body: string;
+  href: string;
+  kind: NotificationKind;
+  meta: string;
+  read: boolean;
+  title: string;
+  value: number;
+};
+
 const stageLabels: Record<string, { ru: string; en: string }> = {
   new: { ru: "Заявка создана", en: "Request created" },
   payment: { ru: "Ожидает оплату", en: "Waiting for payment" },
@@ -52,6 +67,8 @@ const stageLabels: Record<string, { ru: string; en: string }> = {
   cancelled: { ru: "Отменена", en: "Cancelled" },
   processed: { ru: "Заявка выполнена", en: "Completed" }
 };
+
+const finishedOrderStatuses = new Set(["completed", "processed", "cancelled", "canceled", "done", "closed"]);
 
 function getSeconds(value?: FirestoreTime) {
   return value?.seconds ?? 0;
@@ -70,8 +87,6 @@ function formatDate(seconds?: number, isRu = true) {
   }).format(new Date(seconds * 1000));
 }
 
-const finishedOrderStatuses = new Set(["completed", "processed", "cancelled", "canceled", "done", "closed"]);
-
 function isActiveOrderNotification(status?: string) {
   const normalized = (status ?? "new").toLowerCase();
   return normalized !== "new" && !finishedOrderStatuses.has(normalized);
@@ -82,6 +97,18 @@ function isProfitableOffer(offer: { tag?: string; comment?: string; description?
   return (offer.status ?? "published") === "published" && (marker.includes("выгод") || marker.includes("hot") || marker.includes("deal") || marker.includes("best"));
 }
 
+function notificationIcon(kind: NotificationKind) {
+  if (kind === "message") {
+    return MessageCircle;
+  }
+
+  if (kind === "offer") {
+    return Flame;
+  }
+
+  return ShoppingBag;
+}
+
 export function NotificationCenter() {
   const { isRu } = useLanguage();
   const { user } = useAuth();
@@ -89,11 +116,12 @@ export function NotificationCenter() {
   const [threads, setThreads] = useState<DirectThread[]>([]);
   const [topupLeads, setTopupLeads] = useState<TopupLead[]>([]);
   const [seenState, setSeenState] = useState<NotificationSeenState>({});
-  const [activeStep, setActiveStep] = useState<NotificationStep>("messages");
+  const [activeView, setActiveView] = useState<NotificationView>("new");
   const seenUid = user?.uid ?? "guest";
 
   useEffect(() => {
     setSeenState(readNotificationSeenState(seenUid));
+    void hydrateNotificationSeenState(seenUid).then(setSeenState);
 
     function syncSeenState(event?: Event) {
       if (event instanceof StorageEvent && event.key !== notificationSeenStorageKey(seenUid)) {
@@ -123,6 +151,7 @@ export function NotificationCenter() {
     }
 
     setSeenState(readNotificationSeenState(seenUid));
+    void hydrateNotificationSeenState(seenUid).then(setSeenState);
 
     const threadsQuery = query(collection(db, "directThreads"), where("participants", "array-contains", user.uid), limit(80));
     const unsubscribeThreads = onSnapshot(
@@ -134,7 +163,7 @@ export function NotificationCenter() {
       () => setThreads([])
     );
 
-    const topupQuery = query(collection(db, collections.topupLeads), where("uid", "==", user.uid), limit(20));
+    const topupQuery = query(collection(db, collections.topupLeads), where("uid", "==", user.uid), limit(30));
     const unsubscribeTopup = onSnapshot(
       topupQuery,
       (snapshot) => {
@@ -150,186 +179,185 @@ export function NotificationCenter() {
     };
   }, [seenUid, user?.uid]);
 
-  const unreadThreads = useMemo(() => {
+  const notifications = useMemo<NotificationItem[]>(() => {
     if (!user?.uid) {
       return [];
     }
 
-    return threads
-      .filter((thread) => {
+    const messageItems = threads
+      .map<NotificationItem | null>((thread) => {
         const seconds = getSeconds(thread.lastMessageAt);
-        return seconds > 0 && thread.lastMessageUid && thread.lastMessageUid !== user.uid && (seenState.threadById?.[thread.id] ?? 0) < seconds;
+
+        if (!seconds || !thread.lastMessageUid || thread.lastMessageUid === user.uid) {
+          return null;
+        }
+
+        const otherUid = thread.participants?.find((uid) => uid !== user.uid);
+        const body = thread.lastMessageText?.trim() || (isRu ? "Откройте диалог, чтобы прочитать сообщение." : "Open the dialog to read the message.");
+
+        return {
+          id: thread.id,
+          bucket: "threadById",
+          body,
+          href: otherUid ? `/chat?user=${otherUid}` : "/chat",
+          kind: "message",
+          meta: formatDate(seconds, isRu),
+          read: isNotificationSeen(seenState, "threadById", thread.id, seconds),
+          title: isRu ? "Личное сообщение" : "Private message",
+          value: seconds
+        };
       })
-      .sort((a, b) => getSeconds(b.lastMessageAt) - getSeconds(a.lastMessageAt));
-  }, [seenState.threadById, threads, user?.uid]);
+      .filter((item): item is NotificationItem => Boolean(item));
 
-  const updatedOrders = useMemo(() => {
-    if (!user?.uid) {
-      return [];
-    }
-
-    return topupLeads
-      .filter((lead) => {
+    const orderItems = topupLeads
+      .map<NotificationItem | null>((lead) => {
         const status = lead.status ?? "new";
         const seconds = getSeconds(lead.updatedAt) || getSeconds(lead.createdAt);
-        return isActiveOrderNotification(status) && seconds > 0 && (seenState.topupById?.[lead.id] ?? 0) < seconds;
+
+        if (!seconds || !isActiveOrderNotification(status)) {
+          return null;
+        }
+
+        const label = stageLabels[status]?.[isRu ? "ru" : "en"] ?? status;
+
+        return {
+          id: lead.id,
+          bucket: "topupById",
+          body: `${lead.packageName || (isRu ? "Игровой набор" : "Game pack")} · ${label}`,
+          href: `/orders/${lead.id}`,
+          kind: "order",
+          meta: formatDate(seconds, isRu),
+          read: isNotificationSeen(seenState, "topupById", lead.id, seconds),
+          title: isRu ? "Заявка обновлена" : "Request updated",
+          value: seconds
+        };
       })
-      .sort((a, b) => (getSeconds(b.updatedAt) || getSeconds(b.createdAt)) - (getSeconds(a.updatedAt) || getSeconds(a.createdAt)));
-  }, [seenState.topupById, topupLeads, user?.uid]);
+      .filter((item): item is NotificationItem => Boolean(item));
 
-  const hotOffers = useMemo(() => offers.filter(isProfitableOffer).slice(0, 5), [offers]);
-
-  const unreadHotOfferCount = useMemo(
-    () =>
-      hotOffers.filter((offer) => {
+    const offerItems = offers
+      .filter(isProfitableOffer)
+      .slice(0, 5)
+      .map<NotificationItem>((offer) => {
         const seconds = getSeconds(offer.updatedAt) || getSeconds(offer.createdAt) || 1;
-        return (seenState.offerById?.[offer.id] ?? 0) < seconds;
-      }).length,
-    [hotOffers, seenState.offerById]
-  );
 
-  const stepButtons = useMemo(
-    () => [
-      { id: "messages" as const, label: isRu ? "1. Сообщения" : "1. Messages", count: unreadThreads.length },
-      { id: "orders" as const, label: isRu ? "2. Заявки" : "2. Requests", count: updatedOrders.length }
-    ],
-    [isRu, unreadThreads.length, updatedOrders.length]
-  );
+        return {
+          id: offer.id,
+          bucket: "offerById",
+          body: offer.comment || offer.description || (isRu ? "Откройте предложение, чтобы посмотреть детали." : "Open the offer to see details."),
+          href: `/donate?package=${offer.id}`,
+          kind: "offer",
+          meta: `${getDonationOfferTitle(offer, isRu)} · ${offer.priceRub.toLocaleString("ru-RU")} ₽`,
+          read: isNotificationSeen(seenState, "offerById", offer.id, seconds),
+          title: isRu ? "Выгодное предложение" : "Best deal",
+          value: seconds
+        };
+      });
+
+    return [...messageItems, ...orderItems, ...offerItems].sort((a, b) => b.value - a.value);
+  }, [isRu, offers, seenState, threads, topupLeads, user?.uid]);
+
+  const unreadNotifications = useMemo(() => notifications.filter((item) => !item.read), [notifications]);
+  const visibleNotifications = activeView === "new" ? unreadNotifications : notifications;
+  const hotOffers = useMemo(() => offers.filter(isProfitableOffer).slice(0, 5), [offers]);
+  const unreadHotOfferCount = notifications.filter((item) => item.kind === "offer" && !item.read).length;
 
   function markAllSeen() {
-    const threadById = { ...(seenState.threadById ?? {}) };
-    const topupById = { ...(seenState.topupById ?? {}) };
-    const offerById = { ...(seenState.offerById ?? {}) };
-    const next: NotificationSeenState = { threadById, topupById, offerById };
-
-    for (const thread of threads) {
-      const seconds = getSeconds(thread.lastMessageAt);
-      if (seconds) {
-        threadById[thread.id] = seconds;
-      }
-    }
-
-    for (const lead of topupLeads) {
-      const seconds = getSeconds(lead.updatedAt) || getSeconds(lead.createdAt);
-      if (seconds) {
-        topupById[lead.id] = seconds;
-      }
-    }
-
-    for (const offer of hotOffers) {
-      offerById[offer.id] = getSeconds(offer.updatedAt) || getSeconds(offer.createdAt) || 1;
-    }
-
-    writeNotificationSeenState(seenUid, next);
+    const next = markManyNotificationsSeen(
+      seenUid,
+      notifications.map((item) => ({ bucket: item.bucket, id: item.id, value: item.value }))
+    );
     setSeenState(next);
   }
 
-  function markSeen(bucket: NotificationSeenBucket, id: string, value: number) {
-    setSeenState(markNotificationSeen(seenUid, bucket, id, value));
+  function markSeen(item: NotificationItem) {
+    setSeenState(markNotificationSeen(seenUid, item.bucket, item.id, item.value));
   }
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+    <div className="grid gap-5 xl:grid-cols-[1fr_0.86fr]">
       <GlassPanel className="p-5 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-relic">{isRu ? "Центр портала" : "Portal center"}</p>
-            <h2 className="mt-2 font-[var(--font-cinzel)] text-3xl font-black text-white">{isRu ? "Уведомления" : "Notifications"}</h2>
+            <p className="text-xs font-bold tracking-[0.18em] text-relic">{isRu ? "Центр портала" : "Portal center"}</p>
+            <h2 className="mt-2 text-3xl font-black text-white">{isRu ? "Уведомления" : "Notifications"}</h2>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-400">
+              {isRu
+                ? "Новые события не теряются: закрытие всплывающей плашки больше не отмечает уведомление прочитанным."
+                : "New events are not lost: closing a toast no longer marks the notification as read."}
+            </p>
           </div>
           <button
             type="button"
             onClick={markAllSeen}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-relic/30 bg-relic/10 px-4 py-2 text-sm font-bold text-relic transition hover:border-relic hover:bg-relic/20"
+            disabled={unreadNotifications.length === 0}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-relic/30 bg-relic/10 px-4 py-2 text-sm font-bold text-relic transition hover:border-relic hover:bg-relic/20 disabled:cursor-not-allowed disabled:opacity-45"
           >
             <CheckCheck size={17} />
-            {isRu ? "Отметить прочитанным" : "Mark all read"}
+            {isRu ? "Все прочитано" : "Mark all read"}
           </button>
         </div>
 
         <div className="mt-5 grid gap-2 sm:grid-cols-2">
-          {stepButtons.map((step) => (
+          {[
+            { id: "new" as const, label: isRu ? "Новые" : "New", count: unreadNotifications.length },
+            { id: "history" as const, label: isRu ? "История" : "History", count: notifications.length }
+          ].map((view) => (
             <button
-              key={step.id}
+              key={view.id}
               type="button"
-              onClick={() => setActiveStep(step.id)}
+              onClick={() => setActiveView(view.id)}
               className={`rounded-2xl border px-4 py-3 text-left transition ${
-                activeStep === step.id
+                activeView === view.id
                   ? "border-relic bg-relic/15 text-white shadow-[0_0_20px_rgba(47,124,255,0.16)]"
                   : "border-white/10 bg-black/25 text-zinc-400 hover:border-relic/35 hover:text-white"
               }`}
             >
-              <span className="block text-xs font-bold uppercase tracking-[0.18em] text-relic">{step.label}</span>
-              <span className="mt-1 block text-sm">{isRu ? "Новых" : "Unread"}: {step.count}</span>
+              <span className="block text-sm font-black text-white">{view.label}</span>
+              <span className="mt-1 block text-xs text-zinc-500">{isRu ? "Всего" : "Total"}: {view.count}</span>
             </button>
           ))}
         </div>
 
-        <div className="mt-5 max-h-[520px] space-y-3 overflow-y-auto pr-1">
-          {unreadThreads.length === 0 && updatedOrders.length === 0 ? (
+        <div className="mt-5 max-h-[560px] space-y-3 overflow-y-auto pr-1">
+          {visibleNotifications.length === 0 ? (
             <div className="rounded-2xl border border-white/10 bg-black/25 p-5 text-sm leading-6 text-zinc-400">
-              {isRu ? "Новых личных уведомлений пока нет. Выгодные предложения доступны справа." : "No new personal notifications yet. Best deals are available on the right."}
+              {activeView === "new"
+                ? isRu
+                  ? "Новых уведомлений пока нет."
+                  : "No unread notifications yet."
+                : isRu
+                  ? "История уведомлений пока пустая."
+                  : "Notification history is empty."}
             </div>
           ) : null}
 
-          {activeStep === "messages" && unreadThreads.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-5 text-sm text-zinc-500">{isRu ? "Новых личных сообщений нет." : "No unread private messages."}</div>
-          ) : null}
-
-          {activeStep === "orders" && updatedOrders.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-5 text-sm text-zinc-500">{isRu ? "Новых изменений по заявкам нет." : "No new request updates."}</div>
-          ) : null}
-
-          {activeStep === "messages" && unreadThreads.map((thread) => {
-            const otherUid = thread.participants?.find((uid) => uid !== user?.uid);
+          {visibleNotifications.map((item) => {
+            const Icon = notificationIcon(item.kind);
 
             return (
               <Link
-                key={thread.id}
-                href={otherUid ? `/chat?user=${otherUid}` : "/chat"}
-                onClick={() => markSeen("threadById", thread.id, getSeconds(thread.lastMessageAt))}
-                className="group flex items-start gap-3 rounded-2xl border border-relic/[0.18] bg-black/30 p-4 transition hover:-translate-y-0.5 hover:border-relic/45 hover:bg-relic/[0.07]"
+                key={`${item.bucket}:${item.id}`}
+                href={item.href}
+                onClick={() => markSeen(item)}
+                className={`group flex items-start gap-3 rounded-2xl border p-4 transition hover:-translate-y-0.5 ${
+                  item.read
+                    ? "border-white/10 bg-black/20 hover:border-relic/25"
+                    : "border-relic/[0.28] bg-relic/[0.08] hover:border-relic/55"
+                }`}
               >
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-relic/30 bg-relic/[0.12] text-relic">
-                  <MessageCircle size={19} />
+                <span className="relative grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-relic/30 bg-relic/[0.12] text-relic">
+                  {!item.read ? <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border border-black bg-blood shadow-[0_0_12px_rgba(216,75,53,0.9)]" /> : null}
+                  <Icon size={19} />
                 </span>
-                <span className="min-w-0">
-                  <span className="flex items-center gap-2 text-sm font-black text-white">
-                    <span className="h-2 w-2 rounded-full bg-blood shadow-[0_0_12px_rgba(216,75,53,0.85)]" />
-                    {isRu ? "Новое личное сообщение" : "New private message"}
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-black text-white">
+                    {item.title}
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${item.read ? "bg-white/8 text-zinc-500" : "bg-blood/15 text-blood"}`}>
+                      {item.read ? (isRu ? "прочитано" : "read") : (isRu ? "новое" : "new")}
+                    </span>
                   </span>
-                  <span className="mt-1 line-clamp-2 block text-sm leading-6 text-zinc-300">
-                    {thread.lastMessageText || (isRu ? "Откройте диалог, чтобы прочитать сообщение." : "Open the dialog to read the message.")}
-                  </span>
-                  <span className="mt-1 block text-xs text-zinc-500">{formatDate(getSeconds(thread.lastMessageAt), isRu)}</span>
-                </span>
-              </Link>
-            );
-          })}
-
-          {activeStep === "orders" && updatedOrders.map((lead) => {
-            const status = lead.status ?? "new";
-            const label = stageLabels[status]?.[isRu ? "ru" : "en"] ?? status;
-            const seconds = getSeconds(lead.updatedAt) || getSeconds(lead.createdAt);
-
-            return (
-              <Link
-                key={lead.id}
-                href={`/orders/${lead.id}`}
-                onClick={() => markSeen("topupById", lead.id, seconds)}
-                className="group flex items-start gap-3 rounded-2xl border border-relic/[0.18] bg-black/30 p-4 transition hover:-translate-y-0.5 hover:border-relic/45 hover:bg-relic/[0.07]"
-              >
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-relic/30 bg-relic/[0.12] text-relic">
-                  <ShoppingBag size={19} />
-                </span>
-                <span className="min-w-0">
-                  <span className="flex items-center gap-2 text-sm font-black text-white">
-                    <span className="h-2 w-2 rounded-full bg-blood shadow-[0_0_12px_rgba(216,75,53,0.85)]" />
-                    {isRu ? "Заявка обновлена" : "Request updated"}
-                  </span>
-                  <span className="mt-1 line-clamp-2 block text-sm leading-6 text-zinc-300">
-                    {lead.packageName || (isRu ? "Игровой набор" : "Game pack")} · {label}
-                  </span>
-                  <span className="mt-1 block text-xs text-zinc-500">{formatDate(seconds, isRu)}</span>
+                  <span className="mt-1 block whitespace-normal break-words text-sm leading-6 text-zinc-300">{item.body}</span>
+                  <span className="mt-1 block text-xs text-zinc-500">{item.meta}</span>
                 </span>
               </Link>
             );
@@ -343,12 +371,12 @@ export function NotificationCenter() {
             <Flame size={20} />
           </span>
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-relic">{isRu ? "Выгодное предложение" : "Best deal"}</p>
-            <h2 className="font-[var(--font-cinzel)] text-2xl font-black text-white">{isRu ? "Предложения доната" : "Donation offers"}</h2>
+            <p className="text-xs font-bold tracking-[0.18em] text-relic">{isRu ? "Выгодное предложение" : "Best deal"}</p>
+            <h2 className="text-2xl font-black text-white">{isRu ? "Предложения доната" : "Donation offers"}</h2>
           </div>
         </div>
 
-        <div className="max-h-[520px] space-y-3 overflow-y-auto pr-1">
+        <div className="max-h-[560px] space-y-3 overflow-y-auto pr-1">
           {hotOffers.length === 0 ? (
             <div className="rounded-2xl border border-white/10 bg-black/25 p-5 text-sm leading-6 text-zinc-400">
               {isRu ? "Сейчас нет опубликованных предложений с тегом «выгодно»." : "No published offers tagged as best deal yet."}
@@ -357,12 +385,14 @@ export function NotificationCenter() {
 
           {hotOffers.map((offer) => {
             const imageUrl = getDonationOfferImageUrl(offer);
+            const seconds = getSeconds(offer.updatedAt) || getSeconds(offer.createdAt) || 1;
+            const isRead = isNotificationSeen(seenState, "offerById", offer.id, seconds);
 
             return (
               <Link
                 key={offer.id}
                 href={`/donate?package=${offer.id}`}
-                onClick={() => markSeen("offerById", offer.id, getSeconds(offer.updatedAt) || getSeconds(offer.createdAt) || 1)}
+                onClick={() => setSeenState(markNotificationSeen(seenUid, "offerById", offer.id, seconds))}
                 className="group relative min-h-[132px] overflow-hidden rounded-2xl border border-relic/20 bg-[#07111d] p-4 transition hover:-translate-y-0.5 hover:border-relic/55"
               >
                 {imageUrl ? (
@@ -371,8 +401,8 @@ export function NotificationCenter() {
                 <span className="absolute inset-0 bg-[linear-gradient(90deg,rgba(4,8,14,0.92),rgba(4,8,14,0.72)_48%,rgba(4,8,14,0.28))]" />
                 <span className="relative z-10 flex h-full min-h-[100px] flex-col justify-between">
                   <span>
-                    <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.22em] text-blood">
-                      <span className="h-2 w-2 rounded-full bg-blood shadow-[0_0_12px_rgba(216,75,53,0.8)]" />
+                    <span className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.18em] text-blood">
+                      {!isRead ? <span className="h-2 w-2 rounded-full bg-blood shadow-[0_0_12px_rgba(216,75,53,0.8)]" /> : null}
                       {isRu ? "Выгодно" : "Best deal"}
                     </span>
                     <span className="mt-2 block max-w-[72%] text-xl font-black leading-tight text-white">{getDonationOfferTitle(offer, isRu)}</span>
@@ -384,7 +414,9 @@ export function NotificationCenter() {
           })}
         </div>
         {unreadHotOfferCount > 0 ? (
-          <p className="mt-4 text-xs text-zinc-500">{isRu ? "Красная точка исчезнет после открытия предложения." : "The red dot disappears after opening an offer."}</p>
+          <p className="mt-4 text-xs leading-5 text-zinc-500">
+            {isRu ? "Предложение становится прочитанным только после открытия." : "An offer becomes read only after opening it."}
+          </p>
         ) : null}
       </GlassPanel>
     </div>

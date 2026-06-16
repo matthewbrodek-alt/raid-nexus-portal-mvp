@@ -8,6 +8,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import {
+  hydrateNotificationSeenState,
   markNotificationSeen,
   notificationSeenStateEvent,
   notificationSeenStorageKey,
@@ -47,6 +48,10 @@ type Toast = {
   seenValue: number;
 };
 
+function toastDismissKey(toast: Toast) {
+  return `${toast.seenKey}:${toast.id}:${toast.seenValue}`;
+}
+
 function getSeconds(value?: FirestoreTime) {
   return value?.seconds ?? 0;
 }
@@ -78,6 +83,8 @@ export function SiteNotificationToast() {
 
     const uid = userUid;
     setSeenState(readNotificationSeenState(uid));
+    setDismissedIds([]);
+    void hydrateNotificationSeenState(uid).then(setSeenState);
   }, [userUid]);
 
   useEffect(() => {
@@ -159,8 +166,8 @@ export function SiteNotificationToast() {
       })
       .sort((a, b) => getSeconds(b.lastMessageAt) - getSeconds(a.lastMessageAt))[0];
 
-    if (unreadThread && !dismissedIds.includes(`thread:${unreadThread.id}`)) {
-      return {
+    if (unreadThread) {
+      const candidate: Toast = {
         id: unreadThread.id,
         icon: "message",
         title: "Новое личное сообщение",
@@ -169,39 +176,47 @@ export function SiteNotificationToast() {
         seenKey: "threadById",
         seenValue: getSeconds(unreadThread.lastMessageAt)
       };
+
+      if (!dismissedIds.includes(toastDismissKey(candidate))) {
+        return candidate;
+      }
     }
 
     const relevantTopup = topupLeads
-      .filter((lead) => {
+      .map<Toast | null>((lead) => {
         const seconds = getSeconds(lead.updatedAt) || getSeconds(lead.createdAt);
         const status = lead.status ?? "new";
 
         if (!seconds || (seenState.topupById?.[lead.id] ?? 0) >= seconds) {
-          return false;
+          return null;
         }
 
         if (isAdmin) {
-          return status === "new" || status === "pending";
+          if (status !== "new" && status !== "pending") {
+            return null;
+          }
+        } else if (lead.uid !== uid || !isActiveOrderNotification(status)) {
+          return null;
         }
 
-        return lead.uid === uid && isActiveOrderNotification(status);
+        return {
+          id: lead.id,
+          icon: "topup",
+          title: isAdmin ? "Новая заявка на донат" : "Заявка на донат обновлена",
+          body: isAdmin
+            ? `${lead.telegram || "Клиент"}: ${lead.packageName || "выбранный набор"}`
+            : `${lead.packageName || "Ваш набор"}: ${lead.status || "обновлено"}`,
+          href: isAdmin ? "/admin" : `/orders/${lead.id}`,
+          seenKey: "topupById",
+          seenValue: seconds
+        };
       })
-      .sort((a, b) => (getSeconds(b.updatedAt) || getSeconds(b.createdAt)) - (getSeconds(a.updatedAt) || getSeconds(a.createdAt)))[0];
+      .filter((item): item is Toast => Boolean(item))
+      .sort((a, b) => b.seenValue - a.seenValue)
+      .find((candidate) => !dismissedIds.includes(toastDismissKey(candidate)));
 
-    if (relevantTopup && !dismissedIds.includes(`topup:${relevantTopup.id}`)) {
-      const seconds = getSeconds(relevantTopup.updatedAt) || getSeconds(relevantTopup.createdAt);
-
-      return {
-        id: relevantTopup.id,
-        icon: "topup",
-        title: isAdmin ? "Новая заявка на донат" : "Заявка на донат обновлена",
-        body: isAdmin
-          ? `${relevantTopup.telegram || "Клиент"}: ${relevantTopup.packageName || "выбранный набор"}`
-          : `${relevantTopup.packageName || "Ваш набор"}: ${relevantTopup.status || "обновлено"}`,
-        href: isAdmin ? "/admin" : `/orders/${relevantTopup.id}`,
-        seenKey: "topupById",
-        seenValue: seconds
-      };
+    if (relevantTopup) {
+      return relevantTopup;
     }
 
     return null;
@@ -219,13 +234,17 @@ export function SiteNotificationToast() {
       return;
     }
 
-    const uid = userUid;
-    setSeenState(markNotificationSeen(uid, activeToast.seenKey, activeToast.id, activeToast.seenValue));
-    setDismissedIds((current) => [...current, `${activeToast.seenKey === "threadById" ? "thread" : "topup"}:${activeToast.id}`]);
+    setDismissedIds((current) => (current.includes(toastDismissKey(activeToast)) ? current : [...current, toastDismissKey(activeToast)]));
   }
 
   function openToast() {
-    closeToast();
+    if (!userUid) {
+      return;
+    }
+
+    const uid = userUid;
+    setSeenState(markNotificationSeen(uid, activeToast.seenKey, activeToast.id, activeToast.seenValue));
+    setDismissedIds((current) => (current.includes(toastDismissKey(activeToast)) ? current : [...current, toastDismissKey(activeToast)]));
     router.push(activeToast.href);
   }
 
@@ -247,7 +266,7 @@ export function SiteNotificationToast() {
               <Bell size={14} className="text-relic" />
               {activeToast.title}
             </p>
-            <p className="mt-1 line-clamp-2 text-sm leading-5 text-zinc-300">{activeToast.body}</p>
+            <p className="mt-1 line-clamp-3 whitespace-normal break-words text-sm leading-5 text-zinc-300">{activeToast.body}</p>
           </button>
           <button
             type="button"

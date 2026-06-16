@@ -100,6 +100,25 @@ export default function RafflePage() {
     }
   }, []);
 
+  const playIdleVideo = useCallback((video: HTMLVideoElement | null = videoRef.current, fromStart = false) => {
+    if (!video) {
+      return;
+    }
+
+    video.muted = true;
+    video.loop = true;
+
+    if (fromStart) {
+      try {
+        video.currentTime = 0;
+      } catch {
+        // Some mobile browsers reject seeking before metadata is ready.
+      }
+    }
+
+    void video.play().catch(() => undefined);
+  }, []);
+
   useEffect(() => {
     setRaffle(getNextRaffleInfo());
   }, []);
@@ -112,8 +131,8 @@ export default function RafflePage() {
     }
 
     video.muted = true;
-    resetIdleVideo(video);
-  }, [resetIdleVideo]);
+    playIdleVideo(video);
+  }, [playIdleVideo]);
 
   useEffect(() => {
     if (!reactionVideo || !shouldPlayReactionRef.current) {
@@ -313,7 +332,7 @@ export default function RafflePage() {
                         // Some mobile browsers reject seeking before metadata is ready.
                       }
 
-                      resetIdleVideo();
+                      playIdleVideo(undefined, true);
                       setReactionVisible(false);
                       window.setTimeout(() => {
                         setReactionSourceIndex(0);

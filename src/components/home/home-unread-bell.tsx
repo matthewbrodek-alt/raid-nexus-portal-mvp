@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { Bell } from "lucide-react";
-import { collection, getDocs, limit, onSnapshot, query, where } from "firebase/firestore";
+import { collection, limit, onSnapshot, query, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
+import { useDonationOffers } from "@/components/donate/use-donation-offers";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import {
+  hydrateNotificationSeenState,
+  isNotificationSeen,
   notificationSeenStateEvent,
   notificationSeenStorageKey,
   readNotificationSeenState,
@@ -65,14 +68,15 @@ function isProfitableOffer(offer: HotOffer) {
 
 export function HomeUnreadBell({ label }: { label: string }) {
   const { user } = useAuth();
+  const donationOffers = useDonationOffers();
   const [threads, setThreads] = useState<DirectThread[]>([]);
   const [topupLeads, setTopupLeads] = useState<TopupLead[]>([]);
-  const [hotOffers, setHotOffers] = useState<HotOffer[]>([]);
   const [seenState, setSeenState] = useState<NotificationSeenState>({});
   const seenUid = user?.uid ?? "guest";
 
   useEffect(() => {
     setSeenState(readNotificationSeenState(seenUid));
+    void hydrateNotificationSeenState(seenUid).then(setSeenState);
 
     function syncSeenState(event?: Event) {
       if (event instanceof StorageEvent && event.key !== notificationSeenStorageKey(seenUid)) {
@@ -102,6 +106,7 @@ export function HomeUnreadBell({ label }: { label: string }) {
     }
 
     setSeenState(readNotificationSeenState(user.uid));
+    void hydrateNotificationSeenState(user.uid).then(setSeenState);
 
     const threadsQuery = query(collection(db, "directThreads"), where("participants", "array-contains", user.uid), limit(50));
     return onSnapshot(
@@ -131,36 +136,13 @@ export function HomeUnreadBell({ label }: { label: string }) {
     );
   }, [user?.uid]);
 
-  useEffect(() => {
+  const hotOffers = useMemo<HotOffer[]>(() => {
     if (!user?.uid) {
-      setHotOffers([]);
-      return;
+      return [];
     }
 
-    let cancelled = false;
-
-    async function loadHotOffers() {
-      try {
-        const offersQuery = query(collection(db, collections.donationOffers), where("status", "==", "published"), limit(12));
-        const snapshot = await getDocs(offersQuery);
-
-        if (!cancelled) {
-          setHotOffers(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<HotOffer, "id">) })).filter(isProfitableOffer).slice(0, 5));
-          setSeenState(readNotificationSeenState(seenUid));
-        }
-      } catch {
-        if (!cancelled) {
-          setHotOffers([]);
-        }
-      }
-    }
-
-    void loadHotOffers();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [seenUid, user?.uid]);
+    return donationOffers.filter(isProfitableOffer).slice(0, 5);
+  }, [donationOffers, user?.uid]);
 
   const unreadCount = useMemo(() => {
     if (!user?.uid) {
@@ -169,9 +151,9 @@ export function HomeUnreadBell({ label }: { label: string }) {
 
     return threads.filter((thread) => {
       const seconds = getSeconds(thread.lastMessageAt);
-      return seconds > 0 && thread.lastMessageUid && thread.lastMessageUid !== user.uid && (seenState.threadById?.[thread.id] ?? 0) < seconds;
+      return seconds > 0 && thread.lastMessageUid && thread.lastMessageUid !== user.uid && !isNotificationSeen(seenState, "threadById", thread.id, seconds);
     }).length;
-  }, [seenState.threadById, threads, user?.uid]);
+  }, [seenState, threads, user?.uid]);
 
   const topupNotificationCount = useMemo(() => {
     if (!user?.uid) {
@@ -181,9 +163,9 @@ export function HomeUnreadBell({ label }: { label: string }) {
     return topupLeads.filter((lead) => {
       const status = lead.status ?? "new";
       const seconds = getSeconds(lead.updatedAt) || getSeconds(lead.createdAt);
-      return isActiveOrderNotification(status) && seconds > 0 && (seenState.topupById?.[lead.id] ?? 0) < seconds;
+      return isActiveOrderNotification(status) && seconds > 0 && !isNotificationSeen(seenState, "topupById", lead.id, seconds);
     }).length;
-  }, [seenState.topupById, topupLeads, user?.uid]);
+  }, [seenState, topupLeads, user?.uid]);
 
   const hotOfferCount = useMemo(() => {
     if (!user?.uid) {
@@ -193,10 +175,10 @@ export function HomeUnreadBell({ label }: { label: string }) {
     return (
       hotOffers.filter((offer) => {
         const seconds = getSeconds(offer.updatedAt) || getSeconds(offer.createdAt) || 1;
-        return (seenState.offerById?.[offer.id] ?? 0) < seconds;
+        return !isNotificationSeen(seenState, "offerById", offer.id, seconds);
       }).length
     );
-  }, [hotOffers, seenState.offerById, user?.uid]);
+  }, [hotOffers, seenState, user?.uid]);
 
   const notificationCount = unreadCount + topupNotificationCount + hotOfferCount;
   const hasActiveSignal = notificationCount > 0;
