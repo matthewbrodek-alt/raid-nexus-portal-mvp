@@ -1,7 +1,7 @@
 "use client";
 
 import { Filter, Search, Star } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { HeroesCatalog } from "@/components/heroes/heroes-catalog";
 import { PageShell } from "@/components/layout/page-shell";
 import { GlassPanel } from "@/components/ui/glass-panel";
@@ -75,6 +75,14 @@ export default function HeroesPage() {
   const [rarity, setRarity] = useState("all");
   const [affinity, setAffinity] = useState("all");
   const factionOptions = useMemo(() => Array.from(new Set(gestalChampions.map((hero) => hero.faction))).sort((a, b) => a.localeCompare(b)), []);
+
+  useEffect(() => {
+    const querySearch = new URLSearchParams(window.location.search).get("search");
+
+    if (querySearch) {
+      setSearch(querySearch);
+    }
+  }, []);
 
   return (
     <PageShell

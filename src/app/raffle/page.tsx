@@ -15,7 +15,7 @@ import { getNextRaffleInfo, RAFFLE_PRIZE, type RaffleInfo } from "@/lib/raffle";
 const CRY_LINES = ["Ай-ай-ай!", "Хнык...", "Не по пузику!", "Еще чуть-чуть...", "Мачеха терпит ради рубинов", "Уже почти участник!"];
 const REQUIRED_CLICKS = 100;
 const MACHEHA_CRY_SOUND_SRC = "/sounds/macheha-cry.mp3";
-const HIT_VIDEO_KEYS = ["hit1", "hit2", "hit3"] as const;
+const HIT_VIDEO_KEYS = ["hit1", "hit2", "hit3", "hit4", "hit5"] as const;
 
 type RaffleVideoKey = "idle" | (typeof HIT_VIDEO_KEYS)[number];
 type RaffleVideoSource = {
@@ -51,6 +51,20 @@ const MACHEHA_VIDEOS: Record<RaffleVideoKey, RaffleVideoSource[]> = {
     { src: "/videos/raffle/macheha-hit-3.mov", type: "video/quicktime" },
     { src: "/videos/raffle/macheha.webm", type: "video/webm" },
     { src: "/videos/raffle/macheha.mov", type: "video/quicktime" }
+  ],
+  hit4: [
+    { src: "/videos/raffle/macheha-hit-4.mp4", type: "video/mp4" },
+    { src: "/videos/raffle/macheha-hit-4.webm", type: "video/webm" },
+    { src: "/videos/raffle/macheha-hit-4.mov", type: "video/quicktime" },
+    { src: "/videos/raffle/macheha-hit-1.mp4", type: "video/mp4" },
+    { src: "/videos/raffle/macheha-hit-1.webm", type: "video/webm" }
+  ],
+  hit5: [
+    { src: "/videos/raffle/macheha-hit-5.mp4", type: "video/mp4" },
+    { src: "/videos/raffle/macheha-hit-5.webm", type: "video/webm" },
+    { src: "/videos/raffle/macheha-hit-5.mov", type: "video/quicktime" },
+    { src: "/videos/raffle/macheha-hit-2.mp4", type: "video/mp4" },
+    { src: "/videos/raffle/macheha-hit-2.webm", type: "video/webm" }
   ]
 };
 
@@ -131,7 +145,7 @@ export default function RafflePage() {
     }
 
     video.muted = true;
-    playIdleVideo(video);
+    playIdleVideo(video, true);
   }, [playIdleVideo]);
 
   useEffect(() => {
@@ -304,7 +318,10 @@ export default function RafflePage() {
                   muted
                   playsInline
                   preload="auto"
-                  onLoadedMetadata={(event) => resetIdleVideo(event.currentTarget)}
+                  autoPlay
+                  loop
+                  onLoadedMetadata={(event) => playIdleVideo(event.currentTarget, true)}
+                  onCanPlay={(event) => playIdleVideo(event.currentTarget)}
                 >
                   {MACHEHA_VIDEOS.idle.map((source) => (
                     <source key={source.src} src={source.src} type={source.type} />

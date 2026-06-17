@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, CornerDownRight, ImagePlus, Menu, MessageSquare, Search, Send, Smile, Trash2, Users, X } from "lucide-react";
+import { ChevronDown, CornerDownRight, ImagePlus, Menu, MessageSquare, Pencil, Search, Send, Smile, Trash2, Users, X } from "lucide-react";
 import {
   addDoc,
   collection,
@@ -53,6 +53,7 @@ type ChatMessage = {
   } | null;
   mentions?: MentionedUser[];
   createdAt?: { seconds?: number };
+  editedAt?: { seconds?: number };
 };
 
 type ImagePreview = {
@@ -251,6 +252,9 @@ export function ChatWindow() {
   const [selectedGroup, setSelectedGroup] = useState<UserGroup | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [message, setMessage] = useState("");
+  const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null);
+  const [editingText, setEditingText] = useState("");
+  const [editingSaving, setEditingSaving] = useState(false);
   const [search, setSearch] = useState("");
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
@@ -801,13 +805,70 @@ export function ChatWindow() {
       return;
     }
 
-    const messageRef = selectedGroup
-      ? doc(db, collections.userGroups, selectedGroup.id, "messages", messageItem.id)
-      : activeDirectThreadId
-        ? doc(db, "directThreads", activeDirectThreadId, "messages", messageItem.id)
-        : doc(db, collections.chatRooms, "global", "messages", messageItem.id);
+    await deleteDoc(getMessageDocumentRef(messageItem.id));
 
-    await deleteDoc(messageRef);
+    if (editingMessage?.id === messageItem.id) {
+      cancelEditMessage();
+    }
+  }
+
+  function getMessageDocumentRef(messageId: string) {
+    if (selectedGroup) {
+      return doc(db, collections.userGroups, selectedGroup.id, "messages", messageId);
+    }
+
+    if (activeDirectThreadId) {
+      return doc(db, "directThreads", activeDirectThreadId, "messages", messageId);
+    }
+
+    return doc(db, collections.chatRooms, "global", "messages", messageId);
+  }
+
+  function startEditMessage(messageItem: ChatMessage) {
+    if (!user || messageItem.uid !== user.uid || !messageItem.text) {
+      return;
+    }
+
+    setEditingMessage(messageItem);
+    setEditingText(messageItem.text);
+    setReplyTo(null);
+    setEmojiOpen(false);
+  }
+
+  function cancelEditMessage() {
+    setEditingMessage(null);
+    setEditingText("");
+    setEditingSaving(false);
+  }
+
+  async function saveEditedMessage() {
+    if (!user || !editingMessage || editingSaving || editingMessage.uid !== user.uid) {
+      return;
+    }
+
+    const nextText = editingText.trim();
+
+    if (!nextText) {
+      return;
+    }
+
+    if (nextText === editingMessage.text.trim()) {
+      cancelEditMessage();
+      return;
+    }
+
+    setEditingSaving(true);
+
+    try {
+      await updateDoc(getMessageDocumentRef(editingMessage.id), {
+        text: nextText,
+        mentions: selectedUser ? [] : extractMentions(nextText, users, user.uid),
+        editedAt: serverTimestamp()
+      });
+      cancelEditMessage();
+    } finally {
+      setEditingSaving(false);
+    }
   }
 
   function applySelectedFile(file?: File | null) {
@@ -1179,7 +1240,47 @@ export function ChatWindow() {
                         <img src={attachmentUrl} alt={attachmentAlt} loading="lazy" decoding="async" className="max-h-44 object-cover" />
                       </button>
                     ) : null}
-                    {item.text ? <p className="break-words text-[13px] leading-5">{renderMessageText(item.text, item.mentions, customEmojis)}</p> : null}
+                    {editingMessage?.id === item.id ? (
+                      <div className="space-y-2">
+                        <textarea
+                          value={editingText}
+                          onChange={(event) => setEditingText(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Escape") {
+                              event.preventDefault();
+                              cancelEditMessage();
+                            }
+
+                            if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+                              event.preventDefault();
+                              void saveEditedMessage();
+                            }
+                          }}
+                          rows={2}
+                          className="min-h-[72px] w-full resize-y rounded-lg border border-relic/25 bg-black/45 px-3 py-2 text-[13px] leading-5 text-white outline-none transition focus:border-relic"
+                          autoFocus
+                        />
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={cancelEditMessage}
+                            className="rounded-lg border border-white/10 px-3 py-1.5 text-[11px] font-bold text-zinc-300 transition hover:text-white"
+                          >
+                            Отмена
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void saveEditedMessage()}
+                            disabled={editingSaving || !editingText.trim()}
+                            className="rounded-lg bg-relic px-3 py-1.5 text-[11px] font-black text-black transition hover:bg-[#8bbcff] disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {editingSaving ? "Сохранение..." : "Сохранить"}
+                          </button>
+                        </div>
+                      </div>
+                    ) : item.text ? (
+                      <p className="break-words text-[13px] leading-5">{renderMessageText(item.text, item.mentions, customEmojis)}</p>
+                    ) : null}
                     {!selectedUser ? (
                       <div className={`mt-1.5 hidden items-center gap-2 rounded-lg border border-white/10 bg-black/45 px-2 py-1 backdrop-blur-md group-hover:flex group-focus-within:flex ${own ? "justify-end" : "justify-start"}`}>
                         <button
@@ -1190,6 +1291,16 @@ export function ChatWindow() {
                           <CornerDownRight size={13} />
                           Ответить
                         </button>
+                        {own && item.text ? (
+                          <button
+                            type="button"
+                            onClick={() => startEditMessage(item)}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-200 hover:text-white"
+                          >
+                            <Pencil size={12} />
+                            Редактировать
+                          </button>
+                        ) : null}
                         {own || canModerate ? (
                           <button
                             type="button"
@@ -1202,16 +1313,31 @@ export function ChatWindow() {
                         ) : null}
                       </div>
                     ) : own ? (
-                      <button
-                        type="button"
-                        onClick={() => void deleteMessage(item)}
-                        className="mt-1.5 hidden items-center gap-1 rounded-lg border border-white/10 bg-black/45 px-2 py-1 text-[11px] font-semibold text-red-200 backdrop-blur-md transition hover:text-red-100 group-hover:inline-flex group-focus-within:inline-flex"
-                      >
-                        <Trash2 size={12} />
-                        Удалить
-                      </button>
+                      <div className="mt-1.5 hidden items-center justify-end gap-2 rounded-lg border border-white/10 bg-black/45 px-2 py-1 backdrop-blur-md group-hover:flex group-focus-within:flex">
+                        {item.text ? (
+                          <button
+                            type="button"
+                            onClick={() => startEditMessage(item)}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-200 transition hover:text-white"
+                          >
+                            <Pencil size={12} />
+                            Редактировать
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => void deleteMessage(item)}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-200 transition hover:text-red-100"
+                        >
+                          <Trash2 size={12} />
+                          Удалить
+                        </button>
+                      </div>
                     ) : null}
-                    <p className={`mt-0.5 text-right text-[10px] ${own ? "text-white/65" : "text-zinc-500"}`}>{formatTime(item)}</p>
+                    <p className={`mt-0.5 text-right text-[10px] ${own ? "text-white/65" : "text-zinc-500"}`}>
+                      {item.editedAt ? <span className="mr-1 opacity-80">изменено</span> : null}
+                      {formatTime(item)}
+                    </p>
                   </article>
                 </div>
               );

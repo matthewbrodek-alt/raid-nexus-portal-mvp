@@ -4,6 +4,8 @@ import Link from "next/link";
 import { collection, limit, onSnapshot, query, where } from "firebase/firestore";
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { getChampionRussianNameByEnglish } from "@/lib/data/champion-localization";
+import { gestalChampions } from "@/lib/data/gestal-champions";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import { useLanguage, type Language } from "@/lib/i18n/use-language";
@@ -14,6 +16,7 @@ type SearchItem = {
   title: string;
   description: string;
   href: string;
+  keywords?: string[];
 };
 
 type FirestoreNews = {
@@ -27,8 +30,13 @@ type FirestoreNews = {
 
 type FirestoreHero = {
   name?: string;
+  nameRu?: string;
+  nameEn?: string;
   faction?: string;
+  rarity?: string;
   role?: string;
+  affinity?: string;
+  aliases?: string[];
   markdownComment?: string;
 };
 
@@ -129,14 +137,15 @@ function getStaticItems(language: Language): SearchItem[] {
   const labels = copy[language];
 
   return [
-    { id: "page-news", type: labels.section, title: labels.news, description: labels.newsDescription, href: "/#news" },
-    { id: "page-heroes", type: labels.section, title: labels.heroes, description: labels.heroesDescription, href: "/heroes" },
-    { id: "page-market", type: labels.section, title: labels.market, description: labels.marketDescription, href: "/marketplace" },
-    { id: "page-clans", type: labels.section, title: labels.clans, description: labels.clansDescription, href: "/clans" },
-    { id: "page-topup", type: labels.section, title: labels.donate, description: labels.donateDescription, href: "/topup" },
-    { id: "page-useful", type: labels.section, title: labels.useful, description: labels.usefulDescription, href: "/useful" },
-    { id: "page-chat", type: labels.section, title: labels.chat, description: labels.chatDescription, href: "/chat" },
-    { id: "page-stream", type: labels.section, title: labels.stream, description: labels.streamDescription, href: "/stream" }
+    { id: "page-news", type: labels.section, title: labels.news, description: labels.newsDescription, href: "/#news", keywords: ["свежие новости", "новости", "articles", "latest news", "news"] },
+    { id: "page-heroes", type: labels.section, title: labels.heroes, description: labels.heroesDescription, href: "/heroes", keywords: ["герои", "герой", "чемпионы", "персонажи", "база героев", "heroes", "champions", "arbiter", "siphi", "taras"] },
+    { id: "page-market", type: labels.section, title: labels.market, description: labels.marketDescription, href: "/marketplace", keywords: ["покупка аккаунта", "аккаунты", "стартовый аккаунт", "осколки", "market", "account", "shards"] },
+    { id: "page-clans", type: labels.section, title: labels.clans, description: labels.clansDescription, href: "/clans", keywords: ["кланы", "клан", "гильдии", "объявления", "clans", "guilds"] },
+    { id: "page-topup", type: labels.section, title: labels.donate, description: labels.donateDescription, href: "/topup", keywords: ["донат", "купить игровой набор", "набор", "рубины", "bumpy coins", "donate", "topup", "pack"] },
+    { id: "page-useful", type: labels.section, title: labels.useful, description: labels.usefulDescription, href: "/useful", keywords: ["полезное", "гайды", "калькулятор", "арена", "урон", "hellhades", "gestal", "guides", "calculator"] },
+    { id: "page-chat", type: labels.section, title: labels.chat, description: labels.chatDescription, href: "/chat", keywords: ["чат", "сообщения", "личные сообщения", "общий чат", "chat", "messages"] },
+    { id: "page-stream", type: labels.section, title: labels.stream, description: labels.streamDescription, href: "/stream", keywords: ["эфир", "трансляция", "стрим", "live", "stream"] },
+    { id: "page-raffle", type: labels.section, title: language === "en" ? "Ruby giveaway" : "Розыгрыш рубинов", description: language === "en" ? "Raffle page with the Macheha click event" : "Страница розыгрыша с кликами по мачехе", href: "/raffle", keywords: ["розыгрыш", "розыгрыш рубинов", "мачеха", "пузико", "потыкай", "giveaway", "raffle", "rubies"] }
   ];
 }
 
@@ -145,7 +154,10 @@ function normalize(value: string) {
 }
 
 function matches(item: SearchItem, queryText: string) {
-  return normalize(`${item.title} ${item.description} ${item.type}`).includes(queryText);
+  const haystack = normalize(`${item.title} ${item.description} ${item.type} ${(item.keywords ?? []).join(" ")}`);
+  const queryParts = queryText.split(/\s+/).filter(Boolean);
+
+  return haystack.includes(queryText) || queryParts.every((part) => haystack.includes(part));
 }
 
 export function HomeSearch() {
@@ -171,7 +183,8 @@ export function HomeSearch() {
             description:
               (language === "en" ? data.summaryEn || data.markdownBodyEn || data.summary || data.markdownBody : data.summary || data.markdownBody || data.summaryEn || data.markdownBodyEn) ||
               labels.newsDescription,
-            href: "/#news"
+            href: "/#news",
+            keywords: ["news", "новости", data.title, data.titleEn, data.summary, data.summaryEn].filter(Boolean) as string[]
           };
         });
 
@@ -183,9 +196,10 @@ export function HomeSearch() {
           return {
             id: `hero-${item.id}`,
             type: labels.heroType,
-            title: data.name || labels.defaultHero,
-            description: [data.faction, data.role, data.markdownComment].filter(Boolean).join(" · ") || labels.heroesDescription,
-            href: "/heroes"
+            title: language === "en" ? data.nameEn || data.name || data.nameRu || labels.defaultHero : data.nameRu || data.name || data.nameEn || labels.defaultHero,
+            description: [data.faction, data.rarity, data.role, data.affinity, data.markdownComment].filter(Boolean).join(" · ") || labels.heroesDescription,
+            href: "/heroes",
+            keywords: [data.name, data.nameRu, data.nameEn, data.faction, data.rarity, data.role, data.affinity, ...(data.aliases ?? [])].filter(Boolean) as string[]
           };
         });
 
@@ -199,7 +213,8 @@ export function HomeSearch() {
             type: labels.marketType,
             title: data.title || labels.defaultMarket,
             description: data.description || [...(data.tags ?? []), ...(data.heroes ?? [])].join(", ") || labels.marketDescription,
-            href: "/marketplace"
+            href: "/marketplace",
+            keywords: [data.title, data.description, ...(data.tags ?? []), ...(data.heroes ?? [])].filter(Boolean) as string[]
           };
         });
 
@@ -212,7 +227,25 @@ export function HomeSearch() {
     };
   }, [labels, language]);
 
-  const items = useMemo(() => [...getStaticItems(language), ...dynamicItems], [dynamicItems, language]);
+  const localHeroItems = useMemo<SearchItem[]>(
+    () =>
+      gestalChampions.map((champion) => {
+        const russianName = getChampionRussianNameByEnglish(champion.name);
+        const title = language === "en" ? champion.name : russianName;
+        const description = [champion.faction, champion.rarity, champion.affinity, ...champion.roles].filter(Boolean).join(" · ");
+
+        return {
+          id: `local-hero-${champion.slug}`,
+          type: labels.heroType,
+          title,
+          description: description || labels.heroesDescription,
+          href: `/heroes?search=${encodeURIComponent(title)}`,
+          keywords: [champion.name, champion.shortName, russianName, champion.slug, champion.faction, champion.rarity, champion.affinity, champion.aura, ...champion.roles].filter(Boolean)
+        };
+      }),
+    [labels.heroType, labels.heroesDescription, language]
+  );
+  const items = useMemo(() => [...getStaticItems(language), ...localHeroItems, ...dynamicItems], [dynamicItems, language, localHeroItems]);
   const queryText = normalize(value);
   const results = useMemo(() => {
     if (!queryText) {
