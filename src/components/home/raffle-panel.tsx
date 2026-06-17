@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Clock3, Gem, Trophy, Users } from "lucide-react";
+import { ArrowRight, Clock3, Gem, Users } from "lucide-react";
 import { collection, limit, onSnapshot, query, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { useTheme } from "@/lib/theme/use-theme";
@@ -56,6 +56,10 @@ function getActiveRaffle(widgets: PortalEventWidget[], now: Date) {
   return active[0] ?? null;
 }
 
+function imageUrl(value: string) {
+  return `url("${value.replace(/"/g, "%22")}")`;
+}
+
 export function RafflePanel() {
   const { language } = useLanguage();
   const { theme } = useTheme();
@@ -90,78 +94,91 @@ export function RafflePanel() {
   const prizeFund = raffle?.prizeFund?.trim() || RAFFLE_PRIZE;
   const winnerCount = Math.max(1, Math.floor(raffle?.winnerCount ?? 5));
   const href = raffle?.id ? `/raffle?event=${raffle.id}` : "/raffle";
-  const backgroundImage = theme === "light" ? "url('/images/raffle/raffle-panel-light.png')" : "url('/images/raffle/raffle-panel-dark.png')";
+  const backgroundImage = theme === "light" ? imageUrl("/images/raffle/raffle-panel-light.png") : imageUrl("/images/raffle/raffle-panel-dark.png");
+  const leftArtImage = theme === "light" ? imageUrl("/images/raffle/raffle-left-light.png") : imageUrl("/images/raffle/raffle-left-dark.png");
+  const uploadedArt = raffle?.image?.secureUrl || raffle?.image?.url;
+  const rightArtImage = uploadedArt
+    ? imageUrl(uploadedArt)
+    : theme === "light"
+      ? imageUrl("/images/raffle/raffle-right-light.png")
+      : imageUrl("/images/raffle/raffle-right-dark.png");
 
   return (
     <section
-      className="relative overflow-hidden rounded-[28px] border border-[rgba(122,70,255,0.45)] bg-[#070a16] p-5 text-white shadow-[0_24px_80px_rgba(0,0,0,0.42)] sm:p-7"
+      className="relative min-h-[236px] overflow-hidden rounded-[28px] border border-[rgba(122,70,255,0.45)] bg-[#070a16] p-4 text-white shadow-[0_24px_80px_rgba(0,0,0,0.42)] sm:p-5"
       style={{
         backgroundImage,
         backgroundPosition: "center",
         backgroundSize: "cover"
       }}
     >
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(7,10,22,0.96)_0%,rgba(14,12,42,0.88)_42%,rgba(14,8,28,0.28)_100%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_26%,rgba(133,54,255,0.32),transparent_22%),radial-gradient(circle_at_72%_45%,rgba(255,47,126,0.18),transparent_30%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(7,10,22,0.98)_0%,rgba(14,12,42,0.9)_48%,rgba(14,8,28,0.54)_100%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_13%_24%,rgba(133,54,255,0.26),transparent_20%),radial-gradient(circle_at_86%_34%,rgba(255,47,126,0.18),transparent_27%)]" />
+      <div
+        className="pointer-events-none absolute right-0 top-0 z-[1] h-full w-[48%] bg-contain bg-right-center bg-no-repeat opacity-95"
+        style={{ backgroundImage: rightArtImage }}
+      />
+      <div className="pointer-events-none absolute bottom-0 right-0 z-[2] h-full w-[45%] bg-[linear-gradient(90deg,rgba(7,10,22,0)_0%,rgba(7,10,22,0.12)_42%,rgba(7,10,22,0.84)_100%)]" />
 
-      <div className="relative grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto]">
-        <div className="flex min-w-0 gap-4 sm:gap-5">
-          <span className="grid h-20 w-20 shrink-0 place-items-center rounded-full border border-[#9a6cff]/40 bg-[#220c46]/60 text-[#ff4fac] shadow-[0_0_44px_rgba(137,63,255,0.42)] sm:h-24 sm:w-24">
-            <Gem size={46} />
+      <div className="relative z-[3] flex min-h-[204px] flex-col justify-between gap-4">
+        <div className="grid grid-cols-[64px_minmax(0,1fr)] gap-3 pr-[32%] sm:grid-cols-[74px_minmax(0,1fr)] sm:gap-4 sm:pr-[36%]">
+          <span
+            className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-full border border-[#9a6cff]/40 bg-[#220c46]/70 bg-contain bg-center bg-no-repeat text-[#ff4fac] shadow-[0_0_34px_rgba(137,63,255,0.38)] sm:h-[74px] sm:w-[74px]"
+            style={{ backgroundImage: leftArtImage }}
+          >
+            <Gem className="drop-shadow-[0_0_18px_rgba(255,75,172,0.55)]" size={34} />
           </span>
 
           <div className="min-w-0">
-            <h2 className="text-2xl font-black leading-tight text-white sm:text-3xl">{title}</h2>
-            <p className="mt-3 max-w-md text-sm font-semibold leading-6 text-zinc-300">{description}</p>
+            <h2 className="text-[1.32rem] font-black leading-[1.08] text-white sm:text-2xl">{title}</h2>
+            <p className="mt-2 line-clamp-3 max-w-[26rem] text-[0.82rem] font-semibold leading-5 text-zinc-300 sm:text-sm sm:leading-6">{description}</p>
           </div>
         </div>
 
-        <div className="w-full rounded-2xl border border-white/10 bg-black/40 p-4 backdrop-blur-sm lg:w-[240px]">
-          <div className="flex items-center justify-between gap-3">
-            <span className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-200">
-              <Clock3 size={16} className="text-[#9b7aff]" />
-              {labels.endLabel}
-            </span>
-            <span className="text-xs text-zinc-400">
+        <div className="flex flex-wrap items-center gap-2 pr-[30%] sm:pr-[34%]">
+          <span className="inline-flex min-h-8 items-center gap-2 rounded-xl border border-white/10 bg-black/38 px-3 text-[0.72rem] font-bold text-zinc-200 backdrop-blur-sm">
+            <Clock3 size={14} className="text-[#9b7aff]" />
+            <span>{labels.endLabel}</span>
+            <span className="text-zinc-400">
               {raffleDate.toLocaleDateString(language === "ru" ? "ru-RU" : "en-US", { day: "2-digit", month: "long" })}
             </span>
-          </div>
+          </span>
 
-          <div className="mt-3 grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 gap-1.5">
             {[
               [timeLeft.days, language === "ru" ? "дн" : "d"],
               [timeLeft.hours, language === "ru" ? "ч" : "h"],
               [timeLeft.minutes, language === "ru" ? "м" : "m"],
               [timeLeft.seconds, language === "ru" ? "с" : "s"]
             ].map(([value, label]) => (
-              <span key={label} className="rounded-xl border border-[#38507e] bg-[rgba(8,13,28,0.88)] px-2 py-2 text-center">
-                <span className="block text-lg font-black text-white">{String(value).padStart(2, "0")}</span>
-                <span className="mt-0.5 block text-[10px] font-bold uppercase text-zinc-400">{label}</span>
+              <span key={label} className="min-w-[43px] rounded-lg border border-[#38507e] bg-[rgba(8,13,28,0.88)] px-1.5 py-1.5 text-center">
+                <span className="block text-sm font-black leading-none text-white">{String(value).padStart(2, "0")}</span>
+                <span className="mt-1 block text-[9px] font-bold uppercase leading-none text-zinc-400">{label}</span>
               </span>
             ))}
           </div>
         </div>
 
-        <div className="grid gap-3 rounded-2xl border border-white/10 bg-black/40 p-4 backdrop-blur-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,0.75fr)_auto] lg:col-span-2">
-          <div className="flex min-w-0 items-center gap-3 sm:border-r sm:border-white/10 sm:pr-4">
-            <Gem className="shrink-0 text-[#ff375f]" size={26} />
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-black/42 p-3 pr-[29%] backdrop-blur-sm sm:pr-[34%]">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <Gem className="shrink-0 text-[#ff375f]" size={24} />
             <div className="min-w-0">
-              <p className="text-xs text-zinc-400">{labels.prizeLabel}</p>
-              <p className="mt-1 truncate text-base font-black text-white">{prizeFund}</p>
+              <p className="text-[0.7rem] text-zinc-400">{labels.prizeLabel}</p>
+              <p className="mt-0.5 truncate text-sm font-black text-white">{prizeFund}</p>
             </div>
           </div>
 
-          <div className="flex min-w-0 items-center gap-3">
-            <Users className="shrink-0 text-[#a56bff]" size={27} />
+          <div className="flex min-w-0 items-center gap-2">
+            <Users className="shrink-0 text-[#a56bff]" size={24} />
             <div>
-              <p className="text-xs text-zinc-400">{labels.winnersLabel}</p>
-              <p className="mt-1 text-base font-black text-white">{winnerCount}</p>
+              <p className="text-[0.7rem] text-zinc-400">{labels.winnersLabel}</p>
+              <p className="mt-0.5 text-sm font-black text-white">{winnerCount}</p>
             </div>
           </div>
 
           <Link
             href={href}
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#6d2cff] px-6 py-3 text-sm font-black text-white shadow-[0_0_34px_rgba(109,44,255,0.42)] transition hover:bg-[#7c3dff]"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#6d2cff] px-5 py-2.5 text-sm font-black text-white shadow-[0_0_34px_rgba(109,44,255,0.42)] transition hover:bg-[#7c3dff]"
           >
             {labels.cta}
             <ArrowRight size={18} />
@@ -170,7 +187,6 @@ export function RafflePanel() {
       </div>
 
       <div className="pointer-events-none absolute inset-0 rounded-[28px] ring-1 ring-inset ring-white/10" />
-      <Trophy className="pointer-events-none absolute right-5 top-5 hidden text-white/10 sm:block" size={34} />
     </section>
   );
 }
