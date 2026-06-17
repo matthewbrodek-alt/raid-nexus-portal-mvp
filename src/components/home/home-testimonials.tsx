@@ -5,6 +5,7 @@ import { addDoc, collection, deleteDoc, doc, limit, onSnapshot, query, serverTim
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "@/components/auth/auth-provider";
+import { LegalConsentCheckbox } from "@/components/legal/legal-consent-checkbox";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import { useLanguage } from "@/lib/i18n/use-language";
@@ -46,6 +47,7 @@ export function HomeTestimonials() {
   const [authorName, setAuthorName] = useState("");
   const [text, setText] = useState("");
   const [rating, setRating] = useState(5);
+  const [legalConsent, setLegalConsent] = useState(false);
   const [saving, setSaving] = useState(false);
   const [allReviewsOpen, setAllReviewsOpen] = useState(false);
   const [hiddenFallbackIds, setHiddenFallbackIds] = useState<string[]>([]);
@@ -122,7 +124,7 @@ export function HomeTestimonials() {
   async function submitReview(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!user?.uid || !text.trim() || saving) {
+    if (!user?.uid || !text.trim() || !legalConsent || saving) {
       return;
     }
 
@@ -134,6 +136,8 @@ export function HomeTestimonials() {
         createdAt: serverTimestamp(),
         createdBy: user.uid,
         rating,
+        legalConsentAcceptedAt: serverTimestamp(),
+        legalConsentVersion: "2026-06-17",
         source: isAdmin ? "admin" : "user",
         status: "published",
         text: text.trim()
@@ -141,6 +145,7 @@ export function HomeTestimonials() {
       setAuthorName("");
       setText("");
       setRating(5);
+      setLegalConsent(false);
       setOpen(false);
     } finally {
       setSaving(false);
@@ -248,7 +253,11 @@ export function HomeTestimonials() {
               />
             </label>
 
-            <button disabled={saving || !user} className="mt-4 w-full rounded-xl bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
+            <div className="mt-4">
+              <LegalConsentCheckbox checked={legalConsent} disabled={!user} kind="review" onChange={setLegalConsent} />
+            </div>
+
+            <button disabled={saving || !user || !legalConsent} className="mt-4 w-full rounded-xl bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
               {saving ? (isRu ? "Сохранение..." : "Saving...") : isRu ? "Опубликовать" : "Publish"}
             </button>
             {!user ? (

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useDonationOffers } from "@/components/donate/use-donation-offers";
+import { LegalConsentCheckbox } from "@/components/legal/legal-consent-checkbox";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { getClipboardImageFile } from "@/lib/browser/clipboard-image";
 import { getDonationOfferTitle } from "@/lib/donation/offers";
@@ -111,6 +112,7 @@ export function TopupLeadForm({ selectedPackageId, onSelectedPackageIdChange }: 
   const [comment, setComment] = useState("");
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [useBumpyCoins, setUseBumpyCoins] = useState(false);
+  const [legalConsent, setLegalConsent] = useState(false);
   const [fileError, setFileError] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [activeManagerUid, setActiveManagerUid] = useState("");
@@ -184,6 +186,11 @@ export function TopupLeadForm({ selectedPackageId, onSelectedPackageIdChange }: 
       return;
     }
 
+    if (!legalConsent) {
+      setStatus("error");
+      return;
+    }
+
     submittingRef.current = true;
     setStatus("sending");
 
@@ -220,6 +227,8 @@ export function TopupLeadForm({ selectedPackageId, onSelectedPackageIdChange }: 
 
       await setDoc(topupRef, {
         ...payload,
+        legalConsentAcceptedAt: serverTimestamp(),
+        legalConsentVersion: "2026-06-17",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
@@ -264,6 +273,7 @@ export function TopupLeadForm({ selectedPackageId, onSelectedPackageIdChange }: 
       setStatus("sent");
       setScreenshotFile(null);
       setFileError("");
+      setLegalConsent(false);
       router.push(`/orders/${topupRef.id}`);
     } catch {
       setStatus("error");
@@ -387,8 +397,10 @@ export function TopupLeadForm({ selectedPackageId, onSelectedPackageIdChange }: 
           {fileError ? <p className="mt-2 text-xs text-ember">{fileError}</p> : null}
         </div>
 
+        <LegalConsentCheckbox checked={legalConsent} disabled={!user} kind="request" onChange={setLegalConsent} />
+
         <button
-          disabled={status === "sending" || status === "sent" || !user}
+          disabled={status === "sending" || status === "sent" || !user || !legalConsent}
           className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-relic px-4 py-2.5 font-semibold text-black transition hover:bg-[#8bbcff] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Send size={18} />

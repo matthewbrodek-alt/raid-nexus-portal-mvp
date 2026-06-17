@@ -11,6 +11,7 @@ import type { UserProfile } from "@/lib/auth/types";
 import { collections } from "@/lib/firebase/collections";
 import { makeReferralCode, normalizeReferralCode } from "@/lib/referrals";
 import { GlassPanel } from "@/components/ui/glass-panel";
+import { LegalConsentCheckbox } from "@/components/legal/legal-consent-checkbox";
 
 export function RegisterForm() {
   const [displayName, setDisplayName] = useState("");
@@ -18,6 +19,7 @@ export function RegisterForm() {
   const [password, setPassword] = useState("");
   const [referralCode, setReferralCode] = useState("");
   const [error, setError] = useState("");
+  const [legalConsent, setLegalConsent] = useState(false);
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -76,6 +78,12 @@ export function RegisterForm() {
           topupRequestsCount: 0
         },
         interests: [],
+        legalConsents: {
+          consentVersion: "2026-06-17",
+          personalDataConsentAt: serverTimestamp(),
+          privacyAcceptedAt: serverTimestamp(),
+          termsAcceptedAt: serverTimestamp()
+        },
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       },
@@ -100,6 +108,12 @@ export function RegisterForm() {
     event.preventDefault();
     setError("");
     setNotice("");
+
+    if (!legalConsent) {
+      setError("Для регистрации нужно принять соглашение и дать согласие на обработку персональных данных.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -112,6 +126,7 @@ export function RegisterForm() {
       setDisplayName("");
       setEmail("");
       setPassword("");
+      setLegalConsent(false);
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Не удалось зарегистрироваться.");
     } finally {
@@ -169,11 +184,13 @@ export function RegisterForm() {
           <span className="block text-xs text-zinc-500">Если игрок пришел по реферальной ссылке, код подставится автоматически.</span>
         </label>
 
+        <LegalConsentCheckbox checked={legalConsent} kind="registration" onChange={setLegalConsent} />
+
         {notice ? <p className="rounded-md border border-relic/30 bg-relic/10 p-3 text-sm text-relic">{notice}</p> : null}
         {error ? <p className="rounded-md border border-ember/30 bg-ember/10 p-3 text-sm text-ember">{error}</p> : null}
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !legalConsent}
           className="w-full rounded-md bg-relic px-4 py-3 text-sm font-black text-abyss transition hover:bg-relic/90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? "Создаем аккаунт..." : "Зарегистрироваться"}

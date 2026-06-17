@@ -27,6 +27,7 @@ import { HomeUserCard } from "@/components/home/home-user-card";
 import { LatestNewsRail } from "@/components/home/latest-news-rail";
 import { RafflePanel } from "@/components/home/raffle-panel";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { LegalFooterLinks } from "@/components/legal/legal-footer-links";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { useLanguage, type Language } from "@/lib/i18n/use-language";
 
@@ -182,8 +183,8 @@ export default function Home() {
             </aside>
           </div>
 
-          <footer className="mt-8 flex items-center justify-between py-5 text-xs uppercase tracking-[0.18em] text-zinc-500">
-            <span>RAID Shadow Legends</span>
+          <footer className="mt-8 flex flex-wrap items-center justify-between gap-4 py-5 text-xs tracking-[0.12em] text-zinc-500">
+            <LegalFooterLinks />
             <Link href="/dashboard" className="inline-flex items-center gap-2 text-relic transition hover:text-[#b8d7ff]">
               {labels.footerAccount}
               <ChevronRight size={16} />

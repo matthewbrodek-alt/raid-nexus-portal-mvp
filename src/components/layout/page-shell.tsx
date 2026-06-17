@@ -2,6 +2,7 @@
 
 import { HomeSearch } from "@/components/home/home-search";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { LegalFooterLinks } from "@/components/legal/legal-footer-links";
 import { Navigation } from "@/components/layout/navigation";
 import { SiteSidebar } from "@/components/layout/site-sidebar";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
@@ -60,6 +61,9 @@ export function PageShell({ eyebrow, title, description, children, compact = fal
               </div>
             ) : null}
             {children}
+            <footer className="mt-10 border-t border-relic/10 py-5">
+              <LegalFooterLinks />
+            </footer>
           </section>
         </div>
       </div>

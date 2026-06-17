@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { RaidLogo } from "@/components/brand/raid-logo";
+import { LegalFooterLinks } from "@/components/legal/legal-footer-links";
 
 type AuthFormShellProps = {
   children: React.ReactNode;
@@ -22,7 +23,10 @@ export function AuthFormShell({ children, mode }: AuthFormShellProps) {
           </h1>
         </section>
 
-        <div className="min-w-0 w-full max-w-xl justify-self-center lg:max-w-2xl">{children}</div>
+        <div className="min-w-0 w-full max-w-xl justify-self-center lg:max-w-2xl">
+          {children}
+          <LegalFooterLinks className="mt-5 justify-center" />
+        </div>
       </div>
     </main>
   );
