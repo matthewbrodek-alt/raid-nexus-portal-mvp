@@ -18,6 +18,8 @@ type ReviewItem = {
   createdAt?: { seconds?: number };
 };
 
+export const HOME_REVIEWS_EVENT = "bp-open-home-reviews";
+
 const fallbackReviews = {
   ru: [
     { id: "fallback-1", authorName: "Bumpy клиент", text: "Заявка ушла быстро, менеджер сразу уточнил набор и статус появился в кабинете.", rating: 5 },
@@ -52,6 +54,15 @@ export function HomeTestimonials() {
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    function openReviewsFromHeader() {
+      setAllReviewsOpen(true);
+    }
+
+    window.addEventListener(HOME_REVIEWS_EVENT, openReviewsFromHeader);
+    return () => window.removeEventListener(HOME_REVIEWS_EVENT, openReviewsFromHeader);
   }, []);
 
   useEffect(() => {
@@ -137,40 +148,39 @@ export function HomeTestimonials() {
   }
 
   return (
-    <section className="raid-ornate-panel mt-5 overflow-visible p-4 sm:p-5">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+    <section className="raid-ornate-panel mt-4 hidden overflow-visible p-3.5 sm:p-4 lg:block">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-xs font-semibold tracking-[0.16em] text-relic">{isRu ? "Отзывы игроков" : "Player reviews"}</p>
-          <p className="mt-1 text-sm text-zinc-400">{isRu ? "Короткие впечатления после использования сервиса." : "Short service impressions."}</p>
+          <p className="text-xs font-semibold tracking-[0.12em] text-relic">{isRu ? "Отзывы игроков" : "Player reviews"}</p>
         </div>
         <button
           type="button"
           onClick={() => setAllReviewsOpen(true)}
-          className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-black/20 px-4 py-2 text-sm font-semibold text-zinc-100 transition hover:border-relic/50 hover:text-relic"
+          className="inline-flex items-center gap-2 rounded-xl border border-white/12 bg-black/16 px-3 py-1.5 text-xs font-semibold text-zinc-100 transition hover:border-relic/50 hover:text-relic"
         >
           {isRu ? "Все отзывы" : "All reviews"}
         </button>
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="inline-flex items-center gap-2 rounded-xl border border-relic/35 bg-black/30 px-4 py-2 text-sm font-semibold text-relic transition hover:border-relic hover:bg-relic/10"
+          className="inline-flex items-center gap-2 rounded-xl border border-relic/35 bg-black/24 px-3 py-1.5 text-xs font-semibold text-relic transition hover:border-relic hover:bg-relic/10"
         >
-          <MessageSquarePlus size={16} />
+          <MessageSquarePlus size={14} />
           {isRu ? "Оставить отзыв" : "Leave review"}
         </button>
       </div>
 
-      <div className="raid-review-marquee overflow-hidden py-2">
-        <div className="raid-review-track flex w-max gap-3">
+      <div className="raid-review-marquee overflow-hidden py-1.5">
+        <div className="raid-review-track flex w-max gap-2.5">
           {marqueeItems.map((item, index) => (
-            <article key={`${item.id}-${index}`} className="flex min-w-[260px] max-w-[320px] items-center gap-3 rounded-2xl border border-relic/10 bg-black/20 px-4 py-3">
+            <article key={`${item.id}-${index}`} className="flex min-w-[220px] max-w-[280px] items-center gap-2.5 rounded-2xl border border-relic/10 bg-black/18 px-3 py-2.5">
               <div className="flex shrink-0 gap-0.5 text-relic">
                 {Array.from({ length: Math.max(1, Math.min(5, item.rating ?? 5)) }).map((_, starIndex) => (
-                  <Star key={starIndex} size={12} fill="currentColor" />
+                  <Star key={starIndex} size={11} fill="currentColor" />
                 ))}
               </div>
               <div className="min-w-0">
-                <p className="truncate text-sm text-zinc-200">{firstWords(item.text, 9)}</p>
+                <p className="truncate text-xs text-zinc-200">{firstWords(item.text, 8)}</p>
                 <p className="mt-1 truncate text-xs font-semibold text-relic">{item.authorName || (isRu ? "Игрок" : "Player")}</p>
               </div>
               {isAdmin ? (
@@ -259,14 +269,27 @@ export function HomeTestimonials() {
                 <p className="text-xs font-bold tracking-[0.18em] text-relic">{isRu ? "Отзывы" : "Reviews"}</p>
                 <h2 className="mt-1 font-[var(--font-display)] text-2xl font-light text-white">{isRu ? "Все отзывы" : "All reviews"}</h2>
               </div>
-              <button
-                type="button"
-                onClick={() => setAllReviewsOpen(false)}
-                className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 text-zinc-400 transition hover:text-white"
-                aria-label={isRu ? "Закрыть" : "Close"}
-              >
-                <X size={18} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAllReviewsOpen(false);
+                    setOpen(true);
+                  }}
+                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-relic/30 px-3 text-xs font-bold text-relic transition hover:border-relic hover:bg-relic/10"
+                >
+                  <MessageSquarePlus size={14} />
+                  {isRu ? "Оставить" : "Leave"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAllReviewsOpen(false)}
+                  className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 text-zinc-400 transition hover:text-white"
+                  aria-label={isRu ? "Закрыть" : "Close"}
+                >
+                  <X size={18} />
+                </button>
+              </div>
             </div>
 
             <div className="space-y-3 overflow-y-auto p-4">

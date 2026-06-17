@@ -21,7 +21,7 @@ import { HomeCommunityLinks } from "@/components/home/home-community-links";
 import { HomeEventCalendarCard } from "@/components/home/home-event-calendar-card";
 import { HomeMobileHeader } from "@/components/home/home-mobile-header";
 import { HomeSearch } from "@/components/home/home-search";
-import { HomeTestimonials } from "@/components/home/home-testimonials";
+import { HOME_REVIEWS_EVENT, HomeTestimonials } from "@/components/home/home-testimonials";
 import { HomeUnreadBell } from "@/components/home/home-unread-bell";
 import { HomeUserCard } from "@/components/home/home-user-card";
 import { LatestNewsRail } from "@/components/home/latest-news-rail";
@@ -132,13 +132,23 @@ export default function Home() {
         <section className="min-w-0 px-4 py-2 sm:px-6 lg:px-8 lg:py-4">
           <HomeMobileHeader />
 
-          <Link
-            href="/topup"
-            className="raid-donate-pulse raid-glow-button mt-2 flex items-center justify-center gap-2 border border-relic/45 bg-black/55 px-3 py-3 text-center text-xs font-black uppercase tracking-[0.1em] text-relic shadow-[0_0_30px_rgba(47,124,255,0.16)] lg:hidden"
-          >
-            <Crown size={18} />
-            {language === "ru" ? "Купить игровой набор в RAID" : "Buy RAID Game Pack"}
-          </Link>
+          <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-2 lg:hidden">
+            <Link
+              href="/topup"
+              className="raid-donate-pulse raid-glow-button flex min-h-11 items-center justify-center gap-2 border border-relic/45 bg-black/55 px-3 py-3 text-center text-[11px] font-black uppercase tracking-[0.08em] text-relic shadow-[0_0_30px_rgba(47,124,255,0.16)]"
+            >
+              <Crown size={17} />
+              <span className="min-w-0 text-balance">{language === "ru" ? "Купить игровой набор в RAID" : "Buy RAID Game Pack"}</span>
+            </Link>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event(HOME_REVIEWS_EVENT))}
+              className="raid-glow-button flex min-h-11 min-w-[96px] items-center justify-center gap-2 border border-relic/30 bg-black/36 px-3 py-3 text-[11px] font-black uppercase tracking-[0.08em] text-relic transition hover:border-relic/60 hover:bg-relic/10"
+            >
+              <MessageCircle size={16} />
+              {language === "ru" ? "Отзывы" : "Reviews"}
+            </button>
+          </div>
 
           <header className="hidden h-24 items-center gap-5 lg:flex">
             <Link
