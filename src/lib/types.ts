@@ -13,9 +13,12 @@ export type PortalEventWidget = {
   comment?: string;
   details?: string;
   type?: "contest" | "special" | "event";
+  startsAt?: string;
   deadlineAt?: string;
   donationUrl?: string;
   status?: "published" | "archived";
+  prizeFund?: string;
+  winnerCount?: number;
   image?: {
     secureUrl?: string;
     url?: string;
@@ -28,10 +31,19 @@ export type PortalEventWidget = {
   }>;
   participants?: string[];
   participantCount?: number;
+  winners?: Array<{
+    uid: string;
+    displayName?: string;
+    email?: string;
+    pickedAtIso?: string;
+  }>;
+  winnerUids?: string[];
   winnerUid?: string;
   winnerName?: string;
   winnerPickedAt?: { seconds?: number };
   createdAt?: { seconds?: number };
+  updatedAt?: { seconds?: number };
+  archivedAt?: { seconds?: number };
 };
 
 export type HeroProfile = {

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { CheckCircle2, ChevronLeft } from "lucide-react";
 import { browserLocalPersistence, setPersistence, signInWithEmailAndPassword } from "firebase/auth";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, getDoc, runTransaction, serverTimestamp, setDoc } from "firebase/firestore";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RaidLogo } from "@/components/brand/raid-logo";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -11,6 +11,7 @@ import { normalizeEmail } from "@/lib/auth/role-utils";
 import { auth, db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import { getNextRaffleInfo, RAFFLE_PRIZE, type RaffleInfo } from "@/lib/raffle";
+import type { PortalEventWidget } from "@/lib/types";
 
 const CRY_LINES = ["Ай-ай-ай!", "Хнык...", "Не по пузику!", "Еще чуть-чуть...", "Мачеха терпит ради рубинов", "Уже почти участник!"];
 const REQUIRED_CLICKS = 100;
@@ -75,7 +76,9 @@ function pickHitVideo(previous: RaffleVideoKey) {
 
 export default function RafflePage() {
   const { loading, profile, user } = useAuth();
+  const [eventId, setEventId] = useState("");
   const [raffle, setRaffle] = useState<RaffleInfo | null>(null);
+  const [raffleWidget, setRaffleWidget] = useState<PortalEventWidget | null>(null);
   const [clicks, setClicks] = useState(0);
   const [entryExists, setEntryExists] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -99,6 +102,10 @@ export default function RafflePage() {
   const reactionVideoSource = reactionVideoSources[reactionSourceIndex] ?? reactionVideoSources[0];
   const progress = Math.min(100, Math.round((clicks / REQUIRED_CLICKS) * 100));
   const entryId = user && raffle ? `${user.uid}_${raffle.drawKey}` : "";
+
+  useEffect(() => {
+    setEventId(new URLSearchParams(window.location.search).get("event") ?? "");
+  }, []);
 
   const resetIdleVideo = useCallback((video: HTMLVideoElement | null = videoRef.current) => {
     if (!video) {
@@ -134,8 +141,47 @@ export default function RafflePage() {
   }, []);
 
   useEffect(() => {
-    setRaffle(getNextRaffleInfo());
-  }, []);
+    let alive = true;
+
+    async function loadRaffle() {
+      const fallback = getNextRaffleInfo();
+
+      if (!eventId) {
+        setRaffleWidget(null);
+        setRaffle(fallback);
+        return;
+      }
+
+      const snapshot = await getDoc(doc(db, collections.eventWidgets, eventId)).catch(() => null);
+      const widget = snapshot?.exists() ? ({ id: snapshot.id, ...(snapshot.data() as Omit<PortalEventWidget, "id">) } as PortalEventWidget) : null;
+
+      if (!alive) {
+        return;
+      }
+
+      if (widget?.status === "published" && widget.type === "contest") {
+        const deadline = widget.deadlineAt ? new Date(widget.deadlineAt) : fallback.date;
+        const date = Number.isNaN(deadline.getTime()) ? fallback.date : deadline;
+
+        setRaffleWidget(widget);
+        setRaffle({
+          date,
+          drawKey: widget.id,
+          title: widget.title || fallback.title
+        });
+        return;
+      }
+
+      setRaffleWidget(null);
+      setRaffle(fallback);
+    }
+
+    void loadRaffle();
+
+    return () => {
+      alive = false;
+    };
+  }, [eventId]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -182,10 +228,12 @@ export default function RafflePage() {
 
   useEffect(() => {
     if (!user || !entryId) {
+      setEntryExists(false);
       return;
     }
 
     let alive = true;
+    setEntryExists(false);
 
     getDoc(doc(db, collections.raffleEntries, entryId))
       .then((snapshot) => {
@@ -215,13 +263,35 @@ export default function RafflePage() {
         drawAt: raffle.date.toISOString(),
         drawKey: raffle.drawKey,
         email: user.email || "",
-        prize: RAFFLE_PRIZE,
+        prize: raffleWidget?.prizeFund || RAFFLE_PRIZE,
         requiredClicks: REQUIRED_CLICKS,
         service: "ruby_subscription_raffle",
         source: "portal",
         totalClicks: nextClicks,
         uid: user.uid
       });
+
+      if (raffleWidget?.id) {
+        await runTransaction(db, async (transaction) => {
+          const widgetRef = doc(db, collections.eventWidgets, raffleWidget.id);
+          const widgetSnapshot = await transaction.get(widgetRef);
+          const widgetData = widgetSnapshot.exists() ? (widgetSnapshot.data() as PortalEventWidget) : null;
+          const participants = Array.isArray(widgetData?.participants) ? widgetData.participants : [];
+
+          if (participants.includes(user.uid)) {
+            return;
+          }
+
+          const nextParticipants = [...participants, user.uid];
+
+          transaction.update(widgetRef, {
+            participantCount: nextParticipants.length,
+            participants: nextParticipants,
+            updatedAt: serverTimestamp()
+          });
+        }).catch(() => undefined);
+      }
+
       setEntryExists(true);
     } catch {
       setError("Не удалось записать участие. Проверь вход в аккаунт и правила Firestore.");
@@ -286,7 +356,7 @@ export default function RafflePage() {
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-5 sm:px-6 lg:px-8">
         <header className="flex items-center justify-between gap-4">
           <RaidLogo compact />
-          <Link href="/" className="raid-glow-button inline-flex items-center gap-2 border border-relic/35 bg-black/35 px-4 py-3 text-xs font-black uppercase tracking-[0.16em] text-relic">
+          <Link href="/" className="raid-glow-button inline-flex items-center gap-2 border border-relic/30 bg-black/40 px-4 py-3 text-xs font-black uppercase tracking-[0.16em] text-relic">
             <ChevronLeft size={16} />
             На главную
           </Link>
@@ -294,7 +364,7 @@ export default function RafflePage() {
 
         <section className="mt-6 flex flex-1 justify-center">
           <div className="raid-ornate-panel w-full max-w-4xl overflow-hidden p-5 sm:p-7">
-            <div className="mx-auto mb-4 w-fit rounded-[18px] border border-relic/35 bg-black/22 px-6 py-3 text-center text-sm font-black text-relic shadow-[0_0_26px_rgba(47,124,255,0.14)]">
+            <div className="mx-auto mb-4 w-fit rounded-[18px] border border-relic/30 bg-black/20 px-6 py-3 text-center text-sm font-black text-relic shadow-[0_0_26px_rgba(47,124,255,0.14)]">
               Розыгрыш рубинов
             </div>
             <h1 className="max-w-3xl text-4xl font-black leading-[1.05] text-white sm:text-6xl">
@@ -370,11 +440,11 @@ export default function RafflePage() {
                   aria-label="Потыкай мачеху в пузико"
                 />
 
-                <span className="pointer-events-none absolute left-4 top-4 z-[9] grid min-w-20 place-items-center rounded-[14px] border border-relic/40 bg-black/58 px-3 py-2 font-[var(--font-cinzel)] text-lg font-black text-relic shadow-[0_0_28px_rgba(47,124,255,0.2)] backdrop-blur-sm">
+                <span className="pointer-events-none absolute left-4 top-4 z-[9] grid min-w-20 place-items-center rounded-[14px] border border-relic/40 bg-black/60 px-3 py-2 font-[var(--font-cinzel)] text-lg font-black text-relic shadow-[0_0_28px_rgba(47,124,255,0.2)] backdrop-blur-sm">
                   {clicks}/{REQUIRED_CLICKS}
                 </span>
 
-                <span className="pointer-events-none absolute bottom-5 left-5 right-5 z-[7] rounded-[20px] border border-relic/24 bg-black/68 p-4 backdrop-blur-sm">
+                <span className="pointer-events-none absolute bottom-5 left-5 right-5 z-[7] rounded-[20px] border border-relic/25 bg-black/70 p-4 backdrop-blur-sm">
                   <span className="flex items-center justify-between gap-3">
                     <span className="font-black text-white">{entryExists ? "Спасибо за участие в розыгрыше" : CRY_LINES[cryIndex]}</span>
                     <span className="text-sm font-bold text-relic">{progress}%</span>
@@ -394,10 +464,10 @@ export default function RafflePage() {
                 </p>
               ) : null}
 
-              {error ? <p className="mt-3 rounded-[16px] border border-blood/35 bg-blood/10 px-4 py-3 text-sm text-red-200">{error}</p> : null}
+              {error ? <p className="mt-3 rounded-[16px] border border-blood/30 bg-blood/10 px-4 py-3 text-sm text-red-200">{error}</p> : null}
 
               {!loading && !user ? (
-                <div className="mt-3 rounded-[18px] border border-relic/22 bg-black/28 p-4 text-sm text-zinc-300">
+                <div className="mt-3 rounded-[18px] border border-relic/20 bg-black/30 p-4 text-sm text-zinc-300">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <p className="max-w-xl font-semibold leading-6 text-zinc-300">
                       Чтобы клики засчитались и аккаунт попал в список участников, войдите в личный кабинет или зарегистрируйтесь.
@@ -417,7 +487,7 @@ export default function RafflePage() {
                   </div>
 
                   {showLoginForm ? (
-                    <form onSubmit={handleInlineLogin} className="mt-4 rounded-[16px] border border-white/10 bg-black/32 p-3">
+                    <form onSubmit={handleInlineLogin} className="mt-4 rounded-[16px] border border-white/10 bg-black/30 p-3">
                       <div className="grid gap-3 sm:grid-cols-2">
                         <input
                           type="email"
@@ -450,7 +520,7 @@ export default function RafflePage() {
                     </form>
                   ) : null}
 
-                  {loginError ? <p className="mt-3 rounded-xl border border-blood/35 bg-blood/10 px-3 py-2 text-xs text-red-200">{loginError}</p> : null}
+                  {loginError ? <p className="mt-3 rounded-xl border border-blood/30 bg-blood/10 px-3 py-2 text-xs text-red-200">{loginError}</p> : null}
                 </div>
               ) : null}
             </div>
