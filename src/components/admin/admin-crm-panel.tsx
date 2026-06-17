@@ -133,6 +133,26 @@ function clientDisplayName(lead: TopupLead) {
   return lead.uid ? `Игрок ${lead.uid.slice(-6)}` : "Клиент";
 }
 
+function profileDisplayName(user: UserProfile) {
+  return user.displayName?.trim() || user.email?.trim() || `Игрок ${user.uid.slice(-6)}`;
+}
+
+function normalizeUserSearch(value: string) {
+  return value.trim().toLocaleLowerCase("ru-RU");
+}
+
+function matchesUserSearch(user: UserProfile, queryText: string) {
+  const needle = normalizeUserSearch(queryText);
+
+  if (!needle) {
+    return true;
+  }
+
+  return [user.displayName, user.email, user.uid, user.referralCode]
+    .filter(Boolean)
+    .some((value) => normalizeUserSearch(String(value)).includes(needle));
+}
+
 function formatRub(value?: number) {
   return `${Math.max(0, Math.floor(value ?? 0)).toLocaleString("ru-RU")} ₽`;
 }
@@ -353,8 +373,10 @@ export function AdminCrmPanel() {
   const [leads, setLeads] = useState<TopupLead[]>([]);
   const [selectedMonth, setSelectedMonth] = useState(currentMonthValue);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
+  const [siteUsers, setSiteUsers] = useState<UserProfile[]>([]);
   const [manualService, setManualService] = useState<ServiceType>("donation");
-  const [manualClient, setManualClient] = useState("");
+  const [manualUserSearch, setManualUserSearch] = useState("");
+  const [manualSelectedUserUid, setManualSelectedUserUid] = useState("");
   const [manualNote, setManualNote] = useState("");
   const [statusText, setStatusText] = useState("");
   const [editingLeadId, setEditingLeadId] = useState("");
@@ -380,6 +402,24 @@ export function AdminCrmPanel() {
     });
   }, []);
 
+  useEffect(() => {
+    const usersQuery = query(collection(db, collections.users), limit(500));
+
+    return onSnapshot(
+      usersQuery,
+      (snapshot) => {
+        const nextUsers = snapshot.docs
+          .map((item) => ({ uid: item.id, ...(item.data() as Omit<UserProfile, "uid">) }))
+          .sort((first, second) => profileDisplayName(first).localeCompare(profileDisplayName(second), "ru"));
+
+        setSiteUsers(nextUsers);
+      },
+      () => {
+        setSiteUsers([]);
+      }
+    );
+  }, []);
+
   const availableMonths = useMemo(() => {
     const months = new Set([currentMonthValue(), selectedMonth]);
 
@@ -398,6 +438,12 @@ export function AdminCrmPanel() {
     () => monthLeads.filter((lead) => isCompletedOrder(lead.status)).reduce((sum, lead) => sum + (lead.amountRub ?? 0), 0),
     [monthLeads]
   );
+  const selectedManualUser = useMemo(() => siteUsers.find((user) => user.uid === manualSelectedUserUid) ?? null, [manualSelectedUserUid, siteUsers]);
+  const filteredManualUsers = useMemo(() => {
+    const source = manualUserSearch.trim() ? siteUsers.filter((user) => matchesUserSearch(user, manualUserSearch)) : siteUsers;
+
+    return source.slice(0, 8);
+  }, [manualUserSearch, siteUsers]);
 
   function updateDraft(leadId: string, patch: Partial<Draft>) {
     setDrafts((current) => ({
@@ -488,16 +534,25 @@ export function AdminCrmPanel() {
   async function createManualLead(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (!selectedManualUser) {
+      setStatusText("Выберите клиента из базы сайта. Тогда заявка получит чат, Bumpy Coins и историю в личном кабинете.");
+      return;
+    }
+
     const manualRequestTitle = serviceLabel(manualService);
+    const clientName = profileDisplayName(selectedManualUser);
 
     await addDoc(collection(db, collections.topupLeads), {
-      clientName: manualClient.trim(),
+      uid: selectedManualUser.uid,
+      email: selectedManualUser.email ?? "",
+      clientName,
       telegram: "",
       packageId: `manual-${manualService}`,
       packageName: manualRequestTitle,
       serviceType: manualService,
       paymentMethod: "manager",
       managerNote: manualNote.trim(),
+      requestedBumpyCoinsAvailable: selectedManualUser.bumpyCoinsBalance ?? 0,
       status: "new",
       source: "admin-panel",
       createdBy: profile?.uid ?? "",
@@ -505,10 +560,11 @@ export function AdminCrmPanel() {
       updatedAt: serverTimestamp()
     });
 
-    setManualClient("");
+    setManualUserSearch("");
+    setManualSelectedUserUid("");
     setManualNote("");
     setManualService("donation");
-    setStatusText("Внутренняя заявка создана.");
+    setStatusText(`Внутренняя заявка создана для ${clientName}.`);
   }
 
   async function copyMonthText() {
@@ -777,15 +833,58 @@ export function AdminCrmPanel() {
         </div>
       </div>
 
-      <form onSubmit={createManualLead} className="mb-4 grid gap-2 rounded-xl border border-white/10 bg-black/20 p-3 lg:grid-cols-[0.8fr_1fr_2fr_auto]">
+      <form onSubmit={createManualLead} className="mb-4 grid gap-2 rounded-xl border border-white/10 bg-black/20 p-3 lg:grid-cols-[0.8fr_1.6fr_2fr_auto]">
         <select value={manualService} onChange={(event) => setManualService(event.target.value as ServiceType)} className="rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
           <option value="donation">Донат</option>
           <option value="account_purchase">Покупка аккаунта</option>
           <option value="game_help">Помощь по игре</option>
         </select>
-        <input value={manualClient} onChange={(event) => setManualClient(event.target.value)} placeholder="Клиент" className="rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+        <div className="rounded-md border border-white/10 bg-black/30 p-2">
+          <input
+            value={manualUserSearch}
+            onChange={(event) => {
+              setManualUserSearch(event.target.value);
+              setManualSelectedUserUid("");
+            }}
+            placeholder="Найти клиента по нику, email или uid"
+            className="w-full rounded-md border-white/10 bg-black/40 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+          />
+          {selectedManualUser ? (
+            <div className="mt-2 rounded-lg border border-relic/25 bg-relic/[0.08] px-3 py-2 text-xs text-zinc-300">
+              <p className="font-black text-white">{profileDisplayName(selectedManualUser)}</p>
+              <p className="mt-1 break-words text-zinc-500">{selectedManualUser.email || selectedManualUser.uid}</p>
+              <p className="mt-1 text-relic">
+                BP: {selectedManualUser.bpStatus ?? "bronze"} · Баланс: {(selectedManualUser.bumpyCoinsBalance ?? 0).toLocaleString("ru-RU")} BC
+              </p>
+            </div>
+          ) : (
+            <div className="mt-2 max-h-44 overflow-y-auto rounded-lg border border-white/10 bg-[#071019]/95">
+              {filteredManualUsers.length > 0 ? (
+                filteredManualUsers.map((user) => (
+                  <button
+                    key={user.uid}
+                    type="button"
+                    onClick={() => {
+                      setManualSelectedUserUid(user.uid);
+                      setManualUserSearch(profileDisplayName(user));
+                    }}
+                    className="block w-full border-b border-white/5 px-3 py-2 text-left text-xs transition last:border-b-0 hover:bg-relic/[0.12]"
+                  >
+                    <span className="block truncate font-black text-white">{profileDisplayName(user)}</span>
+                    <span className="block truncate text-zinc-500">{user.email || user.uid}</span>
+                    <span className="mt-1 block text-relic">
+                      {user.bpStatus ?? "bronze"} · {(user.bumpyCoinsBalance ?? 0).toLocaleString("ru-RU")} BC
+                    </span>
+                  </button>
+                ))
+              ) : (
+                <p className="px-3 py-3 text-xs text-zinc-500">Пользователь не найден.</p>
+              )}
+            </div>
+          )}
+        </div>
         <textarea value={manualNote} onChange={(event) => setManualNote(event.target.value)} rows={1} placeholder="Заметка менеджера / детали заявки" className="min-h-11 rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
-        <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-relic px-4 py-2 font-bold text-black">
+        <button disabled={!selectedManualUser} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-relic px-4 py-2 font-bold text-black transition disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400">
           <Save size={16} />
           Создать
         </button>
