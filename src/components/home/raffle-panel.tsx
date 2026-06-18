@@ -60,10 +60,6 @@ function imageUrl(value: string) {
   return `url("${value.replace(/"/g, "%22")}")`;
 }
 
-function imageUrlFallback(primary: string, fallback: string) {
-  return `${imageUrl(primary)}, ${imageUrl(fallback)}`;
-}
-
 export function RafflePanel() {
   const { language } = useLanguage();
   const { theme } = useTheme();
@@ -99,15 +95,7 @@ export function RafflePanel() {
   const prizeFund = raffle?.prizeFund?.trim() || RAFFLE_PRIZE;
   const winnerCount = Math.max(1, Math.floor(raffle?.winnerCount ?? 5));
   const href = raffle?.id ? `/raffle?event=${raffle.id}` : "/raffle";
-  const backgroundImage = isLight
-    ? imageUrlFallback("/images/raffle/raffle-panel-light.png", "/images/raffle/raffle-panel-light.PNG")
-    : imageUrlFallback("/images/raffle/raffle-panel-dark.png", "/images/raffle/raffle-panel-dark.PNG");
-  const uploadedArt = raffle?.image?.secureUrl || raffle?.image?.url;
-  const rightArtImage = uploadedArt
-    ? imageUrl(uploadedArt)
-    : isLight
-      ? imageUrlFallback("/images/raffle/raffle-right-light.png", "/images/raffle/raffle-right-light.PNG")
-      : imageUrlFallback("/images/raffle/raffle-right-dark.png", "/images/raffle/raffle-right-dark.PNG");
+  const backgroundImage = isLight ? imageUrl("/images/raffle/raffle-panel-light.PNG") : imageUrl("/images/raffle/raffle-panel-dark.PNG");
 
   return (
     <section
@@ -116,12 +104,11 @@ export function RafflePanel() {
           ? "border-[#bed8ff] bg-[rgba(244,250,255,0.88)] text-[#122033] shadow-[0_22px_58px_rgba(75,126,180,0.18)]"
           : "border-[rgba(122,70,255,0.45)] bg-[#070a16] text-white"
       }`}
-      style={{
-        backgroundImage,
-        backgroundPosition: "center",
-        backgroundSize: "cover"
-      }}
     >
+      <div
+        className="raid-raffle-background pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage }}
+      />
       <div
         className={`raid-raffle-base-overlay pointer-events-none absolute inset-0 ${
           isLight
@@ -134,17 +121,6 @@ export function RafflePanel() {
           isLight
             ? "bg-[radial-gradient(circle_at_13%_24%,rgba(70,98,186,0.08),transparent_22%),radial-gradient(circle_at_86%_34%,rgba(153,80,255,0.08),transparent_28%)]"
             : "bg-[radial-gradient(circle_at_13%_24%,rgba(133,54,255,0.14),transparent_20%),radial-gradient(circle_at_86%_34%,rgba(255,47,126,0.1),transparent_27%)]"
-        }`}
-      />
-      <div
-        className="pointer-events-none absolute right-0 top-0 z-[1] h-full w-[48%] bg-contain bg-right-center bg-no-repeat opacity-100"
-        style={{ backgroundImage: rightArtImage }}
-      />
-      <div
-        className={`raid-raffle-art-fade pointer-events-none absolute bottom-0 right-0 z-[2] h-full w-[45%] ${
-          isLight
-            ? "bg-[linear-gradient(90deg,rgba(247,251,255,0)_0%,rgba(247,251,255,0.04)_42%,rgba(247,251,255,0.28)_100%)]"
-            : "bg-[linear-gradient(90deg,rgba(7,10,22,0)_0%,rgba(7,10,22,0.06)_42%,rgba(7,10,22,0.38)_100%)]"
         }`}
       />
 
