@@ -1,8 +1,10 @@
 "use client";
 
-import { Clock3, X } from "lucide-react";
-import { collection, limit, onSnapshot, query, where } from "firebase/firestore";
+import { Clock3, Edit3, EyeOff, Trash2, X } from "lucide-react";
+import { deleteDoc, doc, collection, limit, onSnapshot, query, updateDoc, where } from "firebase/firestore";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/components/auth/auth-provider";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import { useLanguage, type Language } from "@/lib/i18n/use-language";
@@ -110,11 +112,14 @@ function formatNewsDate(item: NewsItem, language: Language) {
 
 export function LatestNewsRail() {
   const { language } = useLanguage();
+  const { profile } = useAuth();
+  const router = useRouter();
   const labels = copy[language];
   const [news, setNews] = useState<NewsItem[]>([]);
   const [allNewsOpen, setAllNewsOpen] = useState(false);
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
   const visibleNews = news.slice(0, 5);
+  const isAdmin = profile?.role === "admin" || profile?.role === "owner";
 
   useEffect(() => {
     const newsQuery = query(collection(db, collections.news), where("status", "==", "published"), limit(40));
@@ -145,13 +150,13 @@ export function LatestNewsRail() {
             }}
             className={`group w-full text-left transition hover:bg-relic/[0.07] ${
               compact
-                ? "grid grid-cols-[86px_1fr_auto] items-center gap-4 rounded-[18px] border border-relic/10 bg-black/28 p-4"
-                : "flex h-[300px] min-h-[300px] flex-col overflow-hidden rounded-[18px] border border-relic/10 bg-black/32 p-3 sm:h-[320px] sm:min-h-[320px]"
+                ? "grid grid-cols-[86px_1fr_auto] items-center gap-4 rounded-[12px] border border-relic/10 bg-black/28 p-4"
+                : "flex h-[300px] min-h-[300px] flex-col overflow-hidden rounded-[12px] border border-relic/10 bg-black/32 p-3 sm:h-[320px] sm:min-h-[320px]"
             }`}
             aria-label={`${labels.openNewsLabel}: ${getNewsTitle(item, language)}`}
           >
-            <span className={`block overflow-hidden rounded-[14px] border border-relic/12 bg-black/40 ${compact ? "h-16" : "h-32 w-full sm:h-36"}`}>
-              <img src={getNewsImage(item)} alt="" loading="lazy" decoding="async" className="h-full w-full object-contain" />
+            <span className={`block overflow-hidden rounded-[8px] border border-relic/12 bg-black/40 ${compact ? "h-[76px] w-[76px]" : "h-32 w-full sm:h-36"}`}>
+              <img src={getNewsImage(item)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
             </span>
             <span className={`raid-word-wrap min-w-0 ${compact ? "" : "mt-3 block flex-1"}`}>
               <span className={`raid-word-wrap block font-[var(--font-display)] font-light tracking-[0.01em] text-white transition group-hover:text-[#b8d7ff] ${compact ? "truncate text-lg sm:text-xl" : "line-clamp-3 text-base leading-snug sm:text-lg"}`}>
@@ -167,6 +172,26 @@ export function LatestNewsRail() {
         ))}
       </div>
     );
+  }
+
+  async function hideSelectedNews() {
+    if (!isAdmin || !selectedNews) {
+      return;
+    }
+
+    await updateDoc(doc(db, collections.news, selectedNews.id), {
+      status: "draft"
+    });
+    setSelectedNews(null);
+  }
+
+  async function deleteSelectedNews() {
+    if (!isAdmin || !selectedNews || !window.confirm("Удалить эту новость?")) {
+      return;
+    }
+
+    await deleteDoc(doc(db, collections.news, selectedNews.id));
+    setSelectedNews(null);
   }
 
   return (
@@ -247,6 +272,34 @@ export function LatestNewsRail() {
                 </div>
               </div>
               <div className="p-5 sm:p-8">
+                {isAdmin ? (
+                  <div className="mb-5 flex flex-wrap gap-2 rounded-[14px] border border-relic/15 bg-black/25 p-2">
+                    <button
+                      type="button"
+                      onClick={() => router.push("/admin")}
+                      className="inline-flex items-center gap-2 rounded-[10px] border border-relic/20 px-3 py-2 text-xs font-bold text-relic transition hover:bg-relic/10"
+                    >
+                      <Edit3 size={14} />
+                      Редактировать в админке
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void hideSelectedNews()}
+                      className="inline-flex items-center gap-2 rounded-[10px] border border-relic/20 px-3 py-2 text-xs font-bold text-relic transition hover:bg-relic/10"
+                    >
+                      <EyeOff size={14} />
+                      Скрыть
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void deleteSelectedNews()}
+                      className="inline-flex items-center gap-2 rounded-[10px] border border-blood/30 px-3 py-2 text-xs font-bold text-ember transition hover:bg-blood/15"
+                    >
+                      <Trash2 size={14} />
+                      Удалить
+                    </button>
+                  </div>
+                ) : null}
                 <p className="max-w-3xl text-base leading-7 text-zinc-200">{getNewsSummary(selectedNews, language)}</p>
                 <h3 className="raid-title-metal mt-6 text-2xl font-black">{labels.details}</h3>
                 <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-zinc-300">

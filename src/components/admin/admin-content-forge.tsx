@@ -86,6 +86,17 @@ type PortalOffer = {
   createdAt?: { seconds?: number };
 };
 
+type ManagedNews = {
+  id: string;
+  title?: string;
+  summary?: string;
+  markdownBody?: string;
+  status?: "published" | "draft" | "archived" | string;
+  coverImage?: CloudinaryAsset | null;
+  createdAt?: { seconds?: number };
+  publishedAt?: { seconds?: number };
+};
+
 async function uploadImage(file: File, publicId: string, folder = "heroes") {
   const formData = new FormData();
   formData.append("file", file);
@@ -148,6 +159,13 @@ export function AdminContentForge() {
   const [newsSummary, setNewsSummary] = useState("");
   const [newsBody, setNewsBody] = useState("");
   const [newsImage, setNewsImage] = useState<File | null>(null);
+  const [managedNews, setManagedNews] = useState<ManagedNews[]>([]);
+  const [editingNewsId, setEditingNewsId] = useState("");
+  const [editNewsTitle, setEditNewsTitle] = useState("");
+  const [editNewsSummary, setEditNewsSummary] = useState("");
+  const [editNewsBody, setEditNewsBody] = useState("");
+  const [editNewsStatus, setEditNewsStatus] = useState<"published" | "draft" | "archived">("published");
+  const [editNewsImage, setEditNewsImage] = useState<File | null>(null);
   const [heroName, setHeroName] = useState("");
   const [heroNameRu, setHeroNameRu] = useState("");
   const [heroFaction, setHeroFaction] = useState("");
@@ -276,6 +294,14 @@ export function AdminContentForge() {
 
     return onSnapshot(heroesQuery, (snapshot) => {
       setManagedHeroes(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<ManagedHero, "id">) })));
+    });
+  }, []);
+
+  useEffect(() => {
+    const newsQuery = query(collection(db, collections.news), orderBy("createdAt", "desc"), limit(24));
+
+    return onSnapshot(newsQuery, (snapshot) => {
+      setManagedNews(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<ManagedNews, "id">) })));
     });
   }, []);
 
@@ -605,6 +631,105 @@ export function AdminContentForge() {
       setStatus("Новость добавлена в news и heroCalendar.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Не удалось добавить новость.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function startEditNews(item: ManagedNews) {
+    setEditingNewsId(item.id);
+    setEditNewsTitle(item.title ?? "");
+    setEditNewsSummary(item.summary ?? "");
+    setEditNewsBody(item.markdownBody ?? "");
+    setEditNewsStatus(item.status === "draft" || item.status === "archived" ? item.status : "published");
+    setEditNewsImage(null);
+  }
+
+  async function saveNewsEdits() {
+    if (!profile || !editingNewsId) {
+      return;
+    }
+
+    const title = editNewsTitle.trim();
+
+    if (!title) {
+      setStatus("Укажи заголовок новости перед сохранением.");
+      return;
+    }
+
+    setSaving(true);
+    setStatus("");
+
+    try {
+      const slug = slugify(title);
+      const uploadedImage = editNewsImage ? await uploadImage(editNewsImage, `${slug}/cover-${Date.now()}`, "news") : null;
+
+      await updateDoc(doc(db, collections.news, editingNewsId), {
+        title,
+        slug,
+        summary: editNewsSummary.trim(),
+        markdownBody: editNewsBody.trim(),
+        status: editNewsStatus,
+        ...(uploadedImage
+          ? {
+              coverImage: {
+                ...uploadedImage,
+                alt: title
+              }
+            }
+          : {}),
+        ...(editNewsStatus === "published" ? { publishedAt: serverTimestamp() } : {}),
+        updatedBy: profile.uid,
+        updatedAt: serverTimestamp()
+      });
+
+      setEditingNewsId("");
+      setEditNewsImage(null);
+      setStatus("Новость обновлена.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Не удалось сохранить новость.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function setNewsStatus(newsId: string, nextStatus: "published" | "draft" | "archived") {
+    if (!profile) {
+      return;
+    }
+
+    setSaving(true);
+    setStatus("");
+
+    try {
+      await updateDoc(doc(db, collections.news, newsId), {
+        status: nextStatus,
+        ...(nextStatus === "published" ? { publishedAt: serverTimestamp() } : {}),
+        updatedBy: profile.uid,
+        updatedAt: serverTimestamp()
+      });
+      setStatus(nextStatus === "published" ? "Новость опубликована." : "Статус новости обновлен.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Не удалось обновить статус новости.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeNews(newsId: string) {
+    setSaving(true);
+    setStatus("");
+
+    try {
+      await deleteDoc(doc(db, collections.news, newsId));
+
+      if (editingNewsId === newsId) {
+        setEditingNewsId("");
+      }
+
+      setStatus("Новость удалена.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Не удалось удалить новость.");
     } finally {
       setSaving(false);
     }
@@ -1136,6 +1261,87 @@ export function AdminContentForge() {
             <Save size={16} />
             Опубликовать
           </button>
+
+          <div className="space-y-3 border-t border-relic/15 pt-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-relic">News manager</p>
+              <h4 className="text-base font-black text-white">Редактирование новостей</h4>
+            </div>
+
+            <div className="max-h-[360px] space-y-2 overflow-y-auto pr-1">
+              {managedNews.map((item) => {
+                const imageUrl = item.coverImage?.secureUrl ?? item.coverImage?.url ?? "/images/raid-castle-bg.png";
+                const isPublished = item.status === "published";
+
+                return (
+                  <div key={item.id} className="grid gap-3 rounded-[14px] border border-white/10 bg-black/25 p-3 sm:grid-cols-[72px_1fr]">
+                    <button
+                      type="button"
+                      onClick={() => startEditNews(item)}
+                      className="h-[72px] w-[72px] overflow-hidden rounded-[10px] border border-relic/20 bg-black/40"
+                      aria-label="Редактировать новость"
+                    >
+                      <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+                    </button>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <button type="button" onClick={() => startEditNews(item)} className="min-w-0 text-left">
+                          <span className="block truncate font-bold text-white">{item.title ?? "Без заголовка"}</span>
+                          <span className="mt-1 block line-clamp-2 text-xs leading-5 text-zinc-500">{item.summary ?? "Описание не заполнено"}</span>
+                        </button>
+                        <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${isPublished ? "bg-emerald-400/12 text-emerald-200" : "bg-white/10 text-zinc-300"}`}>
+                          {item.status ?? "draft"}
+                        </span>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button type="button" onClick={() => startEditNews(item)} className="rounded-md border border-relic/20 px-3 py-2 text-xs font-bold text-relic hover:bg-relic/10">
+                          Редактировать
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void setNewsStatus(item.id, isPublished ? "draft" : "published")}
+                          className="rounded-md border border-white/10 px-3 py-2 text-xs font-bold text-zinc-200 hover:bg-white/10"
+                        >
+                          {isPublished ? "Скрыть" : "Опубликовать"}
+                        </button>
+                        <button type="button" onClick={() => void removeNews(item.id)} className="rounded-md border border-blood/30 px-3 py-2 text-xs font-bold text-ember hover:bg-blood/15">
+                          Удалить
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {managedNews.length === 0 ? <p className="rounded-xl border border-white/10 bg-black/20 p-3 text-sm text-zinc-500">Новостей пока нет.</p> : null}
+            </div>
+
+            {editingNewsId ? (
+              <div className="space-y-3 rounded-[16px] border border-relic/20 bg-black/25 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-bold text-white">Правка выбранной новости</p>
+                  <button type="button" onClick={() => setEditingNewsId("")} className="text-xs font-bold text-zinc-500 hover:text-white">
+                    Отмена
+                  </button>
+                </div>
+                <input value={editNewsTitle} onChange={(event) => setEditNewsTitle(event.target.value)} placeholder="Заголовок" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+                <input value={editNewsSummary} onChange={(event) => setEditNewsSummary(event.target.value)} placeholder="Краткое описание" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+                <textarea value={editNewsBody} onChange={(event) => setEditNewsBody(event.target.value)} rows={4} placeholder="Полный текст новости" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <select value={editNewsStatus} onChange={(event) => setEditNewsStatus(event.target.value as "published" | "draft" | "archived")} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
+                    <option value="published">Опубликована</option>
+                    <option value="draft">Черновик</option>
+                    <option value="archived">Архив</option>
+                  </select>
+                  <input type="file" accept="image/*" onChange={(event) => setEditNewsImage(event.target.files?.[0] ?? null)} className="block w-full text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-white/10 file:px-3 file:py-2 file:font-bold file:text-white" />
+                </div>
+                <button type="button" disabled={saving} onClick={() => void saveNewsEdits()} className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
+                  <Save size={16} />
+                  Сохранить правки
+                </button>
+              </div>
+            ) : null}
+          </div>
         </form>
 
         <form onSubmit={createHero} className="space-y-3 rounded-lg border border-white/10 bg-black/20 p-4">

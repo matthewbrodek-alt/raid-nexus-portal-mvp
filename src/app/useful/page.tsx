@@ -3,6 +3,7 @@ import { DeadwoodArenaCalculator } from "@/components/tools/deadwood-arena-calcu
 import { DamageComparisonCalculator } from "@/components/tools/damage-comparison-calculator";
 import { CollapsibleToolSection } from "@/components/tools/collapsible-tool-section";
 import { ExternalRaidResources } from "@/components/tools/external-raid-resources";
+import { TournamentBracketTool } from "@/components/tools/tournament-bracket-tool";
 
 export default function UsefulPage() {
   return (
@@ -29,6 +30,14 @@ export default function UsefulPage() {
           description="Сравнение двух сборок по стату, множителю, критическому урону, бонусам и защите цели."
         >
           <DamageComparisonCalculator />
+        </CollapsibleToolSection>
+
+        <CollapsibleToolSection
+          eyebrow="Tournament bracket"
+          title="Турнирная сетка"
+          description="Простая сетка для обычного турнира и double elimination: добавь участников, выбери победителя матча, а проигравшие в double elimination уйдут в нижнюю сетку."
+        >
+          <TournamentBracketTool />
         </CollapsibleToolSection>
 
         <ExternalRaidResources />
