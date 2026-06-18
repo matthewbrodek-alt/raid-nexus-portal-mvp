@@ -60,6 +60,10 @@ function imageUrl(value: string) {
   return `url("${value.replace(/"/g, "%22")}")`;
 }
 
+function imageUrlFallback(primary: string, fallback: string) {
+  return `${imageUrl(primary)}, ${imageUrl(fallback)}`;
+}
+
 export function RafflePanel() {
   const { language } = useLanguage();
   const { theme } = useTheme();
@@ -95,14 +99,18 @@ export function RafflePanel() {
   const prizeFund = raffle?.prizeFund?.trim() || RAFFLE_PRIZE;
   const winnerCount = Math.max(1, Math.floor(raffle?.winnerCount ?? 5));
   const href = raffle?.id ? `/raffle?event=${raffle.id}` : "/raffle";
-  const backgroundImage = isLight ? imageUrl("/images/raffle/raffle-panel-light.png") : imageUrl("/images/raffle/raffle-panel-dark.png");
-  const leftArtImage = isLight ? imageUrl("/images/raffle/raffle-left-light.png") : imageUrl("/images/raffle/raffle-left-dark.png");
+  const backgroundImage = isLight
+    ? imageUrlFallback("/images/raffle/raffle-panel-light.png", "/images/raffle/raffle-panel-light.PNG")
+    : imageUrlFallback("/images/raffle/raffle-panel-dark.png", "/images/raffle/raffle-panel-dark.PNG");
+  const leftArtImage = isLight
+    ? imageUrlFallback("/images/raffle/raffle-left-light.png", "/images/raffle/raffle-left-light.PNG")
+    : imageUrlFallback("/images/raffle/raffle-left-dark.png", "/images/raffle/raffle-left-dark.PNG");
   const uploadedArt = raffle?.image?.secureUrl || raffle?.image?.url;
   const rightArtImage = uploadedArt
     ? imageUrl(uploadedArt)
     : isLight
-      ? imageUrl("/images/raffle/raffle-right-light.png")
-      : imageUrl("/images/raffle/raffle-right-dark.png");
+      ? imageUrlFallback("/images/raffle/raffle-right-light.png", "/images/raffle/raffle-right-light.PNG")
+      : imageUrlFallback("/images/raffle/raffle-right-dark.png", "/images/raffle/raffle-right-dark.PNG");
 
   return (
     <section
