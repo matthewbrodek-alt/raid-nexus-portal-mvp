@@ -165,9 +165,8 @@ function exportRows(leads: TopupLead[]) {
         serviceLabel(lead.serviceType),
         lead.telegram ?? "",
         clientDisplayName(lead),
-        lead.packageName ?? lead.packageId ?? "",
-        `${lead.amountRub ?? 0} RUB`,
         `+${lead.manualBumpyCoinsAwardedTotal ?? 0} / -${lead.bumpyCoinsWrittenOffTotal ?? 0} Bumpy Coins`,
+        `${lead.amountRub ?? 0} RUB`,
         getOrderStage(lead.status).clientLabel,
         lead.paymentDetails ?? "",
         lead.managerNote ?? "",
@@ -377,6 +376,7 @@ export function AdminCrmPanel() {
   const [manualService, setManualService] = useState<ServiceType>("donation");
   const [manualUserSearch, setManualUserSearch] = useState("");
   const [manualSelectedUserUid, setManualSelectedUserUid] = useState("");
+  const [manualBonusCoins, setManualBonusCoins] = useState("");
   const [manualNote, setManualNote] = useState("");
   const [statusText, setStatusText] = useState("");
   const [editingLeadId, setEditingLeadId] = useState("");
@@ -541,8 +541,10 @@ export function AdminCrmPanel() {
 
     const manualRequestTitle = serviceLabel(manualService);
     const clientName = profileDisplayName(selectedManualUser);
+    const initialBonusCoins = Number((manualBonusCoins ?? "").replace(/[^\d.]/g, ""));
+    const safeInitialBonusCoins = Number.isFinite(initialBonusCoins) ? Math.max(0, Math.floor(initialBonusCoins)) : 0;
 
-    await addDoc(collection(db, collections.topupLeads), {
+    const manualLeadRef = await addDoc(collection(db, collections.topupLeads), {
       uid: selectedManualUser.uid,
       email: selectedManualUser.email ?? "",
       clientName,
@@ -560,11 +562,24 @@ export function AdminCrmPanel() {
       updatedAt: serverTimestamp()
     });
 
+    const manualLead: TopupLead = {
+      id: manualLeadRef.id,
+      uid: selectedManualUser.uid,
+      email: selectedManualUser.email ?? "",
+      clientName,
+      packageId: `manual-${manualService}`,
+      packageName: manualRequestTitle,
+      serviceType: manualService,
+      status: "new"
+    };
+    const creditedCoins = safeInitialBonusCoins > 0 ? await creditManualBumpyCoins(manualLead, safeInitialBonusCoins, profile?.uid) : 0;
+
     setManualUserSearch("");
     setManualSelectedUserUid("");
+    setManualBonusCoins("");
     setManualNote("");
     setManualService("donation");
-    setStatusText(`Внутренняя заявка создана для ${clientName}.`);
+    setStatusText(creditedCoins > 0 ? `Внутренняя заявка создана для ${clientName}. Начислено ${creditedCoins} Bumpy Coins.` : `Внутренняя заявка создана для ${clientName}.`);
   }
 
   async function copyMonthText() {
@@ -573,7 +588,7 @@ export function AdminCrmPanel() {
   }
 
   function downloadCsv() {
-    const header = "number;date;service;telegram;client;request;amountRub;manualBumpyCoins;bumpyCoinsWrittenOff;stage;paymentDetails;managerNote;comment";
+    const header = "number;date;service;telegram;client;bumpyCoinsBonus;amountRub;manualBumpyCoins;bumpyCoinsWrittenOff;stage;paymentDetails;managerNote;comment";
     const rows = monthLeads.map((lead, index) =>
       [
         String(index + 1),
@@ -581,7 +596,7 @@ export function AdminCrmPanel() {
         serviceLabel(lead.serviceType),
         lead.telegram ?? "",
         clientDisplayName(lead),
-        lead.packageName ?? lead.packageId ?? "",
+        `+${lead.manualBumpyCoinsAwardedTotal ?? 0} / -${lead.bumpyCoinsWrittenOffTotal ?? 0} BC`,
         String(lead.amountRub ?? 0),
         String(lead.manualBumpyCoinsAwardedTotal ?? 0),
         String(lead.bumpyCoinsWrittenOffTotal ?? 0),
@@ -598,14 +613,14 @@ export function AdminCrmPanel() {
   }
 
   function downloadExcel() {
-    const headers = ["№", "Дата", "Услуга", "Telegram", "Клиент", "Заявка", "Сумма", "Bumpy Coins +", "Bumpy Coins -", "Этап", "Оплата", "Заметка", "Комментарий"];
+    const headers = ["№", "Дата", "Услуга", "Telegram", "Клиент", "Бонус Bumpy Coin", "Сумма", "Bumpy Coins +", "Bumpy Coins -", "Этап", "Оплата", "Заметка", "Комментарий"];
     const rows = monthLeads.map((lead, index) => [
       index + 1,
       formatDate(lead.createdAt?.seconds),
       serviceLabel(lead.serviceType),
       lead.telegram ?? "",
       clientDisplayName(lead),
-      lead.packageName ?? lead.packageId ?? "",
+      `+${lead.manualBumpyCoinsAwardedTotal ?? 0} / -${lead.bumpyCoinsWrittenOffTotal ?? 0} BC`,
       lead.amountRub ?? 0,
       lead.manualBumpyCoinsAwardedTotal ?? 0,
       lead.bumpyCoinsWrittenOffTotal ?? 0,
@@ -833,7 +848,7 @@ export function AdminCrmPanel() {
         </div>
       </div>
 
-      <form onSubmit={createManualLead} className="mb-4 grid gap-2 rounded-xl border border-white/10 bg-black/20 p-3 lg:grid-cols-[0.8fr_1.6fr_2fr_auto]">
+      <form onSubmit={createManualLead} className="mb-4 grid gap-2 rounded-xl border border-white/10 bg-black/20 p-3 lg:grid-cols-[0.8fr_1.6fr_0.9fr_2fr_auto]">
         <select value={manualService} onChange={(event) => setManualService(event.target.value as ServiceType)} className="rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
           <option value="donation">Донат</option>
           <option value="account_purchase">Покупка аккаунта</option>
@@ -883,6 +898,13 @@ export function AdminCrmPanel() {
             </div>
           )}
         </div>
+        <input
+          value={manualBonusCoins}
+          onChange={(event) => setManualBonusCoins(event.target.value)}
+          inputMode="numeric"
+          placeholder="Бонус Bumpy Coin"
+          className="min-h-11 rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
+        />
         <textarea value={manualNote} onChange={(event) => setManualNote(event.target.value)} rows={1} placeholder="Заметка менеджера / детали заявки" className="min-h-11 rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
         <button disabled={!selectedManualUser} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-relic px-4 py-2 font-bold text-black transition disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400">
           <Save size={16} />
@@ -919,7 +941,7 @@ export function AdminCrmPanel() {
                 <th className="border-b border-white/10 p-3">Дата</th>
                 <th className="border-b border-white/10 p-3">Клиент</th>
                 <th className="border-b border-white/10 p-3">Услуга</th>
-                <th className="border-b border-white/10 p-3">Заявка</th>
+                <th className="border-b border-white/10 p-3">Бонус Bumpy Coin</th>
                 <th className="border-b border-white/10 p-3">Сумма</th>
                 <th className="border-b border-white/10 p-3">Статус</th>
                 <th className="border-b border-white/10 p-3">Действия</th>
@@ -950,7 +972,8 @@ export function AdminCrmPanel() {
                       </td>
                       <td className="whitespace-nowrap border-b border-white/10 p-3 align-middle font-semibold text-zinc-300">{serviceLabel(lead.serviceType)}</td>
                       <td className="border-b border-white/10 p-3 align-middle">
-                        <p className="line-clamp-1 font-semibold text-white">{lead.packageName || lead.packageId || "Заявка"}</p>
+                        <p className="line-clamp-1 font-semibold text-white">+{lead.manualBumpyCoinsAwardedTotal ?? 0} BC</p>
+                        {(lead.bumpyCoinsWrittenOffTotal ?? 0) > 0 ? <p className="mt-1 line-clamp-1 text-xs text-zinc-500">Списано: {lead.bumpyCoinsWrittenOffTotal ?? 0} BC</p> : null}
                         {lead.comment ? <p className="mt-1 line-clamp-1 text-xs text-zinc-500">{lead.comment}</p> : null}
                       </td>
                       <td className="whitespace-nowrap border-b border-white/10 p-3 align-middle font-black text-white">{formatRub(Number(draft.amountRub) || lead.amountRub)}</td>
@@ -1023,9 +1046,10 @@ export function AdminCrmPanel() {
 
                 <div className="mt-2 rounded-lg border border-white/10 bg-black/18 px-3 py-2">
                   <div className="flex items-start justify-between gap-3">
-                    <p className="line-clamp-1 font-bold text-white">{lead.packageName || lead.packageId || "Заявка"}</p>
+                    <p className="line-clamp-1 font-bold text-white">Бонус: +{lead.manualBumpyCoinsAwardedTotal ?? 0} BC</p>
                     <p className="shrink-0 font-black text-relic">{formatRub(Number(draft.amountRub) || lead.amountRub)}</p>
                   </div>
+                  {(lead.bumpyCoinsWrittenOffTotal ?? 0) > 0 ? <p className="mt-1 line-clamp-1 text-xs text-zinc-500">Списано: {lead.bumpyCoinsWrittenOffTotal ?? 0} BC</p> : null}
                   {lead.comment ? <p className="mt-1 line-clamp-1 text-xs text-zinc-500">{lead.comment}</p> : null}
                 </div>
 

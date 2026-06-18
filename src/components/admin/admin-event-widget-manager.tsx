@@ -116,6 +116,10 @@ function shuffle<T>(items: T[]) {
   return next;
 }
 
+function isMainRaffle(widget: PortalEventWidget) {
+  return (widget.placement ?? "main") === "main";
+}
+
 export function AdminEventWidgetManager() {
   const { profile } = useAuth();
   const [widgets, setWidgets] = useState<PortalEventWidget[]>([]);
@@ -150,7 +154,9 @@ export function AdminEventWidgetManager() {
         .sort((first, second) => getWidgetDate(second).getTime() - getWidgetDate(first).getTime()),
     [contestWidgets]
   );
-  const mainRaffles = useMemo(() => activeRaffles.filter((item) => (item.placement ?? "main") === "main"), [activeRaffles]);
+  const allMainRaffles = useMemo(() => activeRaffles.filter(isMainRaffle), [activeRaffles]);
+  const mainRaffles = useMemo(() => allMainRaffles.slice(0, 1), [allMainRaffles]);
+  const extraMainRaffles = useMemo(() => allMainRaffles.slice(1), [allMainRaffles]);
   const floatingRaffles = useMemo(() => activeRaffles.filter((item) => item.placement === "floating"), [activeRaffles]);
 
   function updateField(field: keyof typeof emptyForm, value: string) {
@@ -178,6 +184,22 @@ export function AdminEventWidgetManager() {
     });
     setImage(null);
     setStatus("Редактирование активного розыгрыша.");
+  }
+
+  async function archiveOtherMainRaffles(exceptId?: string) {
+    const duplicates = activeRaffles.filter((widget) => isMainRaffle(widget) && widget.id !== exceptId);
+
+    await Promise.all(
+      duplicates.map((widget) =>
+        updateDoc(doc(db, collections.eventWidgets, widget.id), {
+          archivedAt: serverTimestamp(),
+          status: "archived",
+          updatedAt: serverTimestamp()
+        })
+      )
+    );
+
+    return duplicates.length;
   }
 
   async function saveWidget(event: React.FormEvent<HTMLFormElement>) {
@@ -215,10 +237,11 @@ export function AdminEventWidgetManager() {
         updatedAt: serverTimestamp(),
         ...(uploadedImage ? { image: { ...uploadedImage, alt: cleanTitle } } : {})
       };
+      const archivedMainCount = payload.placement === "main" ? await archiveOtherMainRaffles(editingId || undefined) : 0;
 
       if (editingId) {
         await updateDoc(doc(db, collections.eventWidgets, editingId), payload);
-        setStatus("Розыгрыш обновлен.");
+        setStatus(archivedMainCount > 0 ? `Розыгрыш обновлен. ${archivedMainCount} старый основной розыгрыш перенесен в историю.` : "Розыгрыш обновлен.");
       } else {
         await addDoc(collection(db, collections.eventWidgets), {
           ...payload,
@@ -231,7 +254,7 @@ export function AdminEventWidgetManager() {
           winnerUids: [],
           winners: []
         });
-        setStatus("Розыгрыш опубликован.");
+        setStatus(archivedMainCount > 0 ? `Розыгрыш опубликован. ${archivedMainCount} старый основной розыгрыш перенесен в историю.` : "Розыгрыш опубликован.");
       }
 
       resetForm();
@@ -252,11 +275,13 @@ export function AdminEventWidgetManager() {
   }
 
   async function restoreWidget(widget: PortalEventWidget) {
+    const archivedMainCount = isMainRaffle(widget) ? await archiveOtherMainRaffles(widget.id) : 0;
+
     await updateDoc(doc(db, collections.eventWidgets, widget.id), {
       status: "published",
       updatedAt: serverTimestamp()
     });
-    setStatus("Розыгрыш снова опубликован.");
+    setStatus(archivedMainCount > 0 ? `Розыгрыш снова опубликован. ${archivedMainCount} старый основной розыгрыш перенесен в историю.` : "Розыгрыш снова опубликован.");
   }
 
   async function removeWidget(widgetId: string) {
@@ -327,7 +352,7 @@ export function AdminEventWidgetManager() {
   function renderRaffleCard(widget: PortalEventWidget, archived = false) {
     const participantCount = widget.participantCount ?? widget.participants?.length ?? 0;
     const winnersCount = widget.winnerUids?.length ?? widget.winners?.length ?? (widget.winnerUid ? 1 : 0);
-    const placementLabel = (widget.placement ?? "main") === "floating" ? "Всплывающий виджет" : "Основной блок";
+    const placementLabel = (widget.placement ?? "main") === "floating" ? "Виджет ивент" : "Розыгрыш";
 
     return (
       <div key={widget.id} className="rounded-2xl border border-relic/20 bg-black/20 p-4">
@@ -402,7 +427,7 @@ export function AdminEventWidgetManager() {
           <p className="text-xs uppercase tracking-[0.22em] text-relic">Giveaway manager</p>
           <h2 className="text-xl font-bold text-white sm:text-2xl">Управление розыгрышами</h2>
           <p className="mt-1 text-sm text-zinc-400">
-            Настрой основной розыгрыш над календарем и отдельный всплывающий виджет: даты, призы, победителей и участников.
+            Настрой две независимые панели: постоянный “Розыгрыш” над календарем и короткий “Виджет ивент”.
           </p>
         </div>
       </div>
@@ -433,15 +458,16 @@ export function AdminEventWidgetManager() {
               className="rounded-xl border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
             />
             <label className="space-y-2 text-sm text-zinc-300">
-              Место показа
+              Панель
               <select
                 value={form.placement}
                 onChange={(event) => updateField("placement", event.target.value)}
                 className="w-full rounded-xl border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic"
               >
-                <option value="main">Основной блок над календарем</option>
-                <option value="floating">Всплывающий виджет с коротким сроком</option>
+                <option value="main">Розыгрыш</option>
+                <option value="floating">Виджет ивент</option>
               </select>
+              <span className="block text-xs leading-5 text-zinc-500">У “Розыгрыша” может быть только одна активная запись. Новый основной розыгрыш переносит старый в историю.</span>
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="space-y-2 text-sm text-zinc-300">
@@ -515,20 +541,26 @@ export function AdminEventWidgetManager() {
           <section>
             <div className="mb-3 flex items-center gap-2">
               <Gift size={18} className="text-relic" />
-              <h3 className="font-black text-white">Основной розыгрыш над календарем</h3>
+              <h3 className="font-black text-white">Розыгрыш</h3>
             </div>
             <div className="grid max-h-[360px] gap-3 overflow-y-auto pr-1">
-              {mainRaffles.length ? mainRaffles.map((widget) => renderRaffleCard(widget)) : <p className="rounded-2xl border border-white/10 p-4 text-sm text-zinc-400">Основной розыгрыш пока не задан.</p>}
+              {mainRaffles.length ? mainRaffles.map((widget) => renderRaffleCard(widget)) : <p className="rounded-2xl border border-white/10 p-4 text-sm text-zinc-400">Розыгрыш пока не задан.</p>}
+              {extraMainRaffles.length ? (
+                <div className="rounded-2xl border border-amber-400/25 bg-amber-400/10 p-4 text-sm text-amber-100">
+                  <p className="font-bold">Найдено лишних активных основных розыгрышей: {extraMainRaffles.length}.</p>
+                  <p className="mt-1 text-amber-100/80">При следующем сохранении “Розыгрыша” они автоматически уйдут в историю.</p>
+                </div>
+              ) : null}
             </div>
           </section>
 
           <section>
             <div className="mb-3 flex items-center gap-2">
               <Gift size={18} className="text-[#b998ff]" />
-              <h3 className="font-black text-white">Всплывающий розыгрыш-виджет</h3>
+              <h3 className="font-black text-white">Виджет ивент</h3>
             </div>
             <div className="grid max-h-[360px] gap-3 overflow-y-auto pr-1">
-              {floatingRaffles.length ? floatingRaffles.map((widget) => renderRaffleCard(widget)) : <p className="rounded-2xl border border-white/10 p-4 text-sm text-zinc-400">Виджет не опубликован. Он появится только если выбрать место показа “Всплывающий виджет”.</p>}
+              {floatingRaffles.length ? floatingRaffles.map((widget) => renderRaffleCard(widget)) : <p className="rounded-2xl border border-white/10 p-4 text-sm text-zinc-400">Виджет ивент не опубликован. Он появится только если выбрать панель “Виджет ивент”.</p>}
             </div>
           </section>
 

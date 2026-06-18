@@ -74,12 +74,12 @@ export function LoginForm() {
             required
           />
         </label>
-        <label className="flex items-center gap-3 rounded-md border border-white/10 bg-black/20 p-3 text-sm text-zinc-300">
+        <label className="flex items-center gap-3 rounded-md border border-slate-300/70 bg-white/70 p-3 text-sm font-semibold text-slate-700 shadow-sm dark:border-white/10 dark:bg-black/20 dark:text-zinc-300">
           <input
             type="checkbox"
             checked={rememberMe}
             onChange={(event) => setRememberMe(event.target.checked)}
-            className="rounded border-white/20 bg-black/30 text-relic focus:ring-relic"
+            className="h-5 w-5 rounded border-2 border-slate-400 bg-white text-[#2f7cff] accent-[#2f7cff] focus:ring-[#2f7cff] dark:border-white/25 dark:bg-black/30 dark:text-relic dark:accent-relic dark:focus:ring-relic"
           />
           Запомнить меня на этом устройстве
         </label>
