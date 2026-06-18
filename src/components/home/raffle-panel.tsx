@@ -102,9 +102,6 @@ export function RafflePanel() {
   const backgroundImage = isLight
     ? imageUrlFallback("/images/raffle/raffle-panel-light.png", "/images/raffle/raffle-panel-light.PNG")
     : imageUrlFallback("/images/raffle/raffle-panel-dark.png", "/images/raffle/raffle-panel-dark.PNG");
-  const leftArtImage = isLight
-    ? imageUrlFallback("/images/raffle/raffle-left-light.png", "/images/raffle/raffle-left-light.PNG")
-    : imageUrlFallback("/images/raffle/raffle-left-dark.png", "/images/raffle/raffle-left-dark.PNG");
   const uploadedArt = raffle?.image?.secureUrl || raffle?.image?.url;
   const rightArtImage = uploadedArt
     ? imageUrl(uploadedArt)
@@ -128,40 +125,31 @@ export function RafflePanel() {
       <div
         className={`raid-raffle-base-overlay pointer-events-none absolute inset-0 ${
           isLight
-            ? "bg-[linear-gradient(90deg,rgba(247,251,255,0.94)_0%,rgba(235,245,255,0.86)_52%,rgba(224,235,255,0.44)_100%)]"
-            : "bg-[linear-gradient(90deg,rgba(7,10,22,0.98)_0%,rgba(14,12,42,0.9)_48%,rgba(14,8,28,0.54)_100%)]"
+            ? "bg-[linear-gradient(90deg,rgba(247,251,255,0.72)_0%,rgba(235,245,255,0.54)_52%,rgba(224,235,255,0.16)_100%)]"
+            : "bg-[linear-gradient(90deg,rgba(7,10,22,0.72)_0%,rgba(14,12,42,0.52)_48%,rgba(14,8,28,0.12)_100%)]"
         }`}
       />
       <div
         className={`raid-raffle-glow-overlay pointer-events-none absolute inset-0 ${
           isLight
-            ? "bg-[radial-gradient(circle_at_13%_24%,rgba(70,98,186,0.16),transparent_22%),radial-gradient(circle_at_86%_34%,rgba(153,80,255,0.13),transparent_28%)]"
-            : "bg-[radial-gradient(circle_at_13%_24%,rgba(133,54,255,0.26),transparent_20%),radial-gradient(circle_at_86%_34%,rgba(255,47,126,0.18),transparent_27%)]"
+            ? "bg-[radial-gradient(circle_at_13%_24%,rgba(70,98,186,0.08),transparent_22%),radial-gradient(circle_at_86%_34%,rgba(153,80,255,0.08),transparent_28%)]"
+            : "bg-[radial-gradient(circle_at_13%_24%,rgba(133,54,255,0.14),transparent_20%),radial-gradient(circle_at_86%_34%,rgba(255,47,126,0.1),transparent_27%)]"
         }`}
       />
       <div
-        className="pointer-events-none absolute right-0 top-0 z-[1] h-full w-[48%] bg-contain bg-right-center bg-no-repeat opacity-95"
+        className="pointer-events-none absolute right-0 top-0 z-[1] h-full w-[48%] bg-contain bg-right-center bg-no-repeat opacity-100"
         style={{ backgroundImage: rightArtImage }}
       />
       <div
         className={`raid-raffle-art-fade pointer-events-none absolute bottom-0 right-0 z-[2] h-full w-[45%] ${
           isLight
-            ? "bg-[linear-gradient(90deg,rgba(247,251,255,0)_0%,rgba(247,251,255,0.08)_42%,rgba(247,251,255,0.78)_100%)]"
-            : "bg-[linear-gradient(90deg,rgba(7,10,22,0)_0%,rgba(7,10,22,0.12)_42%,rgba(7,10,22,0.84)_100%)]"
+            ? "bg-[linear-gradient(90deg,rgba(247,251,255,0)_0%,rgba(247,251,255,0.04)_42%,rgba(247,251,255,0.28)_100%)]"
+            : "bg-[linear-gradient(90deg,rgba(7,10,22,0)_0%,rgba(7,10,22,0.06)_42%,rgba(7,10,22,0.38)_100%)]"
         }`}
       />
 
       <div className="relative z-[3] flex min-h-[144px] flex-col justify-between gap-2.5">
-        <div className="grid grid-cols-[52px_minmax(0,1fr)] gap-3 pr-[30%] sm:grid-cols-[60px_minmax(0,1fr)] sm:pr-[34%]">
-          <span
-            className={`raid-raffle-icon grid h-[52px] w-[52px] shrink-0 place-items-center overflow-hidden rounded-full border bg-contain bg-center bg-no-repeat text-[#ff4fac] shadow-[0_0_28px_rgba(137,63,255,0.34)] sm:h-[60px] sm:w-[60px] ${
-              isLight ? "border-[#cab9ff] bg-[#efeaff] shadow-[0_12px_34px_rgba(108,78,184,0.18)]" : "border-[#9a6cff]/40 bg-[#220c46]/70"
-            }`}
-            style={{ backgroundImage: leftArtImage }}
-          >
-            <Gem className="drop-shadow-[0_0_16px_rgba(255,75,172,0.55)]" size={28} />
-          </span>
-
+        <div className="pr-[30%] sm:pr-[34%]">
           <div className="min-w-0">
             <h2 className={`raid-raffle-title text-[1.12rem] font-black leading-[1.08] sm:text-[1.35rem] ${isLight ? "text-[#102036]" : "text-white"}`}>{title}</h2>
             <p className={`raid-raffle-description mt-1.5 line-clamp-2 max-w-[24rem] text-[0.76rem] font-semibold leading-4 sm:text-[0.82rem] sm:leading-5 ${isLight ? "text-[#2d3d52]" : "text-zinc-300"}`}>
