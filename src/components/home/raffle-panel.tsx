@@ -50,10 +50,21 @@ function getWidgetDate(widget?: PortalEventWidget | null) {
 function getActiveRaffle(widgets: PortalEventWidget[], now: Date) {
   const active = widgets
     .filter((widget) => widget.status === "published" && widget.type === "contest")
+    .filter((widget) => (widget.placement ?? "main") === "main")
     .filter((widget) => getWidgetDate(widget).getTime() > now.getTime())
     .sort((first, second) => getWidgetDate(first).getTime() - getWidgetDate(second).getTime());
 
   return active[0] ?? null;
+}
+
+function getWinnerNames(widget?: PortalEventWidget | null) {
+  const names = widget?.winners?.map((winner) => winner.displayName?.trim()).filter(Boolean) ?? [];
+
+  if (names.length) {
+    return names as string[];
+  }
+
+  return widget?.winnerName?.trim() ? [widget.winnerName.trim()] : [];
 }
 
 function imageUrl(value: string) {
@@ -94,6 +105,8 @@ export function RafflePanel() {
   const description = raffle?.comment?.trim() || labels.description;
   const prizeFund = raffle?.prizeFund?.trim() || RAFFLE_PRIZE;
   const winnerCount = Math.max(1, Math.floor(raffle?.winnerCount ?? 5));
+  const winnerNames = useMemo(() => getWinnerNames(raffle), [raffle]);
+  const winnerTickerText = winnerNames.join(" • ");
   const href = raffle?.id ? `/raffle?event=${raffle.id}` : "/raffle";
   const backgroundImage = isLight ? imageUrl("/images/raffle/raffle-panel-light.PNG") : imageUrl("/images/raffle/raffle-panel-dark.PNG");
 
@@ -197,6 +210,19 @@ export function RafflePanel() {
             {labels.cta}
             <ArrowRight size={16} />
           </Link>
+
+          {winnerNames.length ? (
+            <div
+              className={`raid-raffle-winner-ticker col-span-full overflow-hidden rounded-xl border px-3 py-2 text-[0.68rem] font-bold ${
+                isLight ? "border-[#d1e2f7] bg-white/62 text-[#243449]" : "border-white/10 bg-black/26 text-zinc-300"
+              }`}
+            >
+              <span className={isLight ? "mr-2 text-[#7a46ff]" : "mr-2 text-[#b998ff]"}>{language === "ru" ? "Победители:" : "Winners:"}</span>
+              <span className="raid-raffle-winner-track inline-block whitespace-nowrap">
+                {winnerTickerText} • {winnerTickerText}
+              </span>
+            </div>
+          ) : null}
         </div>
       </div>
 

@@ -30,6 +30,7 @@ const emptyForm = {
   deadlineAt: "",
   details: "",
   donationUrl: "",
+  placement: "main",
   prizeFund: "5 паков рубинов",
   startsAt: "",
   title: "Розыгрыш рубинов",
@@ -149,6 +150,8 @@ export function AdminEventWidgetManager() {
         .sort((first, second) => getWidgetDate(second).getTime() - getWidgetDate(first).getTime()),
     [contestWidgets]
   );
+  const mainRaffles = useMemo(() => activeRaffles.filter((item) => (item.placement ?? "main") === "main"), [activeRaffles]);
+  const floatingRaffles = useMemo(() => activeRaffles.filter((item) => item.placement === "floating"), [activeRaffles]);
 
   function updateField(field: keyof typeof emptyForm, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -167,6 +170,7 @@ export function AdminEventWidgetManager() {
       deadlineAt: toInputDateTime(widget.deadlineAt),
       details: widget.details ?? "",
       donationUrl: widget.donationUrl ?? "",
+      placement: widget.placement ?? "main",
       prizeFund: widget.prizeFund ?? "5 паков рубинов",
       startsAt: toInputDateTime(widget.startsAt),
       title: widget.title ?? "Розыгрыш рубинов",
@@ -202,6 +206,7 @@ export function AdminEventWidgetManager() {
         details: form.details.trim(),
         donationUrl: form.donationUrl.trim(),
         prizeFund: form.prizeFund.trim() || "5 паков рубинов",
+        placement: form.placement === "floating" ? ("floating" as const) : ("main" as const),
         startsAt: form.startsAt ? new Date(form.startsAt).toISOString() : "",
         status: "published" as const,
         title: cleanTitle,
@@ -322,6 +327,7 @@ export function AdminEventWidgetManager() {
   function renderRaffleCard(widget: PortalEventWidget, archived = false) {
     const participantCount = widget.participantCount ?? widget.participants?.length ?? 0;
     const winnersCount = widget.winnerUids?.length ?? widget.winners?.length ?? (widget.winnerUid ? 1 : 0);
+    const placementLabel = (widget.placement ?? "main") === "floating" ? "Всплывающий виджет" : "Основной блок";
 
     return (
       <div key={widget.id} className="rounded-2xl border border-relic/20 bg-black/20 p-4">
@@ -330,9 +336,14 @@ export function AdminEventWidgetManager() {
             <p className="truncate text-lg font-black text-white">{widget.title || "Розыгрыш рубинов"}</p>
             <p className="mt-1 text-sm text-zinc-400">{formatDate(widget.deadlineAt)}</p>
           </div>
-          <span className="rounded-full border border-relic/25 px-3 py-1 text-xs font-bold text-relic">
-            {archived ? "История" : "Активен"}
-          </span>
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <span className="rounded-full border border-relic/25 px-3 py-1 text-xs font-bold text-relic">
+              {archived ? "История" : "Активен"}
+            </span>
+            <span className="rounded-full border border-[#2f7cff]/25 bg-[#2f7cff]/10 px-3 py-1 text-[0.68rem] font-bold text-[#8bbcff]">
+              {placementLabel}
+            </span>
+          </div>
         </div>
 
         <p className="mt-3 line-clamp-2 text-sm leading-6 text-zinc-400">{widget.comment}</p>
@@ -389,9 +400,9 @@ export function AdminEventWidgetManager() {
         <CalendarClock className="text-relic" />
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-relic">Giveaway manager</p>
-          <h2 className="text-xl font-bold text-white sm:text-2xl">Управление розыгрышем на главной</h2>
+          <h2 className="text-xl font-bold text-white sm:text-2xl">Управление розыгрышами</h2>
           <p className="mt-1 text-sm text-zinc-400">
-            Настрой заголовок, даты, призовой фонд, количество победителей и смотри участников по каждому розыгрышу.
+            Настрой основной розыгрыш над календарем и отдельный всплывающий виджет: даты, призы, победителей и участников.
           </p>
         </div>
       </div>
@@ -421,6 +432,17 @@ export function AdminEventWidgetManager() {
               placeholder="Короткое описание"
               className="rounded-xl border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic"
             />
+            <label className="space-y-2 text-sm text-zinc-300">
+              Место показа
+              <select
+                value={form.placement}
+                onChange={(event) => updateField("placement", event.target.value)}
+                className="w-full rounded-xl border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic"
+              >
+                <option value="main">Основной блок над календарем</option>
+                <option value="floating">Всплывающий виджет с коротким сроком</option>
+              </select>
+            </label>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="space-y-2 text-sm text-zinc-300">
                 Дата старта
@@ -493,10 +515,20 @@ export function AdminEventWidgetManager() {
           <section>
             <div className="mb-3 flex items-center gap-2">
               <Gift size={18} className="text-relic" />
-              <h3 className="font-black text-white">Активные розыгрыши</h3>
+              <h3 className="font-black text-white">Основной розыгрыш над календарем</h3>
             </div>
-            <div className="grid max-h-[560px] gap-3 overflow-y-auto pr-1">
-              {activeRaffles.length ? activeRaffles.map((widget) => renderRaffleCard(widget)) : <p className="rounded-2xl border border-white/10 p-4 text-sm text-zinc-400">Активных розыгрышей пока нет.</p>}
+            <div className="grid max-h-[360px] gap-3 overflow-y-auto pr-1">
+              {mainRaffles.length ? mainRaffles.map((widget) => renderRaffleCard(widget)) : <p className="rounded-2xl border border-white/10 p-4 text-sm text-zinc-400">Основной розыгрыш пока не задан.</p>}
+            </div>
+          </section>
+
+          <section>
+            <div className="mb-3 flex items-center gap-2">
+              <Gift size={18} className="text-[#b998ff]" />
+              <h3 className="font-black text-white">Всплывающий розыгрыш-виджет</h3>
+            </div>
+            <div className="grid max-h-[360px] gap-3 overflow-y-auto pr-1">
+              {floatingRaffles.length ? floatingRaffles.map((widget) => renderRaffleCard(widget)) : <p className="rounded-2xl border border-white/10 p-4 text-sm text-zinc-400">Виджет не опубликован. Он появится только если выбрать место показа “Всплывающий виджет”.</p>}
             </div>
           </section>
 

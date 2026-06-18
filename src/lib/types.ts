@@ -12,6 +12,7 @@ export type PortalEventWidget = {
   title?: string;
   comment?: string;
   details?: string;
+  placement?: "main" | "floating";
   type?: "contest" | "special" | "event";
   startsAt?: string;
   deadlineAt?: string;

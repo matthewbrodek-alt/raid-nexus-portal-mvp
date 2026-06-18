@@ -19,6 +19,7 @@ import { HomeBackgroundVideo } from "@/components/home/home-background-video";
 import { HomeBroadcast } from "@/components/home/home-broadcast";
 import { HomeCommunityLinks } from "@/components/home/home-community-links";
 import { HomeEventCalendarCard } from "@/components/home/home-event-calendar-card";
+import { HomeEventWidgets } from "@/components/home/home-event-widgets";
 import { HomeMobileHeader } from "@/components/home/home-mobile-header";
 import { HomeSearch } from "@/components/home/home-search";
 import { HOME_REVIEWS_EVENT, HomeTestimonials } from "@/components/home/home-testimonials";
@@ -192,6 +193,7 @@ export default function Home() {
           </footer>
         </section>
       </div>
+      <HomeEventWidgets />
     </main>
   );
 }

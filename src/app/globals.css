@@ -2281,6 +2281,25 @@ input[type="file"]::-webkit-file-upload-button {
   animation: raid-donate-pulse 2.7s ease-in-out infinite;
 }
 
+.raid-raffle-winner-ticker {
+  min-width: 0;
+}
+
+.raid-raffle-winner-track {
+  animation: raid-raffle-winner-marquee 18s linear infinite;
+  will-change: transform;
+}
+
+@keyframes raid-raffle-winner-marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 @keyframes raid-donate-pulse {
   0%,
   100% {

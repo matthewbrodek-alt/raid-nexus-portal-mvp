@@ -32,6 +32,43 @@ function getTimeLeft(deadlineAt?: string) {
   return `${hours}ч ${minutes}м`;
 }
 
+function getDateTime(value?: string) {
+  if (!value) {
+    return 0;
+  }
+
+  const date = new Date(value).getTime();
+  return Number.isNaN(date) ? 0 : date;
+}
+
+function hasStarted(widget: PortalEventWidget, now: number) {
+  const startsAt = getDateTime(widget.startsAt);
+  return !startsAt || startsAt <= now;
+}
+
+function hasExpired(widget: PortalEventWidget, now: number) {
+  const deadlineAt = getDateTime(widget.deadlineAt);
+  return Boolean(deadlineAt && deadlineAt <= now);
+}
+
+function getTimingLabel(widget: PortalEventWidget, now: number) {
+  if (!hasStarted(widget, now)) {
+    return `Старт: ${getTimeLeft(widget.startsAt)}`;
+  }
+
+  return getTimeLeft(widget.deadlineAt);
+}
+
+function getWinnerNames(widget: PortalEventWidget) {
+  const names = widget.winners?.map((winner) => winner.displayName?.trim()).filter(Boolean) ?? [];
+
+  if (names.length) {
+    return names as string[];
+  }
+
+  return widget.winnerName?.trim() ? [widget.winnerName.trim()] : [];
+}
+
 function readDismissed() {
   if (typeof window === "undefined") {
     return [];
@@ -69,7 +106,7 @@ export function HomeEventWidgets() {
   }, []);
 
   useEffect(() => {
-    const widgetsQuery = query(collection(db, collections.eventWidgets), where("status", "==", "published"), limit(3));
+    const widgetsQuery = query(collection(db, collections.eventWidgets), where("status", "==", "published"), limit(12));
 
     return onSnapshot(
       widgetsQuery,
@@ -87,10 +124,12 @@ export function HomeEventWidgets() {
   const visibleWidgets = useMemo(
     () =>
       widgets
+        .filter((widget) => widget.type === "contest" && widget.placement === "floating")
+        .filter((widget) => !hasExpired(widget, now || Date.now()))
         .filter((widget) => !dismissed.includes(widget.id))
         .filter((widget) => !user?.uid || !widget.participants?.includes(user.uid) || confirmedIds.includes(widget.id))
         .slice(0, 3),
-    [confirmedIds, dismissed, user?.uid, widgets]
+    [confirmedIds, dismissed, now, user?.uid, widgets]
   );
 
   function closeWidget(widgetId: string) {
@@ -100,7 +139,7 @@ export function HomeEventWidgets() {
   }
 
   async function participate(widget: PortalEventWidget) {
-    if (!user || widget.participants?.includes(user.uid)) {
+    if (!user || widget.participants?.includes(user.uid) || !hasStarted(widget, now || Date.now())) {
       return;
     }
 
@@ -139,6 +178,8 @@ export function HomeEventWidgets() {
         const failed = failedIds.includes(widget.id);
         const expanded = expandedId === widget.id;
         const leaving = leavingIds.includes(widget.id);
+        const started = hasStarted(widget, now || Date.now());
+        const winnerNames = getWinnerNames(widget);
 
         return (
           <div
@@ -168,7 +209,7 @@ export function HomeEventWidgets() {
               <div className="mt-3 flex items-center justify-between gap-2">
                 <span className="inline-flex items-center gap-1 rounded-full border border-relic/25 bg-black/35 px-2 py-1 text-xs font-bold text-relic">
                   <Clock3 size={13} />
-                  {now ? getTimeLeft(widget.deadlineAt) : ""}
+                  {now ? getTimingLabel(widget, now) : ""}
                 </span>
                 <button type="button" onClick={() => setExpandedId(expanded ? "" : widget.id)} className="text-xs font-bold uppercase tracking-[0.12em] text-relic hover:text-[#b8d7ff]">
                   {expanded ? "Скрыть" : "Подробнее"}
@@ -178,10 +219,10 @@ export function HomeEventWidgets() {
               {expanded ? (
                 <div className="mt-3 rounded-xl border border-white/10 bg-black/35 p-3">
                   {widget.details ? <p className="text-xs leading-5 text-zinc-300">{widget.details}</p> : null}
-                  {widget.winnerName ? (
+                  {winnerNames.length ? (
                     <p className="mt-3 inline-flex items-center gap-2 rounded-lg border border-relic/25 bg-relic/10 px-3 py-2 text-xs font-bold text-relic">
                       <Trophy size={14} />
-                      Победитель: {widget.winnerName}
+                      Победитель: {winnerNames.join(", ")}
                     </p>
                   ) : null}
                 </div>
@@ -193,10 +234,10 @@ export function HomeEventWidgets() {
                     <button
                       type="button"
                       onClick={() => void participate(widget)}
-                      disabled={joined}
+                      disabled={joined || !started}
                       className="w-full rounded-xl bg-relic px-3 py-2 text-sm font-black text-black transition hover:bg-[#8bbcff] disabled:cursor-default disabled:opacity-70"
                     >
-                      {joined ? "Вы участвуете" : "Участвовать"}
+                      {joined ? "Вы участвуете" : started ? "Участвовать" : "Скоро"}
                     </button>
                     {joined && widget.donationUrl ? (
                       <a
