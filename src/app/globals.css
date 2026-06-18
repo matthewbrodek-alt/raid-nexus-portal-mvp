@@ -2122,6 +2122,74 @@ input[type="file"]::-webkit-file-upload-button {
     0 16px 42px rgba(72, 104, 142, 0.14) !important;
 }
 
+:root[data-theme="light"] .raid-raffle-panel {
+  border-color: rgba(130, 176, 235, 0.72) !important;
+  background-color: rgba(246, 251, 255, 0.92) !important;
+  color: #102036 !important;
+}
+
+:root[data-theme="light"] .raid-raffle-panel .raid-raffle-base-overlay {
+  background:
+    linear-gradient(90deg, rgba(248, 252, 255, 0.96) 0%, rgba(238, 247, 255, 0.88) 48%, rgba(225, 237, 255, 0.48) 100%) !important;
+}
+
+:root[data-theme="light"] .raid-raffle-panel .raid-raffle-glow-overlay {
+  background:
+    radial-gradient(circle at 13% 24%, rgba(47, 124, 255, 0.16), transparent 23%),
+    radial-gradient(circle at 84% 34%, rgba(132, 58, 255, 0.13), transparent 30%) !important;
+}
+
+:root[data-theme="light"] .raid-raffle-panel .raid-raffle-art-fade {
+  background:
+    linear-gradient(90deg, rgba(248, 252, 255, 0) 0%, rgba(248, 252, 255, 0.12) 42%, rgba(248, 252, 255, 0.86) 100%) !important;
+}
+
+:root[data-theme="light"] .raid-raffle-panel .raid-raffle-title {
+  color: #102036 !important;
+}
+
+:root[data-theme="light"] .raid-raffle-panel .raid-raffle-description {
+  color: #26384d !important;
+}
+
+:root[data-theme="light"] .raid-raffle-panel .raid-raffle-date-pill {
+  border-color: rgba(135, 178, 232, 0.58) !important;
+  background: rgba(255, 255, 255, 0.78) !important;
+  color: #27384c !important;
+}
+
+:root[data-theme="light"] .raid-raffle-panel .raid-raffle-timer-box {
+  border-color: rgba(127, 162, 214, 0.72) !important;
+  background: #142033 !important;
+  color: #ffffff !important;
+}
+
+:root[data-theme="light"] .raid-raffle-panel .raid-raffle-timer-value {
+  color: #ffffff !important;
+}
+
+:root[data-theme="light"] .raid-raffle-panel .raid-raffle-timer-label {
+  color: #aab7c7 !important;
+}
+
+:root[data-theme="light"] .raid-raffle-panel .raid-raffle-stats {
+  border-color: rgba(135, 178, 232, 0.44) !important;
+  background: rgba(255, 255, 255, 0.82) !important;
+}
+
+:root[data-theme="light"] .raid-raffle-panel .raid-raffle-stat-label {
+  color: #64758a !important;
+}
+
+:root[data-theme="light"] .raid-raffle-panel .raid-raffle-stat-value {
+  color: #102036 !important;
+}
+
+:root[data-theme="light"] .raid-raffle-panel .raid-raffle-cta {
+  background: linear-gradient(135deg, #7a2cff, #9f55ff) !important;
+  color: #ffffff !important;
+}
+
 .raid-glow-button {
   position: relative;
   overflow: hidden;
