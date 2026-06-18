@@ -30,7 +30,6 @@ const copy: Record<
   {
     title: string;
     allNews: string;
-    details: string;
     emptyDescription: string;
     emptyList: string;
     closeList: string;
@@ -42,7 +41,6 @@ const copy: Record<
   ru: {
     title: "Свежие новости",
     allNews: "Все новости",
-    details: "Подробности",
     emptyDescription: "Описание новости пока не заполнено.",
     emptyList: "Новости появятся здесь после публикации из админ-панели.",
     closeList: "Закрыть список новостей",
@@ -53,7 +51,6 @@ const copy: Record<
   en: {
     title: "Fresh News",
     allNews: "All News",
-    details: "Details",
     emptyDescription: "News description has not been filled in yet.",
     emptyList: "News will appear here after publication from the admin panel.",
     closeList: "Close news list",
@@ -77,6 +74,10 @@ function getNewsSummary(item: NewsItem, language: Language) {
 
 function getNewsBody(item: NewsItem, language: Language) {
   return language === "en" ? item.markdownBodyEn || item.markdownBody || "" : item.markdownBody || item.markdownBodyEn || "";
+}
+
+function getNewsPreviewText(item: NewsItem, language: Language) {
+  return getNewsBody(item, language) || getNewsSummary(item, language);
 }
 
 function formatNewsDate(item: NewsItem, language: Language) {
@@ -155,14 +156,16 @@ export function LatestNewsRail() {
             }`}
             aria-label={`${labels.openNewsLabel}: ${getNewsTitle(item, language)}`}
           >
-            <span className={`block overflow-hidden rounded-[8px] border border-relic/12 bg-black/40 ${compact ? "h-[76px] w-[76px]" : "h-32 w-full sm:h-36"}`}>
+            <span className={`block overflow-hidden rounded-[8px] border border-relic/12 bg-black/40 ${compact ? "h-[76px] w-[76px]" : "aspect-square w-full"}`}>
               <img src={getNewsImage(item)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
             </span>
             <span className={`raid-word-wrap min-w-0 ${compact ? "" : "mt-3 block flex-1"}`}>
               <span className={`raid-word-wrap block font-[var(--font-display)] font-light tracking-[0.01em] text-white transition group-hover:text-[#b8d7ff] ${compact ? "truncate text-lg sm:text-xl" : "line-clamp-3 text-base leading-snug sm:text-lg"}`}>
                 {getNewsTitle(item, language)}
               </span>
-              <span className={`raid-word-wrap mt-1 block text-sm text-zinc-400 ${compact ? "truncate" : "line-clamp-2 text-xs sm:text-sm"}`}>{getNewsSummary(item, language)}</span>
+              <span className={`raid-word-wrap mt-1 block text-sm text-zinc-400 ${compact ? "truncate" : "line-clamp-2 text-xs sm:text-sm"}`}>
+                {getNewsPreviewText(item, language) || labels.emptyDescription}
+              </span>
             </span>
             <span className={`items-center gap-2 text-xs text-zinc-500 ${compact ? "hidden sm:inline-flex" : "mt-3 inline-flex"}`}>
               <Clock3 size={15} />
@@ -300,9 +303,7 @@ export function LatestNewsRail() {
                     </button>
                   </div>
                 ) : null}
-                <p className="max-w-3xl text-base leading-7 text-zinc-200">{getNewsSummary(selectedNews, language)}</p>
-                <h3 className="raid-title-metal mt-6 text-2xl font-black">{labels.details}</h3>
-                <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-zinc-300">
+                <p className="max-w-3xl whitespace-pre-wrap text-sm leading-7 text-zinc-300">
                   {getNewsBody(selectedNews, language) || getNewsSummary(selectedNews, language) || labels.emptyDescription}
                 </p>
               </div>

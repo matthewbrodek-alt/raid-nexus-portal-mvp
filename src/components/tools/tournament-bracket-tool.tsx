@@ -1,20 +1,33 @@
 "use client";
 
-import { Plus, RotateCcw, Swords, Trash2, Trophy } from "lucide-react";
+import { Plus, RotateCcw, Swords, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 type TournamentMode = "single" | "double";
+type BracketSide = "upper" | "lower" | "final";
+type MatchSlot = "A" | "B";
 
 type Player = {
   id: string;
   name: string;
 };
 
+type MatchResult = {
+  playerAId?: string;
+  playerBId?: string;
+  scoreA: number;
+  scoreB: number;
+  winnerId?: string;
+};
+
 type MatchView = {
   id: string;
   playerA: Player | null;
   playerB: Player | null;
+  scoreA: number;
+  scoreB: number;
   winner: Player | null;
+  autoWinner: Player | null;
 };
 
 type RoundView = {
@@ -23,11 +36,9 @@ type RoundView = {
   matches: MatchView[];
 };
 
-type FinalMatchView = {
-  id: string;
-  playerA: Player;
-  playerB: Player;
-  winner: Player | null;
+const emptyResult: MatchResult = {
+  scoreA: 0,
+  scoreB: 0
 };
 
 function makeId() {
@@ -44,9 +55,47 @@ function nextPowerOfTwo(value: number) {
   return size;
 }
 
-function buildBracket(players: Player[], winners: Record<string, string>, prefix: string): { champion: Player | null; rounds: RoundView[] } {
+function roundTitle(matchCount: number, roundIndex: number, isLastRound: boolean) {
+  if (isLastRound) {
+    return "Финал";
+  }
+
+  if (matchCount >= 2) {
+    return `1/${matchCount}`;
+  }
+
+  return `Раунд ${roundIndex + 1}`;
+}
+
+function resultBelongsToMatch(result: MatchResult | undefined, playerA: Player | null, playerB: Player | null) {
+  if (!result) {
+    return false;
+  }
+
+  return result.playerAId === playerA?.id && result.playerBId === playerB?.id;
+}
+
+function makeMatchView(id: string, playerA: Player | null, playerB: Player | null, results: Record<string, MatchResult>): MatchView {
+  const rawResult = results[id];
+  const result = resultBelongsToMatch(rawResult, playerA, playerB) ? rawResult : emptyResult;
+  const manualWinner =
+    playerA?.id === result.winnerId ? playerA : playerB?.id === result.winnerId ? playerB : null;
+  const autoWinner = playerA && !playerB ? playerA : !playerA && playerB ? playerB : null;
+
+  return {
+    id,
+    playerA,
+    playerB,
+    scoreA: result.scoreA ?? 0,
+    scoreB: result.scoreB ?? 0,
+    winner: manualWinner ?? autoWinner,
+    autoWinner
+  };
+}
+
+function buildBracket(players: Player[], results: Record<string, MatchResult>, prefix: BracketSide) {
   if (players.length === 0) {
-    return { champion: null, rounds: [] };
+    return { champion: null as Player | null, rounds: [] as RoundView[] };
   }
 
   const bracketSize = nextPowerOfTwo(Math.max(2, players.length));
@@ -57,29 +106,18 @@ function buildBracket(players: Player[], winners: Record<string, string>, prefix
   while (slots.length > 1) {
     const matches: MatchView[] = [];
     const nextSlots: Array<Player | null> = [];
+    const isLastRound = slots.length === 2;
 
     for (let index = 0; index < slots.length; index += 2) {
-      const playerA = slots[index] ?? null;
-      const playerB = slots[index + 1] ?? null;
-      const matchId = `${prefix}-${roundIndex}-${index / 2}`;
-      const selectedWinnerId = winners[matchId];
-      const selectedWinner =
-        playerA?.id === selectedWinnerId ? playerA : playerB?.id === selectedWinnerId ? playerB : null;
-      const autoWinner = playerA && !playerB ? playerA : !playerA && playerB ? playerB : null;
-      const winner = selectedWinner ?? autoWinner;
+      const match = makeMatchView(`${prefix}-${roundIndex}-${index / 2}`, slots[index] ?? null, slots[index + 1] ?? null, results);
 
-      matches.push({
-        id: matchId,
-        playerA,
-        playerB,
-        winner
-      });
-      nextSlots.push(winner);
+      matches.push(match);
+      nextSlots.push(match.winner);
     }
 
     rounds.push({
       id: `${prefix}-round-${roundIndex}`,
-      title: roundIndex === 0 ? "Старт" : `Раунд ${roundIndex + 1}`,
+      title: roundTitle(matches.length, roundIndex, isLastRound),
       matches
     });
 
@@ -90,78 +128,217 @@ function buildBracket(players: Player[], winners: Record<string, string>, prefix
   return { champion: slots[0] ?? null, rounds };
 }
 
-function collectLosers(rounds: RoundView[]) {
-  const losers: Player[] = [];
-
-  for (const round of rounds) {
-    for (const match of round.matches) {
-      if (!match.playerA || !match.playerB || !match.winner) {
-        continue;
-      }
-
-      losers.push(match.winner.id === match.playerA.id ? match.playerB : match.playerA);
-    }
-  }
-
-  return losers;
-}
-
 type BracketBoardProps = {
+  accent?: "purple" | "green";
   emptyText: string;
-  onSelectWinner: (matchId: string, winnerId: string) => void;
+  onPickWinner: (match: MatchView, winnerId: string, winsRequired: number) => void;
+  onScoreChange: (match: MatchView, slot: MatchSlot, score: number, winsRequired: number) => void;
   rounds: RoundView[];
   title: string;
   winsRequired: number;
 };
 
-function BracketBoard({ emptyText, onSelectWinner, rounds, title, winsRequired }: BracketBoardProps) {
+function scoreOptions(winsRequired: number) {
+  return Array.from({ length: winsRequired + 1 }, (_, index) => index);
+}
+
+function matchLoser(match: MatchView) {
+  if (!match.playerA || !match.playerB || !match.winner || match.autoWinner) {
+    return null;
+  }
+
+  return match.winner.id === match.playerA.id ? match.playerB : match.playerA;
+}
+
+function buildManualRound(
+  idPrefix: string,
+  title: string,
+  pairs: Array<[Player | null, Player | null]>,
+  results: Record<string, MatchResult>
+) {
+  const matches = pairs.map(([playerA, playerB], index) => makeMatchView(`${idPrefix}-${index}`, playerA, playerB, results));
+
+  return {
+    currentWinners: matches.map((match) => match.winner).filter(Boolean) as Player[],
+    round: {
+      id: `${idPrefix}-round`,
+      title,
+      matches
+    }
+  };
+}
+
+function pairPlayers(players: Player[]) {
+  const pairs: Array<[Player | null, Player | null]> = [];
+
+  for (let index = 0; index < players.length; index += 2) {
+    pairs.push([players[index] ?? null, players[index + 1] ?? null]);
+  }
+
+  return pairs;
+}
+
+function pairLowerWithUpperLosers(lowerWinners: Player[], upperLosers: Player[]) {
+  const pairs: Array<[Player | null, Player | null]> = [];
+  const matchCount = Math.max(lowerWinners.length, upperLosers.length);
+
+  for (let index = 0; index < matchCount; index += 1) {
+    pairs.push([lowerWinners[index] ?? null, upperLosers[index] ?? null]);
+  }
+
+  return pairs;
+}
+
+function buildLowerBracket(upperRounds: RoundView[], results: Record<string, MatchResult>) {
+  const upperLosersByRound = upperRounds
+    .map((round) => round.matches.map(matchLoser).filter(Boolean) as Player[])
+    .filter((losers, index) => index === 0 || losers.length > 0 || upperRounds[index - 1]?.matches.some((match) => match.winner));
+
+  if (!upperLosersByRound.length || !upperLosersByRound[0]?.length) {
+    return { champion: null as Player | null, rounds: [] as RoundView[] };
+  }
+
+  const rounds: RoundView[] = [];
+  let lowerWinners: Player[] = upperLosersByRound[0] ?? [];
+  let lowerRoundIndex = 0;
+  let processedUpperRoundIndex = 0;
+
+  if (lowerWinners.length > 1) {
+    const firstRound = buildManualRound(
+      `lower-${lowerRoundIndex}`,
+      `L${lowerRoundIndex + 1}`,
+      pairPlayers(lowerWinners),
+      results
+    );
+
+    rounds.push(firstRound.round);
+    lowerWinners = firstRound.currentWinners;
+    lowerRoundIndex += 1;
+  }
+
+  for (let upperRoundIndex = 1; upperRoundIndex < upperLosersByRound.length; upperRoundIndex += 1) {
+    const incomingLosers = upperLosersByRound[upperRoundIndex] ?? [];
+
+    if (!lowerWinners.length || !incomingLosers.length) {
+      break;
+    }
+
+    const dropRound = buildManualRound(
+      `lower-${lowerRoundIndex}`,
+      `L${lowerRoundIndex + 1}`,
+      pairLowerWithUpperLosers(lowerWinners, incomingLosers),
+      results
+    );
+
+    rounds.push(dropRound.round);
+    lowerWinners = dropRound.currentWinners;
+    processedUpperRoundIndex = upperRoundIndex;
+    lowerRoundIndex += 1;
+
+    if (lowerWinners.length > 1) {
+      const consolidationRound = buildManualRound(
+        `lower-${lowerRoundIndex}`,
+        `L${lowerRoundIndex + 1}`,
+        pairPlayers(lowerWinners),
+        results
+      );
+
+      rounds.push(consolidationRound.round);
+      lowerWinners = consolidationRound.currentWinners;
+      lowerRoundIndex += 1;
+    }
+  }
+
+  return {
+    champion: processedUpperRoundIndex === upperLosersByRound.length - 1 && lowerWinners.length === 1 ? lowerWinners[0] : null,
+    rounds
+  };
+}
+
+function BracketBoard({ accent = "purple", emptyText, onPickWinner, onScoreChange, rounds, title, winsRequired }: BracketBoardProps) {
+  const accentClass = accent === "green" ? "border-emerald-400/45 bg-emerald-400/10" : "border-[#7c3cff]/45 bg-[#7c3cff]/10";
+  const winnerClass = accent === "green" ? "border-emerald-400 bg-emerald-400 text-black" : "border-[#7c3cff] bg-[#7c3cff] text-white";
+
   return (
-    <section className="rounded-[18px] border border-relic/18 bg-black/24 p-4">
-      <div className="mb-4 flex items-center gap-2 text-white">
-        <Swords size={18} className="text-relic" />
-        <h3 className="font-black">{title}</h3>
+    <section className="rounded-[18px] border border-[#7c3cff]/18 bg-[radial-gradient(circle_at_20%_0%,rgba(124,60,255,0.18),transparent_32%),rgba(2,5,12,0.7)] p-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-white">
+          <Swords size={18} className="text-[#9d67ff]" />
+          <h3 className="font-black">{title}</h3>
+        </div>
+        <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-xs font-bold text-zinc-400">
+          До {winsRequired} побед
+        </span>
       </div>
 
       {rounds.length ? (
-        <div className="flex gap-4 overflow-x-auto pb-2">
-          {rounds.map((round) => (
-            <div key={round.id} className="w-[250px] shrink-0">
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-relic">{round.title}</p>
-              <div className="grid gap-3">
-                {round.matches.map((match) => {
-                  const canPickWinner = Boolean(match.playerA && match.playerB);
+        <div className="overflow-x-auto pb-2">
+          <div className="grid w-max auto-cols-[250px] grid-flow-col gap-6">
+            {rounds.map((round, roundIndex) => (
+              <div key={round.id} className="grid content-start gap-4" style={{ paddingTop: `${roundIndex * 38}px` }}>
+                <p className="text-2xl font-black italic text-white">{round.title}</p>
+                <div className="grid gap-5">
+                  {round.matches.map((match) => {
+                    const isPlayable = Boolean(match.playerA && match.playerB);
+                    const hasNextRound = roundIndex < rounds.length - 1;
 
-                  return (
-                    <div key={match.id} className="rounded-[16px] border border-white/10 bg-[#060b13]/80 p-3">
-                      <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">
-                        До {winsRequired} побед
-                      </p>
-                      {[match.playerA, match.playerB].map((player, index) => {
-                        const active = Boolean(player && match.winner?.id === player.id);
+                    return (
+                      <div
+                        key={match.id}
+                        className={`relative rounded-[14px] border p-2 ${
+                          hasNextRound
+                            ? "after:absolute after:left-full after:top-1/2 after:hidden after:h-px after:w-6 after:bg-[#cfd7ff]/35 xl:after:block"
+                            : ""
+                        } ${match.winner ? accentClass : "border-[#7c3cff]/35 bg-[#120b2c]/70"}`}
+                      >
+                        <div className="grid gap-1.5">
+                          {[
+                            { player: match.playerA, score: match.scoreA, slot: "A" as const },
+                            { player: match.playerB, score: match.scoreB, slot: "B" as const }
+                          ].map(({ player, score, slot }) => {
+                            const isWinner = Boolean(player && match.winner?.id === player.id);
 
-                        return (
-                          <button
-                            key={`${match.id}-${index}`}
-                            type="button"
-                            disabled={!player || !canPickWinner}
-                            onClick={() => player && onSelectWinner(match.id, player.id)}
-                            className={`mb-2 flex min-h-11 w-full items-center justify-between rounded-[12px] border px-3 py-2 text-left transition ${
-                              active
-                                ? "border-relic/70 bg-relic/18 text-white"
-                                : "border-white/10 bg-black/25 text-zinc-300 hover:border-relic/35 hover:text-white"
-                            } disabled:cursor-default disabled:opacity-65`}
-                          >
-                            <span className="truncate font-bold">{player?.name ?? "BYE"}</span>
-                            {active ? <Trophy size={15} className="text-relic" /> : null}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
+                            return (
+                              <div key={`${match.id}-${slot}`} className="grid grid-cols-[1fr_48px] gap-2">
+                                <button
+                                  type="button"
+                                  disabled={!player || !isPlayable}
+                                  onClick={() => player && onPickWinner(match, player.id, winsRequired)}
+                                  className={`min-h-9 rounded-md px-3 text-left text-sm font-black transition ${
+                                    isWinner ? winnerClass : "border border-white/10 bg-white text-[#233058] hover:border-[#9d67ff]"
+                                  } disabled:cursor-default disabled:bg-white/70 disabled:text-zinc-500`}
+                                >
+                                  <span className="block truncate">{player?.name ?? "BYE"}</span>
+                                </button>
+                                <select
+                                  value={score}
+                                  disabled={!player || !isPlayable}
+                                  onChange={(event) => onScoreChange(match, slot, Number(event.target.value), winsRequired)}
+                                  className={`h-9 rounded-md border px-2 text-center text-sm font-black ${
+                                    isWinner ? winnerClass : "border-[#7c3cff]/35 bg-white text-[#233058]"
+                                  } disabled:cursor-default disabled:bg-white/60 disabled:text-zinc-400`}
+                                  aria-label={`Счет ${player?.name ?? "BYE"}`}
+                                >
+                                  {scoreOptions(winsRequired).map((value) => (
+                                    <option key={value} value={value}>
+                                      {value}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {match.autoWinner ? (
+                          <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500">Автопроход</p>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       ) : (
         <p className="rounded-[14px] border border-white/10 bg-black/20 p-4 text-sm text-zinc-500">{emptyText}</p>
@@ -172,30 +349,36 @@ function BracketBoard({ emptyText, onSelectWinner, rounds, title, winsRequired }
 
 export function TournamentBracketTool() {
   const [mode, setMode] = useState<TournamentMode>("single");
-  const [winsRequired, setWinsRequired] = useState(1);
+  const [upperWinsRequired, setUpperWinsRequired] = useState(2);
+  const [lowerWinsRequired, setLowerWinsRequired] = useState(1);
+  const [finalWinsRequired, setFinalWinsRequired] = useState(2);
   const [playerName, setPlayerName] = useState("");
   const [players, setPlayers] = useState<Player[]>([]);
-  const [upperWinners, setUpperWinners] = useState<Record<string, string>>({});
-  const [lowerWinners, setLowerWinners] = useState<Record<string, string>>({});
-  const [finalWinnerId, setFinalWinnerId] = useState("");
+  const [upperResults, setUpperResults] = useState<Record<string, MatchResult>>({});
+  const [lowerResults, setLowerResults] = useState<Record<string, MatchResult>>({});
+  const [finalResults, setFinalResults] = useState<Record<string, MatchResult>>({});
 
-  const upperBracket = useMemo(() => buildBracket(players, upperWinners, "upper"), [players, upperWinners]);
-  const lowerPlayers = useMemo(() => collectLosers(upperBracket.rounds), [upperBracket.rounds]);
-  const lowerBracket = useMemo(() => buildBracket(lowerPlayers, lowerWinners, "lower"), [lowerPlayers, lowerWinners]);
+  const upperBracket = useMemo(() => buildBracket(players, upperResults, "upper"), [players, upperResults]);
+  const lowerBracket = useMemo(() => buildLowerBracket(upperBracket.rounds, lowerResults), [lowerResults, upperBracket.rounds]);
   const finalPlayers = useMemo(
     () => [upperBracket.champion, mode === "double" ? lowerBracket.champion : null].filter(Boolean) as Player[],
     [lowerBracket.champion, mode, upperBracket.champion]
   );
-  const finalMatch: FinalMatchView | null =
-    finalPlayers.length === 2
-      ? {
-          id: "grand-final",
-          playerA: finalPlayers[0]!,
-          playerB: finalPlayers[1]!,
-          winner: finalPlayers.find((player) => player.id === finalWinnerId) ?? null
-        }
-      : null;
-  const champion = mode === "double" ? finalMatch?.winner ?? null : upperBracket.champion;
+  const finalRounds = useMemo(() => {
+    if (mode !== "double" || finalPlayers.length !== 2) {
+      return [] as RoundView[];
+    }
+
+    return [
+      {
+        id: "final-round",
+        title: "Финал",
+        matches: [makeMatchView("final-0-0", finalPlayers[0]!, finalPlayers[1]!, finalResults)]
+      }
+    ];
+  }, [finalPlayers, finalResults, mode]);
+  const finalChampion = finalRounds[0]?.matches[0]?.winner ?? null;
+  const champion = mode === "double" ? finalChampion : upperBracket.champion;
 
   function addPlayer() {
     const name = playerName.trim();
@@ -206,6 +389,7 @@ export function TournamentBracketTool() {
 
     setPlayers((current) => [...current, { id: makeId(), name }]);
     setPlayerName("");
+    resetWinners();
   }
 
   function removePlayer(playerId: string) {
@@ -214,9 +398,57 @@ export function TournamentBracketTool() {
   }
 
   function resetWinners() {
-    setUpperWinners({});
-    setLowerWinners({});
-    setFinalWinnerId("");
+    setUpperResults({});
+    setLowerResults({});
+    setFinalResults({});
+  }
+
+  function updateMatchResult(
+    side: BracketSide,
+    match: MatchView,
+    updater: (current: MatchResult) => MatchResult
+  ) {
+    const setResults = side === "upper" ? setUpperResults : side === "lower" ? setLowerResults : setFinalResults;
+
+    setResults((current) => {
+      const validCurrent = resultBelongsToMatch(current[match.id], match.playerA, match.playerB) ? current[match.id]! : emptyResult;
+      const nextResult = updater(validCurrent);
+
+      return {
+        ...current,
+        [match.id]: {
+          ...nextResult,
+          playerAId: match.playerA?.id,
+          playerBId: match.playerB?.id
+        }
+      };
+    });
+  }
+
+  function pickWinner(side: BracketSide, match: MatchView, winnerId: string, winsRequired: number) {
+    updateMatchResult(side, match, (current) => {
+      const winnerIsA = winnerId === match.playerA?.id;
+
+      return {
+        ...current,
+        scoreA: winnerIsA ? winsRequired : Math.min(current.scoreA ?? 0, Math.max(0, winsRequired - 1)),
+        scoreB: !winnerIsA ? winsRequired : Math.min(current.scoreB ?? 0, Math.max(0, winsRequired - 1)),
+        winnerId
+      };
+    });
+  }
+
+  function changeScore(side: BracketSide, match: MatchView, slot: MatchSlot, score: number) {
+    updateMatchResult(side, match, (current) => {
+      const nextScoreA = slot === "A" ? score : current.scoreA ?? 0;
+      const nextScoreB = slot === "B" ? score : current.scoreB ?? 0;
+
+      return {
+        scoreA: nextScoreA,
+        scoreB: nextScoreB,
+        winnerId: current.winnerId
+      };
+    });
   }
 
   return (
@@ -247,7 +479,7 @@ export function TournamentBracketTool() {
         </button>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-4">
         <label className="block">
           <span className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-relic">Формат</span>
           <select
@@ -263,11 +495,46 @@ export function TournamentBracketTool() {
           </select>
         </label>
         <label className="block">
-          <span className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-relic">Серия</span>
+          <span className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-relic">Верхняя</span>
           <select
-            value={winsRequired}
-            onChange={(event) => setWinsRequired(Number(event.target.value))}
+            value={upperWinsRequired}
+            onChange={(event) => {
+              setUpperWinsRequired(Number(event.target.value));
+              setUpperResults({});
+            }}
             className="w-full rounded-[14px] border border-relic/18 bg-black/30 text-white focus:border-relic focus:ring-relic"
+          >
+            <option value={1}>До 1 победы</option>
+            <option value={2}>До 2 побед</option>
+            <option value={3}>До 3 побед</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-relic">Нижняя</span>
+          <select
+            value={lowerWinsRequired}
+            disabled={mode !== "double"}
+            onChange={(event) => {
+              setLowerWinsRequired(Number(event.target.value));
+              setLowerResults({});
+            }}
+            className="w-full rounded-[14px] border border-relic/18 bg-black/30 text-white focus:border-relic focus:ring-relic disabled:opacity-45"
+          >
+            <option value={1}>До 1 победы</option>
+            <option value={2}>До 2 побед</option>
+            <option value={3}>До 3 побед</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-relic">Финал</span>
+          <select
+            value={finalWinsRequired}
+            disabled={mode !== "double"}
+            onChange={(event) => {
+              setFinalWinsRequired(Number(event.target.value));
+              setFinalResults({});
+            }}
+            className="w-full rounded-[14px] border border-relic/18 bg-black/30 text-white focus:border-relic focus:ring-relic disabled:opacity-45"
           >
             <option value={1}>До 1 победы</option>
             <option value={2}>До 2 побед</option>
@@ -299,43 +566,34 @@ export function TournamentBracketTool() {
 
       <BracketBoard
         emptyText="Добавь участников, чтобы увидеть верхнюю сетку."
-        onSelectWinner={(matchId, winnerId) => setUpperWinners((current) => ({ ...current, [matchId]: winnerId }))}
+        onPickWinner={(match, winnerId, winsRequired) => pickWinner("upper", match, winnerId, winsRequired)}
+        onScoreChange={(match, slot, score) => changeScore("upper", match, slot, score)}
         rounds={upperBracket.rounds}
         title={mode === "double" ? "Верхняя сетка" : "Турнирная сетка"}
-        winsRequired={winsRequired}
+        winsRequired={upperWinsRequired}
       />
 
       {mode === "double" ? (
         <BracketBoard
           emptyText="Проигравшие из верхней сетки появятся здесь после выбора победителей."
-          onSelectWinner={(matchId, winnerId) => setLowerWinners((current) => ({ ...current, [matchId]: winnerId }))}
+          onPickWinner={(match, winnerId, winsRequired) => pickWinner("lower", match, winnerId, winsRequired)}
+          onScoreChange={(match, slot, score) => changeScore("lower", match, slot, score)}
           rounds={lowerBracket.rounds}
           title="Нижняя сетка"
-          winsRequired={winsRequired}
+          winsRequired={lowerWinsRequired}
         />
       ) : null}
 
-      {finalMatch ? (
-        <section className="rounded-[18px] border border-relic/28 bg-relic/[0.08] p-4">
-          <div className="mb-3 flex items-center gap-2 text-white">
-            <Trophy size={18} className="text-relic" />
-            <h3 className="font-black">Гранд-финал</h3>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {[finalMatch.playerA, finalMatch.playerB].map((player) => (
-              <button
-                key={player.id}
-                type="button"
-                onClick={() => setFinalWinnerId(player.id)}
-                className={`rounded-[14px] border px-4 py-3 text-left font-black transition ${
-                  finalWinnerId === player.id ? "border-relic/70 bg-relic/18 text-white" : "border-white/10 bg-black/25 text-zinc-300 hover:border-relic/35"
-                }`}
-              >
-                {player.name}
-              </button>
-            ))}
-          </div>
-        </section>
+      {mode === "double" ? (
+        <BracketBoard
+          accent="green"
+          emptyText="Гранд-финал появится после победителей верхней и нижней сетки."
+          onPickWinner={(match, winnerId, winsRequired) => pickWinner("final", match, winnerId, winsRequired)}
+          onScoreChange={(match, slot, score) => changeScore("final", match, slot, score)}
+          rounds={finalRounds}
+          title="Гранд-финал"
+          winsRequired={finalWinsRequired}
+        />
       ) : null}
 
       <div className="rounded-[18px] border border-relic/18 bg-black/24 p-4">
