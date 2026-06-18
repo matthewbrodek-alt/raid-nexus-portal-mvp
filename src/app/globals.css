@@ -2165,18 +2165,18 @@ input[type="file"]::-webkit-file-upload-button {
   color: #27384c !important;
 }
 
-:root[data-theme="light"] .raid-raffle-panel .raid-raffle-timer-box {
-  border-color: rgba(127, 162, 214, 0.72) !important;
-  background: #142033 !important;
-  color: #ffffff !important;
+:root[data-theme="light"] .raid-raffle-panel .raid-raffle-timer-shell {
+  border-color: rgba(143, 181, 230, 0.58) !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  color: #102036 !important;
 }
 
 :root[data-theme="light"] .raid-raffle-panel .raid-raffle-timer-value {
-  color: #ffffff !important;
+  color: #102036 !important;
 }
 
 :root[data-theme="light"] .raid-raffle-panel .raid-raffle-timer-label {
-  color: #aab7c7 !important;
+  color: #62758c !important;
 }
 
 :root[data-theme="light"] .raid-raffle-panel .raid-raffle-stats {

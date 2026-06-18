@@ -147,21 +147,21 @@ export function RafflePanel() {
             </span>
           </span>
 
-          <div className="grid grid-cols-4 gap-1">
+          <div
+            className={`raid-raffle-timer-shell inline-flex min-h-8 items-center gap-1 rounded-xl border px-2 py-1.5 backdrop-blur-md ${
+              isLight ? "border-[#c5d9f3] bg-white/78 text-[#102036] shadow-[0_8px_22px_rgba(75,126,180,0.13)]" : "border-white/10 bg-black/42 text-white"
+            }`}
+          >
             {[
               [timeLeft.days, language === "ru" ? "дн" : "d"],
               [timeLeft.hours, language === "ru" ? "ч" : "h"],
               [timeLeft.minutes, language === "ru" ? "м" : "m"],
               [timeLeft.seconds, language === "ru" ? "с" : "s"]
-            ].map(([value, label]) => (
-              <span
-                key={label}
-                className={`raid-raffle-timer-box min-w-[37px] rounded-lg border px-1 py-1 text-center ${
-                  isLight ? "border-[#cadbf0] bg-[#142033] shadow-[0_6px_18px_rgba(20,32,51,0.14)]" : "border-[#38507e] bg-[rgba(8,13,28,0.88)]"
-                }`}
-              >
-                <span className="raid-raffle-timer-value block text-xs font-black leading-none text-white">{String(value).padStart(2, "0")}</span>
-                <span className={`raid-raffle-timer-label ${isLight ? "mt-0.5 block text-[8px] font-bold uppercase leading-none text-[#aab7c7]" : "mt-0.5 block text-[8px] font-bold uppercase leading-none text-zinc-400"}`}>{label}</span>
+            ].map(([value, label], index) => (
+              <span key={label} className="inline-flex items-baseline gap-0.5 whitespace-nowrap">
+                {index > 0 ? <span className={`mx-0.5 text-[0.62rem] ${isLight ? "text-[#93a5ba]" : "text-zinc-500"}`}>•</span> : null}
+                <span className={`raid-raffle-timer-value text-[0.78rem] font-black leading-none ${isLight ? "text-[#102036]" : "text-white"}`}>{String(value).padStart(2, "0")}</span>
+                <span className={`raid-raffle-timer-label text-[0.56rem] font-bold leading-none ${isLight ? "text-[#65758a]" : "text-zinc-400"}`}>{label}</span>
               </span>
             ))}
           </div>
