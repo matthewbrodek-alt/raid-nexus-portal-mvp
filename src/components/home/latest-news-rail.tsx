@@ -146,7 +146,7 @@ export function LatestNewsRail() {
             className={`group w-full text-left transition hover:bg-relic/[0.07] ${
               compact
                 ? "grid grid-cols-[86px_1fr_auto] items-center gap-4 rounded-[12px] border border-relic/10 bg-black/28 p-4"
-                : "flex h-[300px] min-h-[300px] flex-col overflow-hidden rounded-[12px] border border-relic/10 bg-black/32 p-3 sm:h-[320px] sm:min-h-[320px]"
+                : "flex h-[390px] min-h-[390px] flex-col overflow-hidden rounded-[12px] border border-relic/10 bg-black/32 p-3 sm:h-[416px] sm:min-h-[416px]"
             }`}
             aria-label={`${labels.openNewsLabel}: ${getNewsTitle(item, language)}`}
           >
