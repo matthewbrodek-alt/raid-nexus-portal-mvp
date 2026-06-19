@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Gift, LayoutGrid, MessageSquarePlus, MessageSquareWarning, Newspaper, ShoppingBag, Table2, Users } from "lucide-react";
+import { CalendarDays, Gift, LayoutGrid, MessageSquarePlus, MessageSquareWarning, Newspaper, ShoppingBag, Swords, Table2, Users } from "lucide-react";
 import { useState } from "react";
 import { AdminCalendarEditor } from "@/components/admin/admin-calendar-editor";
 import { AdminChatModeration } from "@/components/admin/admin-chat-moderation";
@@ -32,9 +32,16 @@ const adminTabs = [
   {
     id: "content",
     label: "Контент",
-    description: "Новости, герои, активность портала и эфирные материалы.",
+    description: "Новости, активность портала, соцсети, смайлики и эфирные материалы.",
     Icon: Newspaper,
-    component: <AdminContentForge />
+    component: <AdminContentForge mode="content" />
+  },
+  {
+    id: "heroes",
+    label: "Герои",
+    description: "Добавление героев, редактирование карточек, сборок, множителей и форм.",
+    Icon: Swords,
+    component: <AdminContentForge mode="heroes" />
   },
   {
     id: "reviews",

@@ -22,8 +22,6 @@ type SearchItem = {
 type FirestoreNews = {
   title?: string;
   titleEn?: string;
-  summary?: string;
-  summaryEn?: string;
   markdownBody?: string;
   markdownBodyEn?: string;
 };
@@ -180,11 +178,9 @@ export function HomeSearch() {
             id: `news-${item.id}`,
             type: labels.newsType,
             title: language === "en" ? data.titleEn || data.title || labels.defaultNews : data.title || data.titleEn || labels.defaultNews,
-            description:
-              (language === "en" ? data.summaryEn || data.markdownBodyEn || data.summary || data.markdownBody : data.summary || data.markdownBody || data.summaryEn || data.markdownBodyEn) ||
-              labels.newsDescription,
+            description: (language === "en" ? data.markdownBodyEn || data.markdownBody : data.markdownBody || data.markdownBodyEn) || labels.newsDescription,
             href: "/#news",
-            keywords: ["news", "новости", data.title, data.titleEn, data.summary, data.summaryEn].filter(Boolean) as string[]
+            keywords: ["news", "новости", data.title, data.titleEn, data.markdownBody, data.markdownBodyEn].filter(Boolean) as string[]
           };
         });
 

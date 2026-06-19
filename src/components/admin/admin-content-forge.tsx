@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ExternalLink, ImagePlus, Newspaper, Plus, Save, ShoppingBag, Smile, Trash2 } from "lucide-react";
-import { addDoc, collection, deleteDoc, doc, getDoc, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, deleteField, doc, getDoc, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { GlassPanel } from "@/components/ui/glass-panel";
@@ -65,13 +65,26 @@ type EditableDamageSkill = {
 
 type ManagedHero = {
   id: string;
+  slug?: string;
+  gestalId?: number;
+  shortName?: string;
   name?: string;
   nameRu?: string;
   faction?: string;
   rarity?: string;
+  rarityColor?: string;
+  affinity?: string;
+  aura?: string;
   role?: string;
+  roles?: string[];
+  rating?: number;
   avatar?: CloudinaryAsset | null;
+  avatarUrl?: string;
+  portraitUrl?: string;
+  borderUrl?: string;
   gallery?: Array<CloudinaryAsset & { sortOrder?: number }>;
+  galleryUrls?: string[];
+  comment?: string;
   markdownComment?: string;
   damageSkills?: ChampionDamageSkill[];
   isPublished?: boolean;
@@ -89,12 +102,15 @@ type PortalOffer = {
 type ManagedNews = {
   id: string;
   title?: string;
-  summary?: string;
   markdownBody?: string;
   status?: "published" | "draft" | "archived" | string;
   coverImage?: CloudinaryAsset | null;
   createdAt?: { seconds?: number };
   publishedAt?: { seconds?: number };
+};
+
+type AdminContentForgeProps = {
+  mode?: "content" | "heroes";
 };
 
 async function uploadImage(file: File, publicId: string, folder = "heroes") {
@@ -114,6 +130,16 @@ async function uploadImage(file: File, publicId: string, folder = "heroes") {
   }
 
   return (await response.json()) as CloudinaryAsset;
+}
+
+function getAssetUrl(asset: CloudinaryAsset | null | undefined) {
+  return asset?.secureUrl ?? asset?.url ?? "";
+}
+
+function buildHeroSearchTerms(values: Array<string | number | null | undefined>) {
+  return values
+    .map((value) => String(value ?? "").trim().toLowerCase())
+    .filter(Boolean);
 }
 
 function makeSkillRow(skill?: Partial<ChampionDamageSkill>, index = 0): EditableDamageSkill {
@@ -153,16 +179,14 @@ function rowsToSkills(rows: EditableDamageSkill[], rarity: string): ChampionDama
     .filter((skill): skill is ChampionDamageSkill => Boolean(skill));
 }
 
-export function AdminContentForge() {
+export function AdminContentForge({ mode = "content" }: AdminContentForgeProps) {
   const { profile } = useAuth();
   const [newsTitle, setNewsTitle] = useState("");
-  const [newsSummary, setNewsSummary] = useState("");
   const [newsBody, setNewsBody] = useState("");
   const [newsImage, setNewsImage] = useState<File | null>(null);
   const [managedNews, setManagedNews] = useState<ManagedNews[]>([]);
   const [editingNewsId, setEditingNewsId] = useState("");
   const [editNewsTitle, setEditNewsTitle] = useState("");
-  const [editNewsSummary, setEditNewsSummary] = useState("");
   const [editNewsBody, setEditNewsBody] = useState("");
   const [editNewsStatus, setEditNewsStatus] = useState<"published" | "draft" | "archived">("published");
   const [editNewsImage, setEditNewsImage] = useState<File | null>(null);
@@ -290,30 +314,49 @@ export function AdminContentForge() {
   }
 
   useEffect(() => {
-    const heroesQuery = query(collection(db, collections.heroes), orderBy("createdAt", "desc"), limit(12));
+    if (mode !== "heroes") {
+      setManagedHeroes([]);
+      return;
+    }
+
+    const heroesQuery = query(collection(db, collections.heroes), orderBy("createdAt", "desc"), limit(200));
 
     return onSnapshot(heroesQuery, (snapshot) => {
       setManagedHeroes(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<ManagedHero, "id">) })));
     });
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
+    if (mode !== "content") {
+      setManagedNews([]);
+      return;
+    }
+
     const newsQuery = query(collection(db, collections.news), orderBy("createdAt", "desc"), limit(24));
 
     return onSnapshot(newsQuery, (snapshot) => {
       setManagedNews(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<ManagedNews, "id">) })));
     });
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
+    if (mode !== "content") {
+      setManagedOffers([]);
+      return;
+    }
+
     const offersQuery = query(collection(db, collections.portalOffers), orderBy("createdAt", "desc"), limit(12));
 
     return onSnapshot(offersQuery, (snapshot) => {
       setManagedOffers(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<PortalOffer, "id">) })));
     });
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
+    if (mode !== "content") {
+      return;
+    }
+
     void getDoc(doc(db, collections.siteSettings, "homeBroadcast")).then((snapshot) => {
       const data = snapshot.data() as { title?: string; videoUrl?: string; backgroundImageUrl?: string; isLive?: boolean } | undefined;
       setBroadcastTitle(data?.title ?? "Видео на главной");
@@ -321,9 +364,13 @@ export function AdminContentForge() {
       setBroadcastBackgroundImageUrl(data?.backgroundImageUrl ?? "");
       setBroadcastIsLive(Boolean(data?.isLive));
     });
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
+    if (mode !== "content") {
+      return;
+    }
+
     void getDoc(doc(db, collections.siteSettings, "streamBroadcast")).then((snapshot) => {
       const data = snapshot.data() as { title?: string; videoUrl?: string; backgroundImageUrl?: string; isLive?: boolean } | undefined;
       setStreamTitle(data?.title ?? "Эфир");
@@ -331,9 +378,13 @@ export function AdminContentForge() {
       setStreamBackgroundImageUrl(data?.backgroundImageUrl ?? "");
       setStreamIsLive(Boolean(data?.isLive));
     });
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
+    if (mode !== "content") {
+      return;
+    }
+
     void getDoc(doc(db, collections.siteSettings, "socialLinks")).then((snapshot) => {
       const data = snapshot.data() as
         | { telegram?: string; vkVideo?: string; vkCommunity?: string; youtube?: string; twitch?: string }
@@ -345,16 +396,24 @@ export function AdminContentForge() {
       setSocialYoutube(data?.youtube ?? "");
       setSocialTwitch(data?.twitch ?? "");
     });
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
+    if (mode !== "content") {
+      return;
+    }
+
     void getDoc(doc(db, collections.siteSettings, "customChatEmojis")).then((snapshot) => {
       const data = snapshot.data() as { items?: CustomChatEmoji[] } | undefined;
       setCustomEmojis(normalizeCustomChatEmojis(data?.items));
     });
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
+    if (mode !== "content") {
+      return;
+    }
+
     void getDoc(doc(db, collections.siteSettings, "homeEventCalendar")).then((snapshot) => {
       const data = snapshot.data() as
         | {
@@ -369,7 +428,7 @@ export function AdminContentForge() {
       setCalendarDescription(data?.description ?? "");
       setCalendarImageUrl(data?.image?.secureUrl ?? data?.image?.url ?? data?.imageUrl ?? "");
     });
-  }, []);
+  }, [mode]);
 
   async function saveBroadcast(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -590,14 +649,21 @@ export function AdminContentForge() {
 
     try {
       const title = newsTitle.trim();
+      const body = newsBody.trim();
+
+      if (!title || !body) {
+        setStatus("Укажи заголовок и текст новости перед публикацией.");
+        setSaving(false);
+        return;
+      }
+
       const slug = slugify(title);
       const coverImage = newsImage ? await uploadImage(newsImage, `${slug}/cover`, "news") : null;
 
       await addDoc(collection(db, collections.news), {
         title,
         slug,
-        summary: newsSummary.trim(),
-        markdownBody: newsBody.trim(),
+        markdownBody: body,
         coverImage: coverImage
           ? {
               ...coverImage,
@@ -614,7 +680,7 @@ export function AdminContentForge() {
 
       await addDoc(collection(db, collections.heroCalendar), {
         title,
-        description: newsSummary.trim(),
+        description: body.slice(0, 220),
         type: "tournament",
         heroIds: [],
         priority: 1,
@@ -625,7 +691,6 @@ export function AdminContentForge() {
       });
 
       setNewsTitle("");
-      setNewsSummary("");
       setNewsBody("");
       setNewsImage(null);
       setStatus("Новость добавлена в news и heroCalendar.");
@@ -639,7 +704,6 @@ export function AdminContentForge() {
   function startEditNews(item: ManagedNews) {
     setEditingNewsId(item.id);
     setEditNewsTitle(item.title ?? "");
-    setEditNewsSummary(item.summary ?? "");
     setEditNewsBody(item.markdownBody ?? "");
     setEditNewsStatus(item.status === "draft" || item.status === "archived" ? item.status : "published");
     setEditNewsImage(null);
@@ -651,9 +715,10 @@ export function AdminContentForge() {
     }
 
     const title = editNewsTitle.trim();
+    const body = editNewsBody.trim();
 
-    if (!title) {
-      setStatus("Укажи заголовок новости перед сохранением.");
+    if (!title || !body) {
+      setStatus("Укажи заголовок и текст новости перед сохранением.");
       return;
     }
 
@@ -667,8 +732,8 @@ export function AdminContentForge() {
       await updateDoc(doc(db, collections.news, editingNewsId), {
         title,
         slug,
-        summary: editNewsSummary.trim(),
-        markdownBody: editNewsBody.trim(),
+        summary: deleteField(),
+        markdownBody: body,
         status: editNewsStatus,
         ...(uploadedImage
           ? {
@@ -812,7 +877,7 @@ export function AdminContentForge() {
     setEditHeroFaction(hero.faction ?? "");
     setEditHeroRarity(heroRarities.some((rarity) => rarity.value === hero.rarity) ? hero.rarity ?? "legendary" : "legendary");
     setEditHeroRole(raidRoles.some((role) => role.value === hero.role) ? hero.role ?? "support" : "support");
-    setEditHeroDescription(hero.markdownComment ?? "");
+    setEditHeroDescription(hero.markdownComment ?? hero.comment ?? "");
     setEditHeroDamageSkills(skillsToRows(hero.damageSkills ?? []));
     setEditHeroAvatar(null);
     setEditHeroGallery(null);
@@ -828,25 +893,42 @@ export function AdminContentForge() {
 
     try {
       const name = editHeroName.trim();
+
+      if (!name) {
+        setStatus("Укажи имя героя перед сохранением.");
+        return;
+      }
+
       const safeName = name || "Hero";
       const slug = slugify(safeName);
+      const roles = [editHeroRole].filter(Boolean);
+      const damageSkills = rowsToSkills(editHeroDamageSkills, editHeroRarity);
       const payload: Record<string, unknown> = {
+        source: "custom",
         name,
         nameRu: editHeroNameRu.trim(),
+        slug,
         faction: editHeroFaction.trim() || "Unknown",
         rarity: editHeroRarity,
         role: editHeroRole,
+        roles,
+        comment: editHeroDescription.trim(),
         markdownComment: editHeroDescription.trim(),
-        damageSkills: rowsToSkills(editHeroDamageSkills, editHeroRarity),
+        damageSkills,
+        tags: [editHeroRole, editHeroFaction.trim(), editHeroRarity, name, editHeroNameRu.trim()].filter(Boolean),
+        searchTerms: buildHeroSearchTerms([name, editHeroNameRu.trim(), editHeroFaction.trim(), editHeroRarity, editHeroRole, ...damageSkills.map((skill) => skill.name)]),
         updatedAt: serverTimestamp()
       };
 
       if (editHeroAvatar) {
         const avatarAsset = await uploadImage(editHeroAvatar, `${slug}/avatar-${Date.now()}`);
+        const avatarUrl = getAssetUrl(avatarAsset);
         payload.avatar = {
           ...avatarAsset,
           alt: safeName
         };
+        payload.avatarUrl = avatarUrl;
+        payload.portraitUrl = avatarUrl;
       }
 
       const galleryFiles = Array.from(editHeroGallery ?? []).slice(0, 5);
@@ -862,6 +944,7 @@ export function AdminContentForge() {
           alt: `${safeName} build ${index + 1}`,
           sortOrder: index + 1
         }));
+        payload.galleryUrls = galleryAssets.map(getAssetUrl).filter(Boolean);
       }
 
       await updateDoc(doc(db, collections.heroes, editingHeroId), payload);
@@ -891,7 +974,9 @@ export function AdminContentForge() {
   async function createHero(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!profile || !avatar) {
+    const name = heroName.trim();
+
+    if (!profile || !name || !avatar) {
       setStatus("Добавь имя героя и главное фото.");
       return;
     }
@@ -900,40 +985,58 @@ export function AdminContentForge() {
     setStatus("");
 
     try {
-      const name = heroName.trim();
       const slug = slugify(name);
       const avatarAsset = await uploadImage(avatar, `${slug}/avatar`);
+      const avatarUrl = getAssetUrl(avatarAsset);
       const galleryFiles = Array.from(gallery ?? []).slice(0, 5);
       const galleryAssets = await Promise.all(
         galleryFiles.map((file, index) => uploadImage(file, `${slug}/build-${index + 1}`))
       );
+      const galleryUrls = galleryAssets.map(getAssetUrl).filter(Boolean);
+      const damageSkills = rowsToSkills(heroDamageSkills, heroRarity);
+      const roles = [heroRole].filter(Boolean);
 
       await addDoc(collection(db, collections.heroes), {
+        source: "custom",
         name,
         nameRu: heroNameRu.trim(),
         slug,
+        shortName: "",
+        gestalId: null,
         faction: heroFaction.trim() || "Unknown",
         affinity: "void",
         rarity: heroRarity,
+        rarityColor: "",
         role: heroRole,
+        roles,
+        aura: "",
+        rating: 0,
         avatar: {
           ...avatarAsset,
           alt: name
         },
+        avatarUrl,
+        portraitUrl: avatarUrl,
+        borderUrl: "",
         gallery: galleryAssets.map((asset, index) => ({
           ...asset,
           alt: `${name} build ${index + 1}`,
           sortOrder: index + 1
         })),
+        galleryUrls,
+        youtubeVideoId: "",
+        youtubeTitle: "",
+        comment: heroDescription.trim(),
         markdownComment: heroDescription.trim(),
-        damageSkills: rowsToSkills(heroDamageSkills, heroRarity),
+        damageSkills,
         ratings: {
           arena: 0,
           clanBoss: 0,
           hydra: 0,
           dungeon: 0
         },
-        tags: [heroRole, heroFaction.trim()].filter(Boolean),
+        tags: [heroRole, heroFaction.trim(), heroRarity, name, heroNameRu.trim()].filter(Boolean),
+        searchTerms: buildHeroSearchTerms([name, heroNameRu.trim(), heroFaction.trim(), heroRarity, heroRole, ...damageSkills.map((skill) => skill.name)]),
         isPublished: true,
         createdBy: profile.uid,
         createdAt: serverTimestamp(),
@@ -958,6 +1061,23 @@ export function AdminContentForge() {
   }
 
   const activeOfferCount = managedOffers.filter((offer) => offer.status !== "archived").length;
+  const forgeLinks =
+    mode === "heroes"
+      ? [
+          ["Добавить героя", "#admin-hero-create"],
+          ["Редактор героев", "#admin-hero-editor"]
+        ]
+      : [
+          ["Новости", "#admin-news"],
+          ["Видео", "#admin-home-video"],
+          ["Эфир", "#admin-stream"],
+          ["Календарь", "#admin-calendar-image"],
+          ["Соцсети", "#admin-social-links"],
+          ["Смайлики", "#admin-chat-emojis"],
+          ["Офферы", "#admin-portal-offers"]
+        ];
+  const contentOnlyClass = mode === "heroes" ? "hidden" : "";
+  const heroesOnlyClass = mode === "content" ? "hidden" : "";
 
   return (
     <GlassPanel className="flex flex-col p-5 sm:p-6">
@@ -965,8 +1085,8 @@ export function AdminContentForge() {
         <div className="flex items-center gap-3">
           <ImagePlus className="shrink-0 text-relic" />
           <div>
-            <p className="text-xs tracking-[0.22em] text-relic">Редактор контента</p>
-            <h2 className="text-xl font-bold text-white sm:text-2xl">Контент и герои</h2>
+            <p className="text-xs tracking-[0.22em] text-relic">{mode === "heroes" ? "Редактор базы" : "Редактор контента"}</p>
+            <h2 className="text-xl font-bold text-white sm:text-2xl">{mode === "heroes" ? "Герои и множители" : "Контент портала"}</h2>
           </div>
         </div>
         <Link
@@ -981,17 +1101,7 @@ export function AdminContentForge() {
       </div>
 
       <div className="order-1 mb-5 flex gap-2 overflow-x-auto pb-1">
-        {[
-          ["Новости", "#admin-news"],
-          ["Герои", "#admin-hero-create"],
-          ["Редактор героев", "#admin-hero-editor"],
-          ["Видео", "#admin-home-video"],
-          ["Эфир", "#admin-stream"],
-          ["Календарь", "#admin-calendar-image"],
-          ["Соцсети", "#admin-social-links"],
-          ["Смайлики", "#admin-chat-emojis"],
-          ["Офферы", "#admin-portal-offers"]
-        ].map(([label, href]) => (
+        {forgeLinks.map(([label, href]) => (
           <a
             key={href}
             href={href}
@@ -1002,7 +1112,7 @@ export function AdminContentForge() {
         ))}
       </div>
 
-      <form id="admin-home-video" onSubmit={saveBroadcast} className="order-3 mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
+      <form id="admin-home-video" onSubmit={saveBroadcast} className={`${contentOnlyClass} order-3 mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4`}>
         <div className="flex items-center gap-2 text-white">
           <Save size={18} className="text-relic" />
           <h3 className="font-semibold">Видео на главной</h3>
@@ -1048,7 +1158,7 @@ export function AdminContentForge() {
         </button>
       </form>
 
-      <form id="admin-stream" onSubmit={saveStreamBroadcast} className="order-3 mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
+      <form id="admin-stream" onSubmit={saveStreamBroadcast} className={`${contentOnlyClass} order-3 mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4`}>
         <div className="flex items-center gap-2 text-white">
           <Save size={18} className="text-relic" />
           <h3 className="font-semibold">Эфир</h3>
@@ -1090,7 +1200,7 @@ export function AdminContentForge() {
         </button>
       </form>
 
-      <form id="admin-calendar-image" onSubmit={saveHomeEventCalendar} className="order-3 mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
+      <form id="admin-calendar-image" onSubmit={saveHomeEventCalendar} className={`${contentOnlyClass} order-3 mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4`}>
         <div className="flex items-center gap-2 text-white">
           <ImagePlus size={18} className="text-relic" />
           <h3 className="font-semibold">Календарь событий на главной</h3>
@@ -1129,7 +1239,7 @@ export function AdminContentForge() {
         </button>
       </form>
 
-      <form id="admin-social-links" onSubmit={saveSocialLinks} className="order-3 mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
+      <form id="admin-social-links" onSubmit={saveSocialLinks} className={`${contentOnlyClass} order-3 mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4`}>
         <div className="flex items-center gap-2 text-white">
           <ExternalLink size={18} className="text-relic" />
           <h3 className="font-semibold">Соцсети на главной</h3>
@@ -1147,7 +1257,7 @@ export function AdminContentForge() {
         </button>
       </form>
 
-      <form id="admin-chat-emojis" onSubmit={addCustomEmoji} className="order-3 mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
+      <form id="admin-chat-emojis" onSubmit={addCustomEmoji} className={`${contentOnlyClass} order-3 mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4`}>
         <div className="flex items-center gap-2 text-white">
           <Smile size={18} className="text-relic" />
           <h3 className="font-semibold">Кастомные смайлики для чатов</h3>
@@ -1201,7 +1311,7 @@ export function AdminContentForge() {
         ) : null}
       </form>
 
-      <form id="admin-portal-offers" onSubmit={createOffer} className="order-3 mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
+      <form id="admin-portal-offers" onSubmit={createOffer} className={`${contentOnlyClass} order-3 mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4`}>
         <div className="flex items-center gap-2 text-white">
           <ShoppingBag size={18} className="text-relic" />
           <h3 className="font-semibold">Активность портала / Special Offers</h3>
@@ -1267,18 +1377,17 @@ export function AdminContentForge() {
       </form>
 
       <div className="order-2 mb-5 grid gap-5">
-        <form id="admin-news" onSubmit={createNews} className="scroll-mt-28 space-y-3 rounded-lg border border-white/10 bg-black/20 p-4">
+        <form id="admin-news" onSubmit={createNews} className={`${contentOnlyClass} scroll-mt-28 space-y-3 rounded-lg border border-white/10 bg-black/20 p-4`}>
           <div className="flex items-center gap-2 text-white">
             <Newspaper size={18} className="text-relic" />
             <h3 className="font-semibold">Новость в Hero-секцию</h3>
           </div>
           <input value={newsTitle} onChange={(event) => setNewsTitle(event.target.value)} required placeholder="Заголовок новости" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
-          <input value={newsSummary} onChange={(event) => setNewsSummary(event.target.value)} required placeholder="Краткое описание" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
           <label className="block text-sm text-zinc-300">
             Картинка новости
             <input type="file" accept="image/*" onChange={(event) => setNewsImage(event.target.files?.[0] ?? null)} className="mt-2 block w-full text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-white/10 file:px-3 file:py-2 file:font-bold file:text-white" />
           </label>
-          <textarea value={newsBody} onChange={(event) => setNewsBody(event.target.value)} rows={5} placeholder="Текст новости / markdown" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+          <textarea value={newsBody} onChange={(event) => setNewsBody(event.target.value)} rows={5} required placeholder="Текст новости / markdown" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
           <button disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
             <Save size={16} />
             Опубликовать
@@ -1309,7 +1418,7 @@ export function AdminContentForge() {
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <button type="button" onClick={() => startEditNews(item)} className="min-w-0 text-left">
                           <span className="block truncate font-bold text-white">{item.title ?? "Без заголовка"}</span>
-                          <span className="mt-1 block line-clamp-2 text-xs leading-5 text-zinc-500">{item.summary ?? "Описание не заполнено"}</span>
+                          <span className="mt-1 block line-clamp-2 whitespace-pre-line text-xs leading-5 text-zinc-500">{item.markdownBody ?? "Текст не заполнен"}</span>
                         </button>
                         <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${isPublished ? "bg-emerald-400/12 text-emerald-200" : "bg-white/10 text-zinc-300"}`}>
                           {item.status ?? "draft"}
@@ -1347,7 +1456,6 @@ export function AdminContentForge() {
                   </button>
                 </div>
                 <input value={editNewsTitle} onChange={(event) => setEditNewsTitle(event.target.value)} placeholder="Заголовок" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
-                <input value={editNewsSummary} onChange={(event) => setEditNewsSummary(event.target.value)} placeholder="Краткое описание" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
                 <textarea value={editNewsBody} onChange={(event) => setEditNewsBody(event.target.value)} rows={4} placeholder="Полный текст новости" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
                 <div className="grid gap-3 sm:grid-cols-2">
                   <select value={editNewsStatus} onChange={(event) => setEditNewsStatus(event.target.value as "published" | "draft" | "archived")} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
@@ -1366,7 +1474,7 @@ export function AdminContentForge() {
           </div>
         </form>
 
-        <form id="admin-hero-create" onSubmit={createHero} className="scroll-mt-28 space-y-3 rounded-lg border border-white/10 bg-black/20 p-4">
+        <form id="admin-hero-create" onSubmit={createHero} className={`${heroesOnlyClass} scroll-mt-28 space-y-3 rounded-lg border border-white/10 bg-black/20 p-4`}>
           <div className="flex items-center gap-2 text-white">
             <Plus size={18} className="text-relic" />
             <h3 className="font-semibold">Добавить героя</h3>
@@ -1416,12 +1524,18 @@ export function AdminContentForge() {
 
       {status ? <p className="order-4 mt-4 rounded-lg border border-relic/20 bg-relic/[0.08] p-3 text-sm text-zinc-300">{status}</p> : null}
 
-      <div id="admin-hero-editor" className="order-5 mt-6 scroll-mt-28 rounded-lg border border-white/10 bg-black/20 p-4">
-        <h3 className="text-lg font-bold text-white">Редактор героев</h3>
+      <div id="admin-hero-editor" className={`${heroesOnlyClass} order-5 mt-6 scroll-mt-28 rounded-lg border border-white/10 bg-black/20 p-4`}>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-bold tracking-[0.18em] text-relic">Список героев</p>
+            <h3 className="text-lg font-bold text-white">Редактор героев</h3>
+          </div>
+          <p className="text-xs text-zinc-500">{managedHeroes.length} карточек из Firestore</p>
+        </div>
         <div className="mt-4 grid gap-3 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1">
+          <div className="max-h-[360px] space-y-2 overflow-y-auto pr-1">
             {managedHeroes.map((hero) => (
-              <div key={hero.id} className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/25 p-3">
+              <div key={hero.id} className={`flex items-center justify-between gap-3 rounded-lg border p-3 ${editingHeroId === hero.id ? "border-relic/45 bg-relic/10" : "border-white/10 bg-black/25"}`}>
                 <button type="button" onClick={() => startEditHero(hero)} className="min-w-0 text-left">
                   <p className="truncate font-semibold text-white">{hero.name ?? "Без имени"}</p>
                   <p className="truncate text-xs text-zinc-500">{hero.faction ?? "Unknown"} · {hero.role ?? "support"}</p>
@@ -1434,48 +1548,60 @@ export function AdminContentForge() {
             {managedHeroes.length === 0 ? <p className="text-sm text-zinc-500">Героев из Firestore пока нет.</p> : null}
           </div>
 
-          <div className="space-y-3 rounded-lg border border-white/10 bg-black/25 p-3">
-            <input value={editHeroName} onChange={(event) => setEditHeroName(event.target.value)} placeholder="Имя героя" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
-            <input value={editHeroNameRu} onChange={(event) => setEditHeroNameRu(event.target.value)} placeholder="Русское имя героя" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
-            <select value={editHeroFaction} onChange={(event) => setEditHeroFaction(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
-              <option value="">Фракция</option>
-              {raidFactions.map((faction) => (
-                <option key={faction} value={faction}>
-                  {faction}
-                </option>
-              ))}
-            </select>
-            <select value={editHeroRole} onChange={(event) => setEditHeroRole(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
-              {raidRoles.map((role) => (
-                <option key={role.value} value={role.value}>
-                  {role.label}
-                </option>
-              ))}
-            </select>
-            <select value={editHeroRarity} onChange={(event) => setEditHeroRarity(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
-              {heroRarities.map((rarity) => (
-                <option key={rarity.value} value={rarity.value}>
-                  {rarity.label}
-                </option>
-              ))}
-            </select>
-            {renderDamageSkillEditor(editHeroDamageSkills, setEditHeroDamageSkills, editHeroRarity)}
-            <textarea value={editHeroDescription} onChange={(event) => setEditHeroDescription(event.target.value)} rows={5} placeholder="Описание" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="block text-sm text-zinc-300">
-                Заменить главное фото
-                <input type="file" accept="image/*" onChange={(event) => setEditHeroAvatar(event.target.files?.[0] ?? null)} className="mt-2 block w-full text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-white/10 file:px-3 file:py-2 file:font-bold file:text-white" />
-              </label>
-              <label className="block text-sm text-zinc-300">
-                Заменить сборку героя (до 5 фото)
-                <input type="file" accept="image/*" multiple onChange={(event) => setEditHeroGallery(event.target.files)} className="mt-2 block w-full text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-white/10 file:px-3 file:py-2 file:font-bold file:text-white" />
-              </label>
+          {editingHeroId ? (
+            <div className="space-y-3 rounded-lg border border-white/10 bg-black/25 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-bold text-white">Правка выбранного героя</p>
+                <button type="button" onClick={() => setEditingHeroId("")} className="text-xs font-bold text-zinc-500 hover:text-white">
+                  Свернуть
+                </button>
+              </div>
+              <input value={editHeroName} onChange={(event) => setEditHeroName(event.target.value)} placeholder="Имя героя" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+              <input value={editHeroNameRu} onChange={(event) => setEditHeroNameRu(event.target.value)} placeholder="Русское имя героя" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+              <select value={editHeroFaction} onChange={(event) => setEditHeroFaction(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
+                <option value="">Фракция</option>
+                {raidFactions.map((faction) => (
+                  <option key={faction} value={faction}>
+                    {faction}
+                  </option>
+                ))}
+              </select>
+              <select value={editHeroRole} onChange={(event) => setEditHeroRole(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
+                {raidRoles.map((role) => (
+                  <option key={role.value} value={role.value}>
+                    {role.label}
+                  </option>
+                ))}
+              </select>
+              <select value={editHeroRarity} onChange={(event) => setEditHeroRarity(event.target.value)} className="w-full rounded-md border-white/10 bg-black/30 text-white focus:border-relic focus:ring-relic">
+                {heroRarities.map((rarity) => (
+                  <option key={rarity.value} value={rarity.value}>
+                    {rarity.label}
+                  </option>
+                ))}
+              </select>
+              {renderDamageSkillEditor(editHeroDamageSkills, setEditHeroDamageSkills, editHeroRarity)}
+              <textarea value={editHeroDescription} onChange={(event) => setEditHeroDescription(event.target.value)} rows={5} placeholder="Описание" className="w-full rounded-md border-white/10 bg-black/30 text-white placeholder:text-zinc-500 focus:border-relic focus:ring-relic" />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block text-sm text-zinc-300">
+                  Заменить главное фото
+                  <input type="file" accept="image/*" onChange={(event) => setEditHeroAvatar(event.target.files?.[0] ?? null)} className="mt-2 block w-full text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-white/10 file:px-3 file:py-2 file:font-bold file:text-white" />
+                </label>
+                <label className="block text-sm text-zinc-300">
+                  Заменить сборку героя (до 5 фото)
+                  <input type="file" accept="image/*" multiple onChange={(event) => setEditHeroGallery(event.target.files)} className="mt-2 block w-full text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-white/10 file:px-3 file:py-2 file:font-bold file:text-white" />
+                </label>
+              </div>
+              <button type="button" disabled={saving} onClick={() => void saveHeroEdits()} className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
+                <Save size={16} />
+                Сохранить героя
+              </button>
             </div>
-            <button type="button" disabled={!editingHeroId || saving} onClick={() => void saveHeroEdits()} className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
-              <Save size={16} />
-              Сохранить героя
-            </button>
-          </div>
+          ) : (
+            <div className="flex min-h-[220px] items-center justify-center rounded-lg border border-dashed border-white/10 bg-black/20 p-6 text-center">
+              <p className="max-w-sm text-sm leading-6 text-zinc-500">Выбери героя в списке слева, чтобы открыть форму редактирования. Так редактор не занимает место, пока он не нужен.</p>
+            </div>
+          )}
         </div>
       </div>
     </GlassPanel>

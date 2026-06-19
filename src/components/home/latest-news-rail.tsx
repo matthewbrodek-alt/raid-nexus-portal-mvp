@@ -13,8 +13,6 @@ type NewsItem = {
   id: string;
   title?: string;
   titleEn?: string;
-  summary?: string;
-  summaryEn?: string;
   markdownBody?: string;
   markdownBodyEn?: string;
   publishedAt?: { seconds?: number };
@@ -41,7 +39,7 @@ const copy: Record<
   ru: {
     title: "Свежие новости",
     allNews: "Все новости",
-    emptyDescription: "Описание новости пока не заполнено.",
+    emptyDescription: "Текст новости пока не заполнен.",
     emptyList: "Новости появятся здесь после публикации из админ-панели.",
     closeList: "Закрыть список новостей",
     closeNews: "Закрыть новость",
@@ -51,7 +49,7 @@ const copy: Record<
   en: {
     title: "Fresh News",
     allNews: "All News",
-    emptyDescription: "News description has not been filled in yet.",
+    emptyDescription: "News text has not been filled in yet.",
     emptyList: "News will appear here after publication from the admin panel.",
     closeList: "Close news list",
     closeNews: "Close news",
@@ -68,16 +66,12 @@ function getNewsTitle(item: NewsItem, language: Language) {
   return language === "en" ? item.titleEn || item.title || "" : item.title || item.titleEn || "";
 }
 
-function getNewsSummary(item: NewsItem, language: Language) {
-  return language === "en" ? item.summaryEn || item.summary || "" : item.summary || item.summaryEn || "";
-}
-
 function getNewsBody(item: NewsItem, language: Language) {
   return language === "en" ? item.markdownBodyEn || item.markdownBody || "" : item.markdownBody || item.markdownBodyEn || "";
 }
 
 function getNewsPreviewText(item: NewsItem, language: Language) {
-  return getNewsBody(item, language) || getNewsSummary(item, language);
+  return getNewsBody(item, language);
 }
 
 function formatNewsDate(item: NewsItem, language: Language) {
@@ -307,7 +301,7 @@ export function LatestNewsRail() {
                   </div>
                 ) : null}
                 <p className="max-w-3xl whitespace-pre-wrap text-sm leading-7 text-zinc-300">
-                  {getNewsBody(selectedNews, language) || getNewsSummary(selectedNews, language) || labels.emptyDescription}
+                  {getNewsBody(selectedNews, language) || labels.emptyDescription}
                 </p>
               </div>
             </div>
