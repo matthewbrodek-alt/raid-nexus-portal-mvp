@@ -152,57 +152,140 @@ function matchLoser(match: MatchView) {
   return match.winner.id === match.playerA.id ? match.playerB : match.playerA;
 }
 
-function buildLowerBracket(upperRounds: RoundView[], results: Record<string, MatchResult>) {
-  const losers = upperRounds.flatMap((round) => round.matches.map(matchLoser).filter(Boolean) as Player[]);
+function isPlayer(player: Player | null): player is Player {
+  return Boolean(player);
+}
 
-  if (!losers.length) {
-    return { champion: null as Player | null, rounds: [] as RoundView[] };
+function getRoundLosers(round: RoundView | undefined) {
+  if (!round) {
+    return [];
   }
 
+  return round.matches.map(matchLoser).filter(isPlayer);
+}
+
+function mergeLowerWinnersWithUpperLosers(lowerWinners: Player[], upperLosers: Player[]) {
+  const slots: Player[] = [];
+  const length = Math.max(lowerWinners.length, upperLosers.length);
+
+  for (let index = 0; index < length; index += 1) {
+    if (lowerWinners[index]) {
+      slots.push(lowerWinners[index]);
+    }
+
+    if (upperLosers[index]) {
+      slots.push(upperLosers[index]);
+    }
+  }
+
+  return slots;
+}
+
+function buildLowerRound(roundIndex: number, slots: Player[], results: Record<string, MatchResult>) {
+  const matches: MatchView[] = [];
+  const winners: Player[] = [];
+
+  for (let index = 0; index < slots.length; index += 2) {
+    const playerA = slots[index] ?? null;
+    const playerB = slots[index + 1] ?? null;
+
+    if (playerA && !playerB) {
+      winners.push(playerA);
+      continue;
+    }
+
+    if (!playerA && !playerB) {
+      continue;
+    }
+
+    const match = makeMatchView(`lower-${roundIndex}-${matches.length}`, playerA, playerB, results);
+
+    matches.push(match);
+
+    if (match.winner) {
+      winners.push(match.winner);
+    }
+  }
+
+  return {
+    isComplete: winners.length === Math.ceil(slots.length / 2),
+    round: matches.length
+      ? {
+          id: `lower-round-${roundIndex}`,
+          title: `L${roundIndex + 1}`,
+          matches
+        }
+      : null,
+    winners
+  };
+}
+
+function buildLowerBracket(upperRounds: RoundView[], results: Record<string, MatchResult>) {
+  const upperLosersByRound = upperRounds.map(getRoundLosers);
   const rounds: RoundView[] = [];
-  let slots = losers;
-  let roundIndex = 0;
+  let lowerRoundIndex = 0;
+  let carry: Player[] = [];
 
-  while (slots.length > 1) {
-    const matches: MatchView[] = [];
-    const nextSlots: Player[] = [];
+  if (!upperLosersByRound.some((losers) => losers.length > 0)) {
+    return { champion: null as Player | null, rounds };
+  }
 
-    for (let index = 0; index < slots.length; index += 2) {
-      const playerA = slots[index] ?? null;
-      const playerB = slots[index + 1] ?? null;
+  const firstRound = buildLowerRound(lowerRoundIndex, upperLosersByRound[0] ?? [], results);
 
-      if (playerA && !playerB) {
-        nextSlots.push(playerA);
-        continue;
-      }
+  if (firstRound.round) {
+    rounds.push(firstRound.round);
+    lowerRoundIndex += 1;
+  }
 
-      const match = makeMatchView(`lower-${roundIndex}-${matches.length}`, playerA, playerB, results);
-      matches.push(match);
+  if (!firstRound.isComplete) {
+    return { champion: null as Player | null, rounds };
+  }
 
-      if (match.winner) {
-        nextSlots.push(match.winner);
-      }
-    }
+  carry = firstRound.winners;
 
-    if (matches.length) {
-      rounds.push({
-        id: `lower-round-${roundIndex}`,
-        title: `L${roundIndex + 1}`,
-        matches
-      });
-    }
+  for (let upperRoundIndex = 1; upperRoundIndex < upperRounds.length; upperRoundIndex += 1) {
+    const upperLosers = upperLosersByRound[upperRoundIndex] ?? [];
 
-    const expectedNextSlots = Math.ceil(slots.length / 2);
-
-    if (nextSlots.length < expectedNextSlots) {
+    if (!upperLosers.length) {
       return { champion: null as Player | null, rounds };
     }
 
-    slots = nextSlots;
-    roundIndex += 1;
+    const dropRound = buildLowerRound(lowerRoundIndex, mergeLowerWinnersWithUpperLosers(carry, upperLosers), results);
+
+    if (dropRound.round) {
+      rounds.push(dropRound.round);
+      lowerRoundIndex += 1;
+    }
+
+    if (!dropRound.isComplete) {
+      return { champion: null as Player | null, rounds };
+    }
+
+    carry = dropRound.winners;
+
+    const upperFinalLoserDropped = upperRoundIndex === upperRounds.length - 1;
+
+    if (upperFinalLoserDropped) {
+      break;
+    }
+
+    if (carry.length > 1) {
+      const consolidationRound = buildLowerRound(lowerRoundIndex, carry, results);
+
+      if (consolidationRound.round) {
+        rounds.push(consolidationRound.round);
+        lowerRoundIndex += 1;
+      }
+
+      if (!consolidationRound.isComplete) {
+        return { champion: null as Player | null, rounds };
+      }
+
+      carry = consolidationRound.winners;
+    }
   }
 
-  return { champion: slots.length === 1 ? slots[0] : null, rounds };
+  return { champion: carry.length === 1 ? carry[0] : null, rounds };
 }
 
 function BracketBoard({
@@ -233,9 +316,9 @@ function BracketBoard({
 
       {rounds.length ? (
         <div className="overflow-x-auto pb-2">
-          <div className="grid w-max auto-cols-[230px] grid-flow-col gap-4">
+          <div className="grid w-max auto-cols-[230px] grid-flow-col gap-5">
             {rounds.map((round, roundIndex) => (
-              <div key={round.id} className="grid content-start gap-4" style={{ paddingTop: `${roundIndex * 24}px` }}>
+              <div key={round.id} className="grid content-start gap-4" style={{ paddingTop: `${roundIndex * 14}px` }}>
                 <p className="text-2xl font-black italic text-white">{round.title}</p>
                 <div className="grid gap-5">
                   {round.matches.map((match) => {
@@ -322,7 +405,7 @@ export function TournamentBracketTool() {
   const upperBracket = useMemo(() => buildBracket(players, upperResults, "upper"), [players, upperResults]);
   const lowerBracket = useMemo(() => buildLowerBracket(upperBracket.rounds, lowerResults), [lowerResults, upperBracket.rounds]);
   const finalPlayers = useMemo(
-    () => [upperBracket.champion, mode === "double" ? lowerBracket.champion : null].filter(Boolean) as Player[],
+    () => [upperBracket.champion, mode === "double" ? lowerBracket.champion : null].filter(isPlayer),
     [lowerBracket.champion, mode, upperBracket.champion]
   );
   const finalRounds = useMemo(() => {
