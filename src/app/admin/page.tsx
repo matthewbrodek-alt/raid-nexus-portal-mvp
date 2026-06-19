@@ -96,10 +96,27 @@ export default function AdminDashboardPage() {
           en: "The operations center is split into clear tabs: orders, users, content, donate, marketplace, moderation and calendar."
         }}
       >
-        <div className="grid gap-5 xl:grid-cols-[290px_minmax(0,1fr)]">
-          <aside className="raid-ornate-panel h-fit p-3 xl:sticky xl:top-5">
-            <p className="px-3 pb-3 text-xs font-bold uppercase tracking-[0.2em] text-relic">Admin sections</p>
-            <div className="grid gap-2">
+        <div className="space-y-5">
+          <nav className="raid-ornate-panel sticky top-3 z-20 p-3 backdrop-blur-xl" aria-label="Разделы админ-панели">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-xs font-bold tracking-[0.16em] text-relic">Разделы админ-панели</p>
+                <p className="mt-1 text-xs text-zinc-500">{activeTab.description}</p>
+              </div>
+              <select
+                value={activeTabId}
+                onChange={(event) => setActiveTabId(event.target.value as AdminTabId)}
+                className="w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm font-bold text-white outline-none focus:border-relic lg:hidden"
+                aria-label="Выбрать раздел админ-панели"
+              >
+                {adminTabs.map(({ id, label }) => (
+                  <option key={id} value={id}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="mt-3 hidden gap-2 overflow-x-auto pb-1 lg:flex">
               {adminTabs.map(({ Icon, description, id, label }) => {
                 const active = id === activeTabId;
 
@@ -109,23 +126,23 @@ export default function AdminDashboardPage() {
                     type="button"
                     onClick={() => setActiveTabId(id)}
                     data-active={active ? "true" : "false"}
-                    className="group flex w-full items-start gap-3 rounded-2xl border border-white/[0.08] bg-black/20 p-3 text-left transition hover:border-relic/35 hover:bg-relic/[0.06] data-[active=true]:border-relic/55 data-[active=true]:bg-relic/[0.12] data-[active=true]:shadow-[inset_3px_0_0_rgba(99,166,255,0.78)]"
+                    title={description}
+                    className="group flex min-w-[170px] items-center gap-2 rounded-2xl border border-white/[0.08] bg-black/20 px-3 py-2 text-left transition hover:border-relic/35 hover:bg-relic/[0.06] data-[active=true]:border-relic/55 data-[active=true]:bg-relic/[0.12] data-[active=true]:shadow-[inset_0_-3px_0_rgba(99,166,255,0.78)]"
                   >
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-relic/20 bg-black/30 text-relic transition group-hover:border-relic/45">
-                      <Icon size={18} />
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-relic/20 bg-black/30 text-relic transition group-hover:border-relic/45">
+                      <Icon size={17} />
                     </span>
                     <span className="min-w-0">
-                      <span className="block font-bold text-white">{label}</span>
-                      <span className="mt-1 block text-xs leading-5 text-zinc-500">{description}</span>
+                      <span className="block truncate text-sm font-bold text-white">{label}</span>
                     </span>
                   </button>
                 );
               })}
             </div>
-          </aside>
+          </nav>
 
           <section className="min-w-0">
-            <div className="mb-4 rounded-[22px] border border-relic/18 bg-black/26 p-4">
+            <div className="mb-4 rounded-[22px] border border-relic/18 bg-black/26 p-4 lg:hidden">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-relic">{activeTab.label}</p>
               <p className="mt-2 text-sm leading-6 text-zinc-400">{activeTab.description}</p>
             </div>

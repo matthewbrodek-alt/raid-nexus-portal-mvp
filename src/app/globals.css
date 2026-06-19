@@ -106,6 +106,20 @@
   scroll-snap-align: start;
 }
 
+.raid-news-preview {
+  display: -webkit-box;
+  max-height: 5.75rem;
+  overflow: hidden;
+  white-space: pre-line;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+}
+
+.raid-news-preview[data-compact="true"] {
+  max-height: 3rem;
+  -webkit-line-clamp: 2;
+}
+
 .raid-stable-news-grid,
 .raid-stable-news-grid * {
   word-break: normal;

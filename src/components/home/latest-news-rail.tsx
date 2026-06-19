@@ -163,7 +163,10 @@ export function LatestNewsRail() {
               <span className={`raid-word-wrap block font-[var(--font-display)] font-light tracking-[0.01em] text-white transition group-hover:text-[#b8d7ff] ${compact ? "truncate text-lg sm:text-xl" : "line-clamp-3 text-base leading-snug sm:text-lg"}`}>
                 {getNewsTitle(item, language)}
               </span>
-              <span className={`raid-word-wrap mt-1 block text-sm text-zinc-400 ${compact ? "truncate" : "line-clamp-2 text-xs sm:text-sm"}`}>
+              <span
+                data-compact={compact ? "true" : "false"}
+                className={`raid-word-wrap raid-news-preview mt-1 block text-sm text-zinc-400 ${compact ? "text-sm" : "text-xs sm:text-sm"}`}
+              >
                 {getNewsPreviewText(item, language) || labels.emptyDescription}
               </span>
             </span>

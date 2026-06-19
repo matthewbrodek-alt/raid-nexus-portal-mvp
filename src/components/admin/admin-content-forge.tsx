@@ -960,12 +960,12 @@ export function AdminContentForge() {
   const activeOfferCount = managedOffers.filter((offer) => offer.status !== "archived").length;
 
   return (
-    <GlassPanel className="p-5 sm:p-6">
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <GlassPanel className="flex flex-col p-5 sm:p-6">
+      <div className="order-1 mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <ImagePlus className="shrink-0 text-relic" />
           <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-relic">Content Forge</p>
+            <p className="text-xs tracking-[0.22em] text-relic">Редактор контента</p>
             <h2 className="text-xl font-bold text-white sm:text-2xl">Контент и герои</h2>
           </div>
         </div>
@@ -980,7 +980,29 @@ export function AdminContentForge() {
         </Link>
       </div>
 
-      <form onSubmit={saveBroadcast} className="mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
+      <div className="order-1 mb-5 flex gap-2 overflow-x-auto pb-1">
+        {[
+          ["Новости", "#admin-news"],
+          ["Герои", "#admin-hero-create"],
+          ["Редактор героев", "#admin-hero-editor"],
+          ["Видео", "#admin-home-video"],
+          ["Эфир", "#admin-stream"],
+          ["Календарь", "#admin-calendar-image"],
+          ["Соцсети", "#admin-social-links"],
+          ["Смайлики", "#admin-chat-emojis"],
+          ["Офферы", "#admin-portal-offers"]
+        ].map(([label, href]) => (
+          <a
+            key={href}
+            href={href}
+            className="shrink-0 rounded-full border border-relic/18 bg-black/24 px-3 py-2 text-xs font-bold text-zinc-300 transition hover:border-relic/45 hover:text-relic"
+          >
+            {label}
+          </a>
+        ))}
+      </div>
+
+      <form id="admin-home-video" onSubmit={saveBroadcast} className="order-3 mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
         <div className="flex items-center gap-2 text-white">
           <Save size={18} className="text-relic" />
           <h3 className="font-semibold">Видео на главной</h3>
@@ -1026,7 +1048,7 @@ export function AdminContentForge() {
         </button>
       </form>
 
-      <form onSubmit={saveStreamBroadcast} className="mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
+      <form id="admin-stream" onSubmit={saveStreamBroadcast} className="order-3 mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
         <div className="flex items-center gap-2 text-white">
           <Save size={18} className="text-relic" />
           <h3 className="font-semibold">Эфир</h3>
@@ -1068,7 +1090,7 @@ export function AdminContentForge() {
         </button>
       </form>
 
-      <form onSubmit={saveHomeEventCalendar} className="mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
+      <form id="admin-calendar-image" onSubmit={saveHomeEventCalendar} className="order-3 mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
         <div className="flex items-center gap-2 text-white">
           <ImagePlus size={18} className="text-relic" />
           <h3 className="font-semibold">Календарь событий на главной</h3>
@@ -1107,7 +1129,7 @@ export function AdminContentForge() {
         </button>
       </form>
 
-      <form onSubmit={saveSocialLinks} className="mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
+      <form id="admin-social-links" onSubmit={saveSocialLinks} className="order-3 mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
         <div className="flex items-center gap-2 text-white">
           <ExternalLink size={18} className="text-relic" />
           <h3 className="font-semibold">Соцсети на главной</h3>
@@ -1125,7 +1147,7 @@ export function AdminContentForge() {
         </button>
       </form>
 
-      <form onSubmit={addCustomEmoji} className="mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
+      <form id="admin-chat-emojis" onSubmit={addCustomEmoji} className="order-3 mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
         <div className="flex items-center gap-2 text-white">
           <Smile size={18} className="text-relic" />
           <h3 className="font-semibold">Кастомные смайлики для чатов</h3>
@@ -1179,7 +1201,7 @@ export function AdminContentForge() {
         ) : null}
       </form>
 
-      <form onSubmit={createOffer} className="mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
+      <form id="admin-portal-offers" onSubmit={createOffer} className="order-3 mb-5 space-y-3 rounded-lg border border-relic/25 bg-black/25 p-4">
         <div className="flex items-center gap-2 text-white">
           <ShoppingBag size={18} className="text-relic" />
           <h3 className="font-semibold">Активность портала / Special Offers</h3>
@@ -1244,8 +1266,8 @@ export function AdminContentForge() {
         </div>
       </form>
 
-      <div className="grid gap-5 xl:grid-cols-2">
-        <form onSubmit={createNews} className="space-y-3 rounded-lg border border-white/10 bg-black/20 p-4">
+      <div className="order-2 mb-5 grid gap-5">
+        <form id="admin-news" onSubmit={createNews} className="scroll-mt-28 space-y-3 rounded-lg border border-white/10 bg-black/20 p-4">
           <div className="flex items-center gap-2 text-white">
             <Newspaper size={18} className="text-relic" />
             <h3 className="font-semibold">Новость в Hero-секцию</h3>
@@ -1264,7 +1286,7 @@ export function AdminContentForge() {
 
           <div className="space-y-3 border-t border-relic/15 pt-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-relic">News manager</p>
+              <p className="text-xs font-bold tracking-[0.18em] text-relic">Менеджер новостей</p>
               <h4 className="text-base font-black text-white">Редактирование новостей</h4>
             </div>
 
@@ -1344,7 +1366,7 @@ export function AdminContentForge() {
           </div>
         </form>
 
-        <form onSubmit={createHero} className="space-y-3 rounded-lg border border-white/10 bg-black/20 p-4">
+        <form id="admin-hero-create" onSubmit={createHero} className="scroll-mt-28 space-y-3 rounded-lg border border-white/10 bg-black/20 p-4">
           <div className="flex items-center gap-2 text-white">
             <Plus size={18} className="text-relic" />
             <h3 className="font-semibold">Добавить героя</h3>
@@ -1392,9 +1414,9 @@ export function AdminContentForge() {
         </form>
       </div>
 
-      {status ? <p className="mt-4 rounded-lg border border-relic/20 bg-relic/[0.08] p-3 text-sm text-zinc-300">{status}</p> : null}
+      {status ? <p className="order-4 mt-4 rounded-lg border border-relic/20 bg-relic/[0.08] p-3 text-sm text-zinc-300">{status}</p> : null}
 
-      <div className="mt-6 rounded-lg border border-white/10 bg-black/20 p-4">
+      <div id="admin-hero-editor" className="order-5 mt-6 scroll-mt-28 rounded-lg border border-white/10 bg-black/20 p-4">
         <h3 className="text-lg font-bold text-white">Редактор героев</h3>
         <div className="mt-4 grid gap-3 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1">
