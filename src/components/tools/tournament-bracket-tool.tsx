@@ -75,12 +75,19 @@ function resultBelongsToMatch(result: MatchResult | undefined, playerA: Player |
   return result.playerAId === playerA?.id && result.playerBId === playerB?.id;
 }
 
-function makeMatchView(id: string, playerA: Player | null, playerB: Player | null, results: Record<string, MatchResult>): MatchView {
+function makeMatchView(
+  id: string,
+  playerA: Player | null,
+  playerB: Player | null,
+  results: Record<string, MatchResult>,
+  options: { autoAdvance?: boolean } = {}
+): MatchView {
   const rawResult = results[id];
   const result = resultBelongsToMatch(rawResult, playerA, playerB) ? rawResult : emptyResult;
   const manualWinner =
     playerA?.id === result.winnerId ? playerA : playerB?.id === result.winnerId ? playerB : null;
-  const autoWinner = playerA && !playerB ? playerA : !playerA && playerB ? playerB : null;
+  const autoWinner =
+    options.autoAdvance === false ? null : playerA && !playerB ? playerA : !playerA && playerB ? playerB : null;
 
   return {
     id,
@@ -301,6 +308,9 @@ function BracketBoard({
 }: BracketBoardProps) {
   const accentClass = accent === "green" ? "border-emerald-400/45 bg-emerald-400/10" : "border-[#7c3cff]/45 bg-[#7c3cff]/10";
   const winnerClass = accent === "green" ? "border-emerald-400 bg-emerald-400 text-black" : "border-[#7c3cff] bg-[#7c3cff] text-white";
+  const maxMatches = Math.max(1, ...rounds.map((round) => round.matches.length));
+  const matchHeight = 104;
+  const bracketHeight = Math.max(matchHeight, maxMatches * 126);
 
   return (
     <section className="rounded-[18px] border border-[#7c3cff]/18 bg-[radial-gradient(circle_at_20%_0%,rgba(124,60,255,0.18),transparent_32%),rgba(2,5,12,0.7)] p-4">
@@ -316,22 +326,25 @@ function BracketBoard({
 
       {rounds.length ? (
         <div className="overflow-x-auto pb-2">
-          <div className="grid w-max auto-cols-[230px] grid-flow-col gap-5">
+          <div className="grid w-max auto-cols-[230px] grid-flow-col gap-8">
             {rounds.map((round, roundIndex) => (
-              <div key={round.id} className="grid content-start gap-4" style={{ paddingTop: `${roundIndex * 14}px` }}>
+              <div key={round.id} className="min-w-0">
                 <p className="text-2xl font-black italic text-white">{round.title}</p>
-                <div className="grid gap-5">
-                  {round.matches.map((match) => {
+                <div className="relative mt-3" style={{ height: `${bracketHeight}px` }}>
+                  {round.matches.map((match, matchIndex) => {
                     const isPlayable = Boolean(match.playerA && match.playerB);
                     const hasNextRound = roundIndex < rounds.length - 1;
                     const matchWinsRequired = getMatchWinsRequired?.(roundIndex, rounds.length, match) ?? winsRequired;
+                    const laneHeight = bracketHeight / Math.max(1, round.matches.length);
+                    const matchTop = matchIndex * laneHeight + (laneHeight - matchHeight) / 2;
 
                     return (
                       <div
                         key={match.id}
-                        className={`relative rounded-[14px] border p-2 ${
+                        style={{ top: `${Math.max(0, matchTop)}px` }}
+                        className={`absolute left-0 right-0 min-h-[96px] rounded-[14px] border p-2 ${
                           hasNextRound
-                            ? "after:absolute after:left-full after:top-1/2 after:hidden after:h-px after:w-6 after:bg-[#cfd7ff]/35 xl:after:block"
+                            ? "after:absolute after:left-full after:top-1/2 after:hidden after:h-px after:w-9 after:bg-[#cfd7ff]/35 xl:after:block"
                             : ""
                         } ${match.winner ? accentClass : "border-[#7c3cff]/35 bg-[#120b2c]/70"}`}
                       >
@@ -352,7 +365,7 @@ function BracketBoard({
                                     isWinner ? winnerClass : "border border-white/10 bg-white text-[#233058] hover:border-[#9d67ff]"
                                   } disabled:cursor-default disabled:bg-white/70 disabled:text-zinc-500`}
                                 >
-                                  <span className="block truncate">{player?.name ?? "BYE"}</span>
+                                  <span className="block truncate">{player?.name ?? (match.autoWinner ? "BYE" : "Ожидается")}</span>
                                 </button>
                                 <select
                                   value={score}
@@ -404,24 +417,32 @@ export function TournamentBracketTool() {
 
   const upperBracket = useMemo(() => buildBracket(players, upperResults, "upper"), [players, upperResults]);
   const lowerBracket = useMemo(() => buildLowerBracket(upperBracket.rounds, lowerResults), [lowerResults, upperBracket.rounds]);
-  const finalPlayers = useMemo(
-    () => [upperBracket.champion, mode === "double" ? lowerBracket.champion : null].filter(isPlayer),
-    [lowerBracket.champion, mode, upperBracket.champion]
-  );
-  const finalRounds = useMemo(() => {
-    if (mode !== "double" || finalPlayers.length !== 2) {
+  const grandFinalRounds = useMemo(() => {
+    if (mode !== "double" || upperBracket.rounds.length === 0) {
       return [] as RoundView[];
     }
 
     return [
       {
-        id: "final-round",
-        title: "Финал",
-        matches: [makeMatchView("final-0-0", finalPlayers[0]!, finalPlayers[1]!, finalResults)]
+        id: "grand-final-round",
+        title: "Гранд-финал",
+        matches: [
+          makeMatchView(
+            "final-0-0",
+            upperBracket.champion,
+            lowerBracket.champion,
+            finalResults,
+            { autoAdvance: false }
+          )
+        ]
       }
     ];
-  }, [finalPlayers, finalResults, mode]);
-  const finalChampion = finalRounds[0]?.matches[0]?.winner ?? null;
+  }, [finalResults, lowerBracket.champion, mode, upperBracket.champion, upperBracket.rounds.length]);
+  const upperDisplayRounds = useMemo(
+    () => (mode === "double" ? [...upperBracket.rounds, ...grandFinalRounds] : upperBracket.rounds),
+    [grandFinalRounds, mode, upperBracket.rounds]
+  );
+  const finalChampion = grandFinalRounds[0]?.matches[0]?.winner ?? null;
   const champion = mode === "double" ? finalChampion : upperBracket.champion;
 
   function addPlayer() {
@@ -570,23 +591,27 @@ export function TournamentBracketTool() {
           </select>
         </label>
         <label className="block">
-          <span className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-relic">Финал</span>
+          <span className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-relic">
+            {mode === "double" ? "Гранд-финал" : "Финал"}
+          </span>
           <select
             value={finalWinsRequired}
             onChange={(event) => {
               setFinalWinsRequired(Number(event.target.value));
-              setUpperResults((current) => {
-                const upperFinalRound = upperBracket.rounds[upperBracket.rounds.length - 1];
-                const upperFinalMatchId = upperFinalRound?.matches[0]?.id;
+              if (mode === "single") {
+                setUpperResults((current) => {
+                  const upperFinalRound = upperBracket.rounds[upperBracket.rounds.length - 1];
+                  const upperFinalMatchId = upperFinalRound?.matches[0]?.id;
 
-                if (!upperFinalMatchId || !current[upperFinalMatchId]) {
-                  return current;
-                }
+                  if (!upperFinalMatchId || !current[upperFinalMatchId]) {
+                    return current;
+                  }
 
-                const nextResults = { ...current };
-                delete nextResults[upperFinalMatchId];
-                return nextResults;
-              });
+                  const nextResults = { ...current };
+                  delete nextResults[upperFinalMatchId];
+                  return nextResults;
+                });
+              }
               setFinalResults({});
             }}
             className="w-full rounded-[14px] border border-relic/18 bg-black/30 text-white focus:border-relic focus:ring-relic"
@@ -621,11 +646,29 @@ export function TournamentBracketTool() {
 
       <BracketBoard
         emptyText="Добавь участников, чтобы увидеть верхнюю сетку."
-        getMatchWinsRequired={(roundIndex, roundCount) => (roundIndex === roundCount - 1 ? finalWinsRequired : upperWinsRequired)}
-        metaLabel={`Раунды: до ${upperWinsRequired}, финал: до ${finalWinsRequired}`}
-        onPickWinner={(match, winnerId, winsRequired) => pickWinner("upper", match, winnerId, winsRequired)}
-        onScoreChange={(match, slot, score) => changeScore("upper", match, slot, score)}
-        rounds={upperBracket.rounds}
+        getMatchWinsRequired={(roundIndex, roundCount, match) => {
+          if (match.id.startsWith("final-")) {
+            return finalWinsRequired;
+          }
+
+          if (mode === "single" && roundIndex === roundCount - 1) {
+            return finalWinsRequired;
+          }
+
+          return upperWinsRequired;
+        }}
+        metaLabel={
+          mode === "double"
+            ? `Верхняя: до ${upperWinsRequired}, гранд-финал: до ${finalWinsRequired}`
+            : `Раунды: до ${upperWinsRequired}, финал: до ${finalWinsRequired}`
+        }
+        onPickWinner={(match, winnerId, winsRequired) =>
+          pickWinner(match.id.startsWith("final-") ? "final" : "upper", match, winnerId, winsRequired)
+        }
+        onScoreChange={(match, slot, score) =>
+          changeScore(match.id.startsWith("final-") ? "final" : "upper", match, slot, score)
+        }
+        rounds={upperDisplayRounds}
         title={mode === "double" ? "Верхняя сетка" : "Турнирная сетка"}
         winsRequired={upperWinsRequired}
       />
@@ -638,19 +681,6 @@ export function TournamentBracketTool() {
           rounds={lowerBracket.rounds}
           title="Нижняя сетка"
           winsRequired={lowerWinsRequired}
-        />
-      ) : null}
-
-      {mode === "double" ? (
-        <BracketBoard
-          accent="green"
-          emptyText="Гранд-финал появится после победителей верхней и нижней сетки."
-          onPickWinner={(match, winnerId, winsRequired) => pickWinner("final", match, winnerId, winsRequired)}
-          onScoreChange={(match, slot, score) => changeScore("final", match, slot, score)}
-          rounds={finalRounds}
-          metaLabel={`Финал: до ${finalWinsRequired}`}
-          title="Гранд-финал"
-          winsRequired={finalWinsRequired}
         />
       ) : null}
 
