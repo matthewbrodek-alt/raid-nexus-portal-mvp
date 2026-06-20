@@ -100,9 +100,9 @@ export function HomeMobileHeader() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-[1000] flex h-[calc(104px+env(safe-area-inset-top))] items-center gap-2 border-b border-white/8 bg-[#050b12]/82 px-3 pt-[env(safe-area-inset-top)] backdrop-blur-2xl lg:hidden">
+      <header className="fixed inset-x-0 top-0 z-[1000] flex h-[calc(64px+env(safe-area-inset-top))] items-center gap-1 border-b border-white/8 bg-[#050b12]/82 px-2 pt-[env(safe-area-inset-top)] backdrop-blur-2xl lg:hidden">
         <Link href="/" className="flex min-w-0 flex-1 items-center overflow-hidden">
-          <RaidLogo compact imageClassName="!h-24 !max-w-none sm:!h-28" />
+          <RaidLogo compact imageClassName="!h-16 !max-w-none sm:!h-[68px]" />
         </Link>
         <div className="mobile-top-switchers">
           <LanguageSwitcher compact />
@@ -111,13 +111,13 @@ export function HomeMobileHeader() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-[13px] border border-relic/40 bg-black/55 text-relic"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-[11px] border border-relic/40 bg-black/55 text-relic"
           aria-label={language === "ru" ? "Открыть меню" : "Open menu"}
         >
-          <Menu size={21} />
+          <Menu size={18} />
         </button>
       </header>
-      <div className="h-[calc(104px+env(safe-area-inset-top))] lg:hidden" aria-hidden="true" />
+      <div className="h-[calc(64px+env(safe-area-inset-top))] lg:hidden" aria-hidden="true" />
 
       {mounted && mobileMenu ? createPortal(mobileMenu, document.body) : null}
     </>
