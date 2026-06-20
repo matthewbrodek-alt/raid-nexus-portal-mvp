@@ -306,18 +306,17 @@ function BracketBoard({
   title,
   winsRequired
 }: BracketBoardProps) {
-  const accentClass = accent === "green" ? "border-emerald-400/45 bg-emerald-400/10" : "border-[#7c3cff]/45 bg-[#7c3cff]/10";
-  const winnerClass = accent === "green" ? "border-emerald-400 bg-emerald-400 text-black" : "border-[#7c3cff] bg-[#7c3cff] text-white";
+  const resolvedCardClass = accent === "green" ? "tournament-match-card-grand" : "tournament-match-card-resolved";
   const maxMatches = Math.max(1, ...rounds.map((round) => round.matches.length));
   const matchHeight = 104;
   const bracketHeight = Math.max(matchHeight, maxMatches * 126);
 
   return (
-    <section className="rounded-[18px] border border-[#7c3cff]/18 bg-[radial-gradient(circle_at_20%_0%,rgba(124,60,255,0.18),transparent_32%),rgba(2,5,12,0.7)] p-4">
+    <section className="tournament-bracket-board rounded-[18px] border border-[#7c3cff]/18 bg-[radial-gradient(circle_at_20%_0%,rgba(124,60,255,0.18),transparent_32%),rgba(2,5,12,0.7)] p-4">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-white">
           <Swords size={18} className="text-[#9d67ff]" />
-          <h3 className="font-black">{title}</h3>
+          <h3 className="tournament-bracket-title font-black">{title}</h3>
         </div>
         <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-xs font-bold text-zinc-400">
           {metaLabel ?? `До ${winsRequired} побед`}
@@ -329,7 +328,7 @@ function BracketBoard({
           <div className="grid w-max auto-cols-[230px] grid-flow-col gap-8">
             {rounds.map((round, roundIndex) => (
               <div key={round.id} className="min-w-0">
-                <p className="text-2xl font-black italic text-white">{round.title}</p>
+                <p className="tournament-round-title text-2xl font-black italic text-white">{round.title}</p>
                 <div className="relative mt-3" style={{ height: `${bracketHeight}px` }}>
                   {round.matches.map((match, matchIndex) => {
                     const isPlayable = Boolean(match.playerA && match.playerB);
@@ -342,11 +341,11 @@ function BracketBoard({
                       <div
                         key={match.id}
                         style={{ top: `${Math.max(0, matchTop)}px` }}
-                        className={`absolute left-0 right-0 min-h-[96px] rounded-[14px] border p-2 ${
+                        className={`tournament-match-card absolute left-0 right-0 min-h-[96px] rounded-[14px] border p-2 ${
                           hasNextRound
                             ? "after:absolute after:left-full after:top-1/2 after:hidden after:h-px after:w-9 after:bg-[#cfd7ff]/35 xl:after:block"
                             : ""
-                        } ${match.winner ? accentClass : "border-[#7c3cff]/35 bg-[#120b2c]/70"}`}
+                        } ${match.winner ? resolvedCardClass : "border-[#7c3cff]/35 bg-[#120b2c]/70"}`}
                       >
                         <div className="grid gap-1.5">
                           {[
@@ -354,6 +353,12 @@ function BracketBoard({
                             { player: match.playerB, score: match.scoreB, slot: "B" as const }
                           ].map(({ player, score, slot }) => {
                             const isWinner = Boolean(player && match.winner?.id === player.id);
+                            const isLoser = Boolean(player && match.winner && match.winner.id !== player.id);
+                            const playerStateClass = isWinner
+                              ? "tournament-player-winner"
+                              : isLoser
+                                ? "tournament-player-loser"
+                                : "tournament-player-pending";
 
                             return (
                               <div key={`${match.id}-${slot}`} className="grid grid-cols-[1fr_48px] gap-2">
@@ -361,9 +366,7 @@ function BracketBoard({
                                   type="button"
                                   disabled={!player || !isPlayable}
                                   onClick={() => player && onPickWinner(match, player.id, matchWinsRequired)}
-                                  className={`min-h-9 rounded-md px-3 text-left text-sm font-black transition ${
-                                    isWinner ? winnerClass : "border border-white/10 bg-white text-[#233058] hover:border-[#9d67ff]"
-                                  } disabled:cursor-default disabled:bg-white/70 disabled:text-zinc-500`}
+                                  className={`tournament-player-row ${playerStateClass} min-h-9 rounded-md border px-3 text-left text-sm font-black transition disabled:cursor-default`}
                                 >
                                   <span className="block truncate">{player?.name ?? (match.autoWinner ? "BYE" : "Ожидается")}</span>
                                 </button>
@@ -371,9 +374,7 @@ function BracketBoard({
                                   value={score}
                                   disabled={!player || !isPlayable}
                                   onChange={(event) => onScoreChange(match, slot, Number(event.target.value), matchWinsRequired)}
-                                  className={`h-9 rounded-md border px-2 text-center text-sm font-black ${
-                                    isWinner ? winnerClass : "border-[#7c3cff]/35 bg-white text-[#233058]"
-                                  } disabled:cursor-default disabled:bg-white/60 disabled:text-zinc-400`}
+                                  className={`tournament-score-select ${playerStateClass} h-9 rounded-md border px-2 text-center text-sm font-black disabled:cursor-default`}
                                   aria-label={`Счет ${player?.name ?? "BYE"}`}
                                 >
                                   {scoreOptions(matchWinsRequired).map((value) => (
