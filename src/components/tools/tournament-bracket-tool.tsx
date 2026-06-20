@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus, RotateCcw, Swords, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type TournamentMode = "single" | "double";
 type BracketSide = "upper" | "lower" | "final";
@@ -40,6 +40,58 @@ const emptyResult: MatchResult = {
   scoreA: 0,
   scoreB: 0
 };
+
+const tournamentStorageKey = "raid-portal:tournament-bracket:v1";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
+
+function restoreWinsRequired(value: unknown, fallback: number) {
+  return value === 1 || value === 2 || value === 3 ? value : fallback;
+}
+
+function restorePlayers(value: unknown): Player[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter(isRecord)
+    .map((player) => ({
+      id: typeof player.id === "string" ? player.id : makeId(),
+      name: typeof player.name === "string" ? player.name.trim() : ""
+    }))
+    .filter((player) => player.name.length > 0)
+    .slice(0, 64);
+}
+
+function restoreResults(value: unknown): Record<string, MatchResult> {
+  if (!isRecord(value)) {
+    return {};
+  }
+
+  const restoredResults: Record<string, MatchResult> = {};
+
+  for (const [matchId, result] of Object.entries(value)) {
+    if (!isRecord(result)) {
+      continue;
+    }
+
+    const scoreA = typeof result.scoreA === "number" ? Math.max(0, Math.min(3, result.scoreA)) : 0;
+    const scoreB = typeof result.scoreB === "number" ? Math.max(0, Math.min(3, result.scoreB)) : 0;
+
+    restoredResults[matchId] = {
+      playerAId: typeof result.playerAId === "string" ? result.playerAId : undefined,
+      playerBId: typeof result.playerBId === "string" ? result.playerBId : undefined,
+      scoreA,
+      scoreB,
+      winnerId: typeof result.winnerId === "string" ? result.winnerId : undefined
+    };
+  }
+
+  return restoredResults;
+}
 
 function makeId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -415,6 +467,71 @@ export function TournamentBracketTool() {
   const [upperResults, setUpperResults] = useState<Record<string, MatchResult>>({});
   const [lowerResults, setLowerResults] = useState<Record<string, MatchResult>>({});
   const [finalResults, setFinalResults] = useState<Record<string, MatchResult>>({});
+  const [storageReady, setStorageReady] = useState(false);
+
+  useEffect(() => {
+    try {
+      const savedValue = window.localStorage.getItem(tournamentStorageKey);
+
+      if (!savedValue) {
+        return;
+      }
+
+      const savedState: unknown = JSON.parse(savedValue);
+
+      if (!isRecord(savedState)) {
+        return;
+      }
+
+      setMode(savedState.mode === "double" ? "double" : "single");
+      setUpperWinsRequired(restoreWinsRequired(savedState.upperWinsRequired, 2));
+      setLowerWinsRequired(restoreWinsRequired(savedState.lowerWinsRequired, 1));
+      setFinalWinsRequired(restoreWinsRequired(savedState.finalWinsRequired, 2));
+      setPlayers(restorePlayers(savedState.players));
+      setUpperResults(restoreResults(savedState.upperResults));
+      setLowerResults(restoreResults(savedState.lowerResults));
+      setFinalResults(restoreResults(savedState.finalResults));
+    } catch {
+      window.localStorage.removeItem(tournamentStorageKey);
+    } finally {
+      setStorageReady(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!storageReady) {
+      return;
+    }
+
+    const savedState = {
+      version: 1,
+      mode,
+      upperWinsRequired,
+      lowerWinsRequired,
+      finalWinsRequired,
+      players,
+      upperResults,
+      lowerResults,
+      finalResults,
+      updatedAt: new Date().toISOString()
+    };
+
+    try {
+      window.localStorage.setItem(tournamentStorageKey, JSON.stringify(savedState));
+    } catch {
+      // The bracket still works when browser storage is unavailable.
+    }
+  }, [
+    finalResults,
+    finalWinsRequired,
+    lowerResults,
+    lowerWinsRequired,
+    mode,
+    players,
+    storageReady,
+    upperResults,
+    upperWinsRequired
+  ]);
 
   const upperBracket = useMemo(() => buildBracket(players, upperResults, "upper"), [players, upperResults]);
   const lowerBracket = useMemo(() => buildLowerBracket(upperBracket.rounds, lowerResults), [lowerResults, upperBracket.rounds]);
