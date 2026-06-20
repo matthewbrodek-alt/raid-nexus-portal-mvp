@@ -198,8 +198,10 @@ export function AdminContentForge({ mode = "content" }: AdminContentForgeProps) 
   const [heroDescription, setHeroDescription] = useState("");
   const [heroDamageSkills, setHeroDamageSkills] = useState<EditableDamageSkill[]>([]);
   const [avatar, setAvatar] = useState<File | null>(null);
+  const [heroPortrait, setHeroPortrait] = useState<File | null>(null);
   const [gallery, setGallery] = useState<FileList | null>(null);
   const [managedHeroes, setManagedHeroes] = useState<ManagedHero[]>([]);
+  const [heroSearch, setHeroSearch] = useState("");
   const [editingHeroId, setEditingHeroId] = useState("");
   const [editHeroName, setEditHeroName] = useState("");
   const [editHeroNameRu, setEditHeroNameRu] = useState("");
@@ -209,6 +211,7 @@ export function AdminContentForge({ mode = "content" }: AdminContentForgeProps) 
   const [editHeroDescription, setEditHeroDescription] = useState("");
   const [editHeroDamageSkills, setEditHeroDamageSkills] = useState<EditableDamageSkill[]>([]);
   const [editHeroAvatar, setEditHeroAvatar] = useState<File | null>(null);
+  const [editHeroPortrait, setEditHeroPortrait] = useState<File | null>(null);
   const [editHeroGallery, setEditHeroGallery] = useState<FileList | null>(null);
   const [broadcastTitle, setBroadcastTitle] = useState("");
   const [broadcastVideoUrl, setBroadcastVideoUrl] = useState("");
@@ -880,6 +883,7 @@ export function AdminContentForge({ mode = "content" }: AdminContentForgeProps) 
     setEditHeroDescription(hero.markdownComment ?? hero.comment ?? "");
     setEditHeroDamageSkills(skillsToRows(hero.damageSkills ?? []));
     setEditHeroAvatar(null);
+    setEditHeroPortrait(null);
     setEditHeroGallery(null);
   }
 
@@ -920,15 +924,27 @@ export function AdminContentForge({ mode = "content" }: AdminContentForgeProps) 
         updatedAt: serverTimestamp()
       };
 
+      let nextAvatarUrl = "";
+
       if (editHeroAvatar) {
         const avatarAsset = await uploadImage(editHeroAvatar, `${slug}/avatar-${Date.now()}`);
-        const avatarUrl = getAssetUrl(avatarAsset);
+        nextAvatarUrl = getAssetUrl(avatarAsset);
         payload.avatar = {
           ...avatarAsset,
           alt: safeName
         };
-        payload.avatarUrl = avatarUrl;
-        payload.portraitUrl = avatarUrl;
+        payload.avatarUrl = nextAvatarUrl;
+      }
+
+      if (editHeroPortrait) {
+        const portraitAsset = await uploadImage(editHeroPortrait, `${slug}/portrait-${Date.now()}`);
+        payload.portrait = {
+          ...portraitAsset,
+          alt: `${safeName} portrait`
+        };
+        payload.portraitUrl = getAssetUrl(portraitAsset);
+      } else if (editHeroAvatar) {
+        payload.portraitUrl = nextAvatarUrl;
       }
 
       const galleryFiles = Array.from(editHeroGallery ?? []).slice(0, 5);
@@ -951,6 +967,7 @@ export function AdminContentForge({ mode = "content" }: AdminContentForgeProps) 
       setEditingHeroId("");
       setEditHeroDamageSkills([]);
       setEditHeroAvatar(null);
+      setEditHeroPortrait(null);
       setEditHeroGallery(null);
       setStatus("Герой обновлен.");
     } catch (error) {
@@ -988,6 +1005,8 @@ export function AdminContentForge({ mode = "content" }: AdminContentForgeProps) 
       const slug = slugify(name);
       const avatarAsset = await uploadImage(avatar, `${slug}/avatar`);
       const avatarUrl = getAssetUrl(avatarAsset);
+      const portraitAsset = heroPortrait ? await uploadImage(heroPortrait, `${slug}/portrait`) : avatarAsset;
+      const portraitUrl = getAssetUrl(portraitAsset);
       const galleryFiles = Array.from(gallery ?? []).slice(0, 5);
       const galleryAssets = await Promise.all(
         galleryFiles.map((file, index) => uploadImage(file, `${slug}/build-${index + 1}`))
@@ -1016,7 +1035,11 @@ export function AdminContentForge({ mode = "content" }: AdminContentForgeProps) 
           alt: name
         },
         avatarUrl,
-        portraitUrl: avatarUrl,
+        portrait: {
+          ...portraitAsset,
+          alt: `${name} portrait`
+        },
+        portraitUrl,
         borderUrl: "",
         gallery: galleryAssets.map((asset, index) => ({
           ...asset,
@@ -1051,6 +1074,7 @@ export function AdminContentForge({ mode = "content" }: AdminContentForgeProps) 
       setHeroDescription("");
       setHeroDamageSkills([]);
       setAvatar(null);
+      setHeroPortrait(null);
       setGallery(null);
       setStatus("Герой добавлен в heroes.");
     } catch (error) {
@@ -1078,6 +1102,14 @@ export function AdminContentForge({ mode = "content" }: AdminContentForgeProps) 
         ];
   const contentOnlyClass = mode === "heroes" ? "hidden" : "";
   const heroesOnlyClass = mode === "content" ? "hidden" : "";
+  const normalizedHeroSearch = heroSearch.trim().toLowerCase();
+  const filteredManagedHeroes = normalizedHeroSearch
+    ? managedHeroes.filter((hero) =>
+        [hero.name, hero.nameRu, hero.faction, hero.rarity, hero.role, hero.slug]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(normalizedHeroSearch))
+      )
+    : managedHeroes;
 
   return (
     <GlassPanel className="flex flex-col p-5 sm:p-6">
@@ -1509,6 +1541,13 @@ export function AdminContentForge({ mode = "content" }: AdminContentForgeProps) 
           <label className="block text-sm text-zinc-300">
             Главное фото
             <input type="file" accept="image/*" onChange={(event) => setAvatar(event.target.files?.[0] ?? null)} required className="mt-2 block w-full text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-relic file:px-3 file:py-2 file:font-bold file:text-black" />
+          </label>
+          <label className="block text-sm text-zinc-300">
+            Крупный портрет / модель героя
+            <input type="file" accept="image/*" onChange={(event) => setHeroPortrait(event.target.files?.[0] ?? null)} className="mt-2 block w-full text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-white/10 file:px-3 file:py-2 file:font-bold file:text-white" />
+            <span className="mt-1 block text-xs leading-5 text-zinc-500">
+              Для вида как на Gestal загружай вертикальный арт персонажа. Если поле пустое, будет использовано главное фото.
+            </span>
           </label>
           <label className="block text-sm text-zinc-300">
             До 5 фото сборки героя
