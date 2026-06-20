@@ -9,6 +9,7 @@ import {
   signInWithEmailAndPassword,
   signOut
 } from "firebase/auth";
+import { Check } from "lucide-react";
 import { useState } from "react";
 import { auth } from "@/lib/firebase/client";
 import { sendPortalEmailVerification } from "@/lib/auth/email-verification";
@@ -79,8 +80,11 @@ export function LoginForm() {
             type="checkbox"
             checked={rememberMe}
             onChange={(event) => setRememberMe(event.target.checked)}
-            className="h-5 w-5 rounded border-2 border-slate-400 bg-white text-[#2f7cff] accent-[#2f7cff] focus:ring-[#2f7cff] dark:border-white/25 dark:bg-black/30 dark:text-relic dark:accent-relic dark:focus:ring-relic"
+            className="peer sr-only"
           />
+          <span className="remember-me-check grid h-5 w-5 shrink-0 place-items-center rounded-[5px] peer-focus-visible:ring-2 peer-focus-visible:ring-[#2f7cff] peer-focus-visible:ring-offset-2" aria-hidden="true">
+            <Check size={14} strokeWidth={3.2} className={rememberMe ? "opacity-100" : "opacity-0"} />
+          </span>
           Запомнить меня на этом устройстве
         </label>
         {notice ? <p className="rounded-md border border-relic/30 bg-relic/10 p-3 text-sm text-relic">{notice}</p> : null}
