@@ -220,7 +220,13 @@ service cloud.firestore {
     }
 
     match /userGroups/{uid} {
-      allow read: if true;
+      allow read: if signedIn()
+        && (
+          isAdmin()
+          || uid == request.auth.uid
+          || resource.data.ownerUid == request.auth.uid
+          || resource.data.get("memberUids", []).hasAny([request.auth.uid])
+        );
       allow create: if isAdmin()
         || (
           activeUser()
@@ -277,7 +283,12 @@ service cloud.firestore {
       allow read: if true;
       allow create: if activeUser()
         && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if isAdmin() || resource.data.uid == request.auth.uid;
+      allow update: if isAdmin()
+        || (
+          resource.data.uid == request.auth.uid
+          && resource.data.status != "moderated"
+        );
+      allow delete: if isAdmin() || resource.data.uid == request.auth.uid;
     }
 
     match /forumThreads/{threadId} {

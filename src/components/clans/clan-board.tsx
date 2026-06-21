@@ -11,9 +11,12 @@ import {
   orderBy,
   query,
   serverTimestamp,
-  setDoc
+  setDoc,
+  Timestamp,
+  updateDoc,
+  where
 } from "firebase/firestore";
-import { Crown, MessageCircle, Megaphone, Pin, Save, Send, Shield, Trash2, UserMinus, UserPlus, Users, X } from "lucide-react";
+import { Crown, History, MessageCircle, Megaphone, Pin, RotateCcw, Save, Send, Shield, Trash2, UserMinus, UserPlus, Users, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { GlassPanel } from "@/components/ui/glass-panel";
@@ -30,7 +33,11 @@ type ClanAnnouncement = {
   authorName?: string;
   title?: string;
   text?: string;
+  status?: "active" | "deleted" | "moderated";
   createdAt?: FirestoreStamp;
+  updatedAt?: FirestoreStamp;
+  expiresAt?: FirestoreStamp;
+  archivedAt?: FirestoreStamp;
 };
 
 type GroupMember = {
@@ -144,6 +151,31 @@ function getGroupMembers(group: UserGroup) {
   return uniqueMembers([...ownerMember, ...(group.members ?? [])]);
 }
 
+const announcementLifetimeMs = 7 * 24 * 60 * 60 * 1000;
+
+function announcementExpiresAt(item: ClanAnnouncement) {
+  if (item.expiresAt?.seconds) {
+    return item.expiresAt.seconds * 1000;
+  }
+
+  if (item.createdAt?.seconds) {
+    return item.createdAt.seconds * 1000 + announcementLifetimeMs;
+  }
+
+  return Number.POSITIVE_INFINITY;
+}
+
+function isAnnouncementVisible(item: ClanAnnouncement, now: number) {
+  return (item.status ?? "active") === "active" && announcementExpiresAt(item) > now;
+}
+
+function announcementHistoryLabel(item: ClanAnnouncement, now: number) {
+  if (item.status === "moderated") return "Снято модератором";
+  if (item.status === "deleted") return "Удалено с доски";
+  if (announcementExpiresAt(item) <= now) return "Срок публикации истёк";
+  return "В архиве";
+}
+
 export function ClanBoard() {
   const { profile, user } = useAuth();
   const [title, setTitle] = useState("");
@@ -165,10 +197,11 @@ export function ClanBoard() {
   const [groupStatus, setGroupStatus] = useState("");
   const [savingAnnouncement, setSavingAnnouncement] = useState(false);
   const [savingGroup, setSavingGroup] = useState(false);
+  const [announcementClock, setAnnouncementClock] = useState(() => Date.now());
   const canModerate = profile?.role === "admin" || profile?.role === "owner";
 
   useEffect(() => {
-    const announcementsQuery = query(collection(db, collections.clanAnnouncements), orderBy("createdAt", "desc"), limit(50));
+    const announcementsQuery = query(collection(db, collections.clanAnnouncements), orderBy("createdAt", "desc"), limit(120));
 
     return onSnapshot(announcementsQuery, (snapshot) => {
       setAnnouncements(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<ClanAnnouncement, "id">) })));
@@ -176,7 +209,21 @@ export function ClanBoard() {
   }, []);
 
   useEffect(() => {
-    const groupsQuery = query(collection(db, collections.userGroups), limit(120));
+    const timer = window.setInterval(() => setAnnouncementClock(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!user?.uid) {
+      setGroups([]);
+      return;
+    }
+
+    const groupsQuery = query(
+      collection(db, collections.userGroups),
+      where("memberUids", "array-contains", user.uid),
+      limit(120)
+    );
 
     return onSnapshot(groupsQuery, (snapshot) => {
       const nextGroups = snapshot.docs
@@ -185,7 +232,7 @@ export function ClanBoard() {
 
       setGroups(nextGroups);
     });
-  }, []);
+  }, [user?.uid]);
 
   useEffect(() => {
     if (!user) {
@@ -209,6 +256,19 @@ export function ClanBoard() {
     if (!user) return null;
     return groups.find((group) => group.id === user.uid || group.ownerUid === user.uid) ?? null;
   }, [groups, user]);
+
+  const visibleAnnouncements = useMemo(
+    () => announcements.filter((item) => isAnnouncementVisible(item, announcementClock)),
+    [announcements, announcementClock]
+  );
+
+  const announcementHistory = useMemo(() => {
+    if (!user) return [];
+
+    return announcements.filter(
+      (item) => item.uid === user.uid && !isAnnouncementVisible(item, announcementClock)
+    );
+  }, [announcements, announcementClock, user]);
 
   const activeGroup = useMemo(() => {
     if (canModerate && adminEditingGroupId) {
@@ -447,6 +507,8 @@ export function ClanBoard() {
         authorName: profile.displayName || "Raid Player",
         title: title.trim(),
         text: text.trim(),
+        status: "active",
+        expiresAt: Timestamp.fromMillis(Date.now() + announcementLifetimeMs),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
@@ -461,7 +523,35 @@ export function ClanBoard() {
     }
   }
 
-  async function removeAnnouncement(item: ClanAnnouncement) {
+  async function archiveAnnouncement(item: ClanAnnouncement) {
+    if (!user || (item.uid !== user.uid && !canModerate)) {
+      return;
+    }
+
+    const removedByModerator = canModerate && item.uid !== user.uid;
+
+    await updateDoc(doc(db, collections.clanAnnouncements, item.id), {
+      status: removedByModerator ? "moderated" : "deleted",
+      archivedAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+  }
+
+  async function republishAnnouncement(item: ClanAnnouncement) {
+    if (!user || item.uid !== user.uid || item.status === "moderated") {
+      return;
+    }
+
+    await updateDoc(doc(db, collections.clanAnnouncements, item.id), {
+      status: "active",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      expiresAt: Timestamp.fromMillis(Date.now() + announcementLifetimeMs),
+      archivedAt: null
+    });
+  }
+
+  async function deleteAnnouncementPermanently(item: ClanAnnouncement) {
     if (!user || (item.uid !== user.uid && !canModerate)) {
       return;
     }
@@ -842,6 +932,57 @@ export function ClanBoard() {
           )}
 
           {announcementStatus ? <p className="mt-4 rounded-lg border border-relic/20 bg-relic/[0.08] p-3 text-sm text-zinc-300">{announcementStatus}</p> : null}
+
+          {user ? (
+            <div className="mt-5 rounded-[18px] border border-white/10 bg-black/24 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="inline-flex items-center gap-2 text-sm font-bold text-white">
+                  <History size={16} className="text-relic" />
+                  История объявлений
+                </p>
+                <span className="rounded-full border border-relic/20 px-2 py-0.5 text-xs font-bold text-relic">
+                  {announcementHistory.length}
+                </span>
+              </div>
+
+              <div className="mt-3 max-h-[300px] space-y-2 overflow-y-auto pr-1">
+                {announcementHistory.map((item) => (
+                  <article key={item.id} className="rounded-[14px] border border-white/10 bg-black/30 p-3">
+                    <p className="break-words text-sm font-bold text-white">{item.title}</p>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      {announcementHistoryLabel(item, announcementClock)} · {formatDate(item)}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {item.status !== "moderated" ? (
+                        <button
+                          type="button"
+                          onClick={() => void republishAnnouncement(item)}
+                          className="inline-flex items-center gap-2 rounded-md border border-relic/30 bg-relic/10 px-3 py-2 text-xs font-bold text-relic transition hover:bg-relic hover:text-black"
+                        >
+                          <RotateCcw size={14} />
+                          Опубликовать снова
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => void deleteAnnouncementPermanently(item)}
+                        className="inline-flex items-center gap-2 rounded-md border border-blood/30 px-3 py-2 text-xs font-bold text-ember transition hover:bg-blood/15"
+                      >
+                        <Trash2 size={14} />
+                        Удалить навсегда
+                      </button>
+                    </div>
+                  </article>
+                ))}
+
+                {announcementHistory.length === 0 ? (
+                  <p className="rounded-[14px] border border-dashed border-white/10 px-3 py-4 text-center text-xs text-zinc-500">
+                    Здесь появятся снятые и просроченные объявления.
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
         </GlassPanel>
 
         <GlassPanel className="p-5 sm:p-6">
@@ -854,7 +995,7 @@ export function ClanBoard() {
           </div>
 
           <div className="max-h-[680px] space-y-3 overflow-y-auto pr-1">
-            {announcements.map((item) => (
+            {visibleAnnouncements.map((item) => (
               <article key={item.id} className="rounded-[18px] border border-relic/18 bg-black/28 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -862,7 +1003,7 @@ export function ClanBoard() {
                     <h3 className="mt-2 break-words text-xl font-black text-white">{item.title}</h3>
                   </div>
                   {user && (item.uid === user.uid || canModerate) ? (
-                    <button type="button" onClick={() => void removeAnnouncement(item)} className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-blood/30 text-ember hover:bg-blood/15" aria-label="Удалить объявление">
+                    <button type="button" onClick={() => void archiveAnnouncement(item)} className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-blood/30 text-ember hover:bg-blood/15" aria-label="Снять объявление с доски">
                       <Trash2 size={16} />
                     </button>
                   ) : null}
@@ -880,7 +1021,7 @@ export function ClanBoard() {
               </article>
             ))}
 
-            {announcements.length === 0 ? (
+            {visibleAnnouncements.length === 0 ? (
               <div className="rounded-[18px] border border-white/10 bg-black/24 p-5 text-sm text-zinc-500">
                 Объявлений пока нет. Первое объявление появится здесь сразу после публикации.
               </div>

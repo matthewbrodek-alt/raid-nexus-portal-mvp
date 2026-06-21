@@ -489,7 +489,11 @@ export function ChatWindow() {
       return;
     }
 
-    const groupsQuery = query(collection(db, collections.userGroups), limit(80));
+    const groupsQuery = query(
+      collection(db, collections.userGroups),
+      where("memberUids", "array-contains", user.uid),
+      limit(80)
+    );
 
     return onSnapshot(
       groupsQuery,
