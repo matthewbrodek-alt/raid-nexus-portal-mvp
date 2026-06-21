@@ -2,20 +2,28 @@ import type { ChampionMultiplierEntry } from "@/lib/data/champion-multipliers";
 import { raidLegendsRussianNames } from "@/lib/data/raid-legends-russian-names";
 
 const manualRussianNameOverrides: Record<string, string> = {
-  "Tekteon Fissureflesh": "Тектеон Фиссурфлеш"
+  "Folan Silverhart": "Фолан",
+  "Rhaia The Mourned": "Райя",
+  "Talenna Soulseer": "Таленна",
+  "Tekteon Fissureflesh": "Тектеон Фиссурфлеш",
+  "Varkos Headsplitter": "Варкос"
 };
 
 const russianAliases: Record<string, string[]> = {
   Arbiter: ["арба", "арбитр"],
   "Duchess Lilitu": ["герцогиня", "лилиту", "дюшес"],
+  "Folan Silverhart": ["фолан"],
   Harima: ["харима"],
   "Joan the Luminant": ["джоан", "джоан озаренная"],
   "Lady Mikage": ["микаге", "леди микаге"],
   "Marichka the Unbreakable": ["маричка"],
+  "Rhaia The Mourned": ["райя", "раия", "рхайя"],
   "Siphi the Lost Bride": ["сифи"],
+  "Talenna Soulseer": ["таленна"],
   "Taras the Fierce": ["тарас"],
   "Tekteon Fissureflesh": ["тектеон", "тектеон фиссурфлеш"],
   "Trunda Giltmallet": ["трунда"],
+  "Varkos Headsplitter": ["варкос"],
   Warlord: ["варлорд", "военачальник"],
   Yumeko: ["юмеко"]
 };

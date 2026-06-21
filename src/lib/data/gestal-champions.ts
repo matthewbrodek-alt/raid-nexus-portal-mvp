@@ -14,6 +14,66 @@
 
 export const gestalChampions: GestalChampion[] = [
     {
+        "id":  1020,
+        "name":  "Talenna Soulseer",
+        "shortName":  "Talenna",
+        "slug":  "talenna-soulseer",
+        "affinity":  "Spirit",
+        "rarity":  "Legendary",
+        "rarityColor":  "#F38626",
+        "faction":  "High Elves",
+        "roles":  [
+                      "Support"
+                  ],
+        "aura":  "SPD",
+        "isUnity":  false
+    },
+    {
+        "id":  1021,
+        "name":  "Varkos Headsplitter",
+        "shortName":  "Varkos",
+        "slug":  "varkos-headsplitter",
+        "affinity":  "Force",
+        "rarity":  "Legendary",
+        "rarityColor":  "#F38626",
+        "faction":  "Dark Elves",
+        "roles":  [
+                      "Defense"
+                  ],
+        "aura":  "",
+        "isUnity":  false
+    },
+    {
+        "id":  1017,
+        "name":  "Rhaia The Mourned",
+        "shortName":  "Rhaia",
+        "slug":  "rhaia-the-mourned",
+        "affinity":  "Void",
+        "rarity":  "Legendary",
+        "rarityColor":  "#F38626",
+        "faction":  "Sylvan Watchers",
+        "roles":  [
+                      "Attack"
+                  ],
+        "aura":  "ATK",
+        "isUnity":  false
+    },
+    {
+        "id":  1016,
+        "name":  "Folan Silverhart",
+        "shortName":  "Folan",
+        "slug":  "folan-silverhart",
+        "affinity":  "Spirit",
+        "rarity":  "Legendary",
+        "rarityColor":  "#F38626",
+        "faction":  "Sylvan Watchers",
+        "roles":  [
+                      "Attack"
+                  ],
+        "aura":  "ATK",
+        "isUnity":  false
+    },
+    {
         "id":  631,
         "name":  "Aphidus the Hivelord",
         "shortName":  "Aphidus",

@@ -433,21 +433,21 @@ export function MarketplaceBoard() {
                     </div>
 
                     <div className="p-5">
-                      <div className="grid grid-cols-4 gap-2 text-sm">
-                        <div className="rounded-xl border border-white/10 bg-black/25 p-2.5">
-                          <p className="text-[11px] text-zinc-500">{t.level}</p>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="min-w-0 rounded-xl border border-white/10 bg-black/25 p-2.5">
+                          <p className="whitespace-normal text-[11px] leading-4 text-zinc-500">{t.level}</p>
                           <p className="font-bold text-white">{account.level}</p>
                         </div>
-                        <div className="rounded-xl border border-white/10 bg-black/25 p-2.5">
-                          <p className="text-[11px] text-zinc-500">{t.mythical}</p>
+                        <div className="min-w-0 rounded-xl border border-white/10 bg-black/25 p-2.5">
+                          <p className="whitespace-normal text-[11px] leading-4 text-zinc-500">{t.mythical}</p>
                           <p className="font-bold text-white">{account.mythicCount ?? 0}</p>
                         </div>
-                        <div className="rounded-xl border border-white/10 bg-black/25 p-2.5">
-                          <p className="text-[11px] text-zinc-500">{t.legendary}</p>
+                        <div className="min-w-0 rounded-xl border border-white/10 bg-black/25 p-2.5">
+                          <p className="whitespace-normal text-[11px] leading-4 text-zinc-500">{t.legendary}</p>
                           <p className="font-bold text-white">{account.legendaryCount}</p>
                         </div>
-                        <div className="rounded-xl border border-white/10 bg-black/25 p-2.5">
-                          <p className="text-[11px] text-zinc-500">{t.void}</p>
+                        <div className="min-w-0 rounded-xl border border-white/10 bg-black/25 p-2.5">
+                          <p className="whitespace-normal text-[11px] leading-4 text-zinc-500">{t.void}</p>
                           <p className="font-bold text-white">{account.voidCount}</p>
                         </div>
                       </div>
