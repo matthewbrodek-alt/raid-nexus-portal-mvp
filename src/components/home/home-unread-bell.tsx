@@ -69,12 +69,22 @@ function isProfitableOffer(offer: HotOffer) {
 export function HomeUnreadBell({ label }: { label: string }) {
   const { user } = useAuth();
   const donationOffers = useDonationOffers();
+  const [mounted, setMounted] = useState(false);
   const [threads, setThreads] = useState<DirectThread[]>([]);
   const [topupLeads, setTopupLeads] = useState<TopupLead[]>([]);
   const [seenState, setSeenState] = useState<NotificationSeenState>({});
-  const seenUid = user?.uid ?? "guest";
+  const seenUid = user?.uid ?? "";
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || !seenUid) {
+      setSeenState({});
+      return;
+    }
+
     setSeenState(readNotificationSeenState(seenUid));
     void hydrateNotificationSeenState(seenUid).then(setSeenState);
 
@@ -95,13 +105,12 @@ export function HomeUnreadBell({ label }: { label: string }) {
       window.removeEventListener("storage", syncSeenState);
       window.removeEventListener("focus", syncSeenState);
     };
-  }, [seenUid]);
+  }, [mounted, seenUid]);
 
   useEffect(() => {
-    if (!user?.uid) {
+    if (!mounted || !user?.uid) {
       setThreads([]);
       setTopupLeads([]);
-      setSeenState(readNotificationSeenState(seenUid));
       return;
     }
 
@@ -117,10 +126,10 @@ export function HomeUnreadBell({ label }: { label: string }) {
       },
       () => setThreads([])
     );
-  }, [seenUid, user?.uid]);
+  }, [mounted, seenUid, user?.uid]);
 
   useEffect(() => {
-    if (!user?.uid) {
+    if (!mounted || !user?.uid) {
       return;
     }
 
@@ -134,7 +143,7 @@ export function HomeUnreadBell({ label }: { label: string }) {
       },
       () => setTopupLeads([])
     );
-  }, [user?.uid]);
+  }, [mounted, user?.uid]);
 
   const hotOffers = useMemo<HotOffer[]>(() => {
     if (!user?.uid) {
@@ -180,7 +189,7 @@ export function HomeUnreadBell({ label }: { label: string }) {
     );
   }, [hotOffers, seenState, user?.uid]);
 
-  const notificationCount = unreadCount + topupNotificationCount + hotOfferCount;
+  const notificationCount = mounted ? unreadCount + topupNotificationCount + hotOfferCount : 0;
   const hasActiveSignal = notificationCount > 0;
 
   return (
@@ -191,10 +200,10 @@ export function HomeUnreadBell({ label }: { label: string }) {
     >
       <span className="pointer-events-none absolute inset-[3px] rounded-[14px] border border-white/[0.04]" />
       <Bell size={21} className="relative z-10 drop-shadow-[0_0_8px_rgba(99,166,255,0.35)] transition group-hover:scale-105" />
-      {hotOfferCount > 0 ? (
+      {mounted && hotOfferCount > 0 ? (
         <span className="absolute right-2 top-2 z-20 h-2.5 w-2.5 rounded-full border border-black bg-blood shadow-[0_0_14px_rgba(216,75,53,0.9)]" />
       ) : null}
-      {hasActiveSignal ? (
+      {mounted && hasActiveSignal ? (
         <span className="absolute -right-2 -top-2 z-30 grid min-h-6 min-w-6 place-items-center rounded-full border border-[#f7d98a] bg-[linear-gradient(180deg,#b8d7ff,#c89a3d)] px-1.5 text-[10px] font-black leading-none text-black shadow-[0_0_18px_rgba(99,166,255,0.62)]">
           {formatNotificationCount(notificationCount)}
         </span>

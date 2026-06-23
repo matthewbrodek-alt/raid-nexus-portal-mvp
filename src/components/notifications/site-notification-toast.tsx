@@ -83,6 +83,7 @@ function getMessageHref(thread: DirectThread, currentUid: string) {
 export function SiteNotificationToast() {
   const { profile, user } = useAuth();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [threads, setThreads] = useState<DirectThread[]>([]);
   const [topupLeads, setTopupLeads] = useState<TopupLead[]>([]);
   const [seenState, setSeenState] = useState<NotificationSeenState>({});
@@ -91,7 +92,11 @@ export function SiteNotificationToast() {
   const userUid = user?.uid;
 
   useEffect(() => {
-    if (!userUid) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || !userUid) {
       setThreads([]);
       setTopupLeads([]);
       setSeenState({});
@@ -102,10 +107,10 @@ export function SiteNotificationToast() {
     setSeenState(readNotificationSeenState(uid));
     setDismissedIds([]);
     void hydrateNotificationSeenState(uid).then(setSeenState);
-  }, [userUid]);
+  }, [mounted, userUid]);
 
   useEffect(() => {
-    if (!userUid) {
+    if (!mounted || !userUid) {
       return;
     }
 
@@ -128,10 +133,10 @@ export function SiteNotificationToast() {
       window.removeEventListener("storage", syncSeenState);
       window.removeEventListener("focus", syncSeenState);
     };
-  }, [userUid]);
+  }, [mounted, userUid]);
 
   useEffect(() => {
-    if (!userUid) {
+    if (!mounted || !userUid) {
       return;
     }
 
@@ -144,10 +149,10 @@ export function SiteNotificationToast() {
       },
       () => setThreads([])
     );
-  }, [userUid]);
+  }, [mounted, userUid]);
 
   useEffect(() => {
-    if (!userUid) {
+    if (!mounted || !userUid) {
       return;
     }
 
@@ -163,10 +168,10 @@ export function SiteNotificationToast() {
       },
       () => setTopupLeads([])
     );
-  }, [isAdmin, userUid]);
+  }, [isAdmin, mounted, userUid]);
 
   const toast = useMemo<Toast | null>(() => {
-    if (!userUid) {
+    if (!mounted || !userUid) {
       return null;
     }
 
@@ -237,9 +242,9 @@ export function SiteNotificationToast() {
     }
 
     return null;
-  }, [dismissedIds, isAdmin, seenState, threads, topupLeads, userUid]);
+  }, [dismissedIds, isAdmin, mounted, seenState, threads, topupLeads, userUid]);
 
-  if (!toast || !userUid) {
+  if (!mounted || !toast || !userUid) {
     return null;
   }
 

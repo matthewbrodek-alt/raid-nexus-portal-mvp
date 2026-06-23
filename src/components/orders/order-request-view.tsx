@@ -390,7 +390,13 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
       return;
     }
 
-    markNotificationSeen(user.uid, "topupById", lead.id, getSeconds(lead.updatedAt) || getSeconds(lead.createdAt));
+    const orderSeconds = getSeconds(lead.updatedAt) || getSeconds(lead.createdAt);
+
+    if (orderSeconds <= 0) {
+      return;
+    }
+
+    markNotificationSeen(user.uid, "topupById", lead.id, orderSeconds);
   }, [lead?.createdAt, lead?.id, lead?.updatedAt, user?.uid]);
 
   useEffect(() => {
@@ -399,6 +405,11 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
     }
 
     const lastMessageSeconds = Math.max(...messages.map((item) => getSeconds(item.createdAt)));
+
+    if (lastMessageSeconds <= 0) {
+      return;
+    }
+
     markNotificationSeen(user.uid, "threadById", lead.threadId, lastMessageSeconds);
   }, [lead?.threadId, messages, user?.uid]);
 

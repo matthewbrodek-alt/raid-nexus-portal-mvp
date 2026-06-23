@@ -130,13 +130,23 @@ export function NotificationCenter() {
   const { isRu } = useLanguage();
   const { user } = useAuth();
   const offers = useDonationOffers();
+  const [mounted, setMounted] = useState(false);
   const [threads, setThreads] = useState<DirectThread[]>([]);
   const [topupLeads, setTopupLeads] = useState<TopupLead[]>([]);
   const [seenState, setSeenState] = useState<NotificationSeenState>({});
   const [activeView, setActiveView] = useState<NotificationView>("new");
-  const seenUid = user?.uid ?? "guest";
+  const seenUid = user?.uid ?? "";
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || !seenUid) {
+      setSeenState({});
+      return;
+    }
+
     setSeenState(readNotificationSeenState(seenUid));
     void hydrateNotificationSeenState(seenUid).then(setSeenState);
 
@@ -157,10 +167,10 @@ export function NotificationCenter() {
       window.removeEventListener("storage", syncSeenState);
       window.removeEventListener("focus", syncSeenState);
     };
-  }, [seenUid]);
+  }, [mounted, seenUid]);
 
   useEffect(() => {
-    if (!user?.uid) {
+    if (!mounted || !user?.uid || !seenUid) {
       setThreads([]);
       setTopupLeads([]);
       setSeenState({});
@@ -194,10 +204,10 @@ export function NotificationCenter() {
       unsubscribeThreads();
       unsubscribeTopup();
     };
-  }, [seenUid, user?.uid]);
+  }, [mounted, seenUid, user?.uid]);
 
   const notifications = useMemo<NotificationItem[]>(() => {
-    if (!user?.uid) {
+    if (!mounted || !user?.uid) {
       return [];
     }
 
@@ -271,7 +281,7 @@ export function NotificationCenter() {
       });
 
     return [...messageItems, ...orderItems, ...offerItems].sort((a, b) => b.value - a.value);
-  }, [isRu, offers, seenState, threads, topupLeads, user?.uid]);
+  }, [isRu, mounted, offers, seenState, threads, topupLeads, user?.uid]);
 
   const unreadNotifications = useMemo(() => notifications.filter((item) => !item.read), [notifications]);
   const visibleNotifications = activeView === "new" ? unreadNotifications : notifications;
@@ -279,6 +289,10 @@ export function NotificationCenter() {
   const unreadHotOfferCount = notifications.filter((item) => item.kind === "offer" && !item.read).length;
 
   function markAllSeen() {
+    if (!seenUid) {
+      return;
+    }
+
     const next = markManyNotificationsSeen(
       seenUid,
       notifications.map((item) => ({ bucket: item.bucket, id: item.id, value: item.value }))
@@ -287,6 +301,10 @@ export function NotificationCenter() {
   }
 
   function markSeen(item: NotificationItem) {
+    if (!seenUid) {
+      return;
+    }
+
     setSeenState(markNotificationSeen(seenUid, item.bucket, item.id, item.value));
   }
 
@@ -409,7 +427,11 @@ export function NotificationCenter() {
               <Link
                 key={offer.id}
                 href={`/donate?package=${offer.id}`}
-                onClick={() => setSeenState(markNotificationSeen(seenUid, "offerById", offer.id, seconds))}
+                onClick={() => {
+                  if (seenUid) {
+                    setSeenState(markNotificationSeen(seenUid, "offerById", offer.id, seconds));
+                  }
+                }}
                 className="group relative min-h-[132px] overflow-hidden rounded-2xl border border-relic/20 bg-[#07111d] p-4 transition hover:-translate-y-0.5 hover:border-relic/55"
               >
                 {imageUrl ? (
