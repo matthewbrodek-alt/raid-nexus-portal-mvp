@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, CornerDownRight, ImagePlus, Menu, MessageSquare, Pencil, Search, Send, Smile, Trash2, Users, X } from "lucide-react";
+import { ChevronDown, CornerDownRight, ImagePlus, Info, Menu, MessageSquare, Pencil, Search, Send, Smile, Trash2, Users, X } from "lucide-react";
 import {
   addDoc,
   collection,
@@ -87,6 +87,11 @@ type UserGroup = {
   ownerBpStatus?: string;
   title?: string;
   description?: string;
+  requirements?: string;
+  activity?: string;
+  pinnedMessage?: string;
+  contact?: string;
+  tags?: string[];
   members?: GroupMember[];
   memberUids?: string[];
   excludedUids?: string[];
@@ -226,6 +231,14 @@ function uniqueGroupMembers(members: GroupMember[]) {
   });
 }
 
+function normalizeBpStatus(value?: string): NonNullable<MemberMenu["bpStatus"]> {
+  if (value === "silver" || value === "gold" || value === "platinum") {
+    return value;
+  }
+
+  return "bronze";
+}
+
 function getGroupMembers(group: UserGroup) {
   const ownerMember = group.ownerUid
     ? [
@@ -250,6 +263,7 @@ export function ChatWindow() {
   const [selectedDirectThreadId, setSelectedDirectThreadId] = useState("");
   const [groups, setGroups] = useState<UserGroup[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<UserGroup | null>(null);
+  const [groupInfoOpen, setGroupInfoOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [message, setMessage] = useState("");
   const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null);
@@ -276,6 +290,11 @@ export function ChatWindow() {
 
   const activeDirectThreadId = selectedUser && user ? selectedDirectThreadId || directThreadId(user.uid, selectedUser.uid) : "";
   const activeThread = selectedGroup ? `group:${selectedGroup.id}` : activeDirectThreadId || "global";
+  const selectedGroupMembers = useMemo(() => (selectedGroup ? getGroupMembers(selectedGroup) : []), [selectedGroup]);
+  const selectedGroupOwner = useMemo(
+    () => selectedGroupMembers.find((member) => member.uid === selectedGroup?.ownerUid) ?? selectedGroupMembers.find((member) => member.role === "owner") ?? null,
+    [selectedGroup?.ownerUid, selectedGroupMembers]
+  );
   const directContactIdSet = useMemo(() => new Set(directContactIds), [directContactIds]);
   const searchTerm = search.trim().toLowerCase();
   const visibleGroups = useMemo(
@@ -1173,10 +1192,20 @@ export function ChatWindow() {
             <span className="hidden h-11 w-11 shrink-0 place-items-center rounded-lg border border-white/10 bg-white/[0.04] text-relic lg:grid">
               <MessageSquare size={20} />
             </span>
-            <div className="hidden min-w-0 lg:block">
-              <h2 className="truncate text-lg font-bold text-white">{selectedGroup ? selectedGroup.title || "Группа" : selectedUser ? getUserLabel(selectedUser) : "Общий чат"}</h2>
-              <p className="truncate text-sm text-zinc-500">{selectedGroup ? "Групповая комната" : selectedUser ? "Личный диалог" : "Открытая комната портала"}</p>
+            <div className="min-w-0 flex-1">
+              <h2 className="truncate text-base font-bold text-white sm:text-lg">{selectedGroup ? selectedGroup.title || "Группа" : selectedUser ? getUserLabel(selectedUser) : "Общий чат"}</h2>
+              <p className="truncate text-xs text-zinc-500 sm:text-sm">{selectedGroup ? "Групповая комната" : selectedUser ? "Личный диалог" : "Открытая комната портала"}</p>
             </div>
+            {selectedGroup ? (
+              <button
+                type="button"
+                onClick={() => setGroupInfoOpen(true)}
+                className="inline-flex h-10 shrink-0 items-center gap-2 rounded-md border border-relic/25 bg-relic/10 px-3 text-sm font-bold text-relic transition hover:border-relic/50 hover:bg-relic/15"
+              >
+                <Info size={16} />
+                <span className="hidden sm:inline">Инфо</span>
+              </button>
+            ) : null}
           </header>
 
           <div
@@ -1567,6 +1596,124 @@ export function ChatWindow() {
         </div>
       ) : null}
 
+
+      {groupInfoOpen && selectedGroup ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" onClick={() => setGroupInfoOpen(false)}>
+          <div className="raid-ornate-panel w-full max-w-2xl overflow-hidden rounded-[22px] border border-relic/25 bg-[#08111f]/96 p-0 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-start justify-between gap-4 border-b border-white/10 p-5">
+              <div className="min-w-0">
+                <p className="text-xs font-bold tracking-[0.18em] text-relic">Информация о группе</p>
+                <h2 className="mt-1 truncate text-2xl font-black text-white">{selectedGroup.title || "Группа"}</h2>
+                <p className="mt-1 text-sm text-zinc-500">{selectedGroupMembers.length} участн. {selectedGroupOwner ? `· владелец ${selectedGroupOwner.displayName}` : ""}</p>
+              </div>
+              <button type="button" onClick={() => setGroupInfoOpen(false)} className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-white/10 text-zinc-400 transition hover:bg-white/10 hover:text-white" aria-label="Закрыть информацию о группе">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="grid max-h-[72vh] gap-4 overflow-y-auto p-5 lg:grid-cols-[1fr_280px]">
+              <div className="space-y-3">
+                {selectedGroup.description ? (
+                  <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-relic">Описание</p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-zinc-200">{selectedGroup.description}</p>
+                  </div>
+                ) : null}
+
+                {selectedGroup.requirements ? (
+                  <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-relic">Требования</p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-zinc-200">{selectedGroup.requirements}</p>
+                  </div>
+                ) : null}
+
+                {selectedGroup.activity ? (
+                  <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-relic">Активность</p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-zinc-200">{selectedGroup.activity}</p>
+                  </div>
+                ) : null}
+
+                {selectedGroup.pinnedMessage ? (
+                  <div className="rounded-xl border border-blue-400/25 bg-blue-500/10 p-4">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-relic">Закрепленное сообщение</p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-zinc-200">{selectedGroup.pinnedMessage}</p>
+                  </div>
+                ) : null}
+
+                {selectedGroup.contact ? (
+                  <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-relic">Контакт</p>
+                    <p className="mt-2 break-words text-sm leading-6 text-zinc-200">{selectedGroup.contact}</p>
+                  </div>
+                ) : null}
+
+                {selectedGroup.tags && selectedGroup.tags.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedGroup.tags.map((tag) => (
+                      <span key={tag} className="rounded-full border border-relic/25 bg-relic/10 px-3 py-1 text-xs font-bold text-relic">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+
+                {!selectedGroup.description && !selectedGroup.requirements && !selectedGroup.activity && !selectedGroup.pinnedMessage && !selectedGroup.contact ? (
+                  <div className="rounded-xl border border-white/10 bg-black/20 p-4 text-sm leading-6 text-zinc-400">
+                    Общая информация пока не заполнена владельцем группы.
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-relic">Состав группы</p>
+                  <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-xs font-bold text-zinc-400">{selectedGroupMembers.length}</span>
+                </div>
+                <div className="grid gap-2">
+                  {selectedGroupMembers.map((member) => {
+                    const profileMatch = users.find((item) => item.uid === member.uid);
+                    const displayName = profileMatch ? getUserLabel(profileMatch) : member.displayName || "User";
+                    const bpStatus = normalizeBpStatus(profileMatch?.bpStatus ?? member.bpStatus);
+                    const avatarUrl = shouldShowAvatar(member.uid, user?.uid, profileMatch?.avatarHiddenByAdmin) ? profileMatch?.avatarUrl || member.avatarUrl || "" : "";
+                    const isOwner = member.uid === selectedGroup.ownerUid || member.role === "owner";
+
+                    return (
+                      <button
+                        key={member.uid}
+                        type="button"
+                        onClick={() => {
+                          setGroupInfoOpen(false);
+                          setMemberMenu({
+                            uid: member.uid,
+                            displayName,
+                            avatarUrl,
+                            avatarFrame: profileMatch?.avatarFrame,
+                            nicknameStyle: profileMatch?.nicknameStyle,
+                            bpStatus,
+                            avatarHiddenByAdmin: profileMatch?.avatarHiddenByAdmin
+                          });
+                        }}
+                        className="flex w-full items-center gap-3 rounded-lg border border-white/10 bg-white/[0.03] p-3 text-left transition hover:border-relic/35 hover:bg-relic/10"
+                      >
+                        <span className={`bp-avatar-safe grid h-10 w-10 shrink-0 place-items-center rounded-lg border bg-gradient-to-br from-violet-500 to-cyan-600 p-[2px] text-xs font-black text-white ${getAvatarFrameClass(profileMatch?.avatarFrame, bpStatus)}`}>
+                          <span className="bp-avatar-crop rounded-md">
+                            {avatarUrl ? <img src={avatarUrl} alt={displayName} loading="lazy" decoding="async" className="h-full w-full object-cover" /> : displayName.slice(0, 2).toUpperCase()}
+                          </span>
+                        </span>
+                        <span className="min-w-0">
+                          <span className={`block truncate text-sm font-bold ${getNicknameClass(profileMatch?.nicknameStyle, bpStatus)}`}>{displayName}</span>
+                          <span className="block truncate text-xs text-zinc-500">{isOwner ? "Владелец" : `${bpStatus} BP`}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {memberMenu ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
           <div className="w-full max-w-sm rounded-lg border border-relic/25 bg-[#0b101b] p-4 shadow-2xl">
@@ -1670,3 +1817,4 @@ export function ChatWindow() {
     </>
   );
 }
+
