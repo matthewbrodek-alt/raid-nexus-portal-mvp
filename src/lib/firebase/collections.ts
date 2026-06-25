@@ -24,5 +24,7 @@ export const collections = {
   moderationQueue: "moderationQueue",
   siteSettings: "siteSettings",
   streamChats: "streamChats",
+  streamChatMutes: "streamChatMutes",
+  streamChatModerationLogs: "streamChatModerationLogs",
   globalUserBlocks: "globalUserBlocks"
 } as const;
