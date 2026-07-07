@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   CreditCard,
+  Film,
   ImagePlus,
   MessageCircle,
+  Play,
   Save,
   Send,
   ShieldCheck,
@@ -32,10 +34,11 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { normalizeOrderStage, type OrderStageId } from "@/lib/bp-status";
 import { getClipboardImageFile } from "@/lib/browser/clipboard-image";
-import type { CloudinaryAsset } from "@/lib/cloudinary/types";
+import { uploadCloudinaryMediaFromClient } from "@/lib/cloudinary/client-upload";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import { useLanguage } from "@/lib/i18n/use-language";
+import { CHAT_ATTACHMENT_ACCEPT, formatUploadSize, getUploadMaxBytes, getUploadResourceType, type UploadResourceType } from "@/lib/media/upload-limits";
 import { markNotificationSeen } from "@/lib/notifications/seen-state";
 
 type FirestoreTime = {
@@ -73,16 +76,24 @@ type OrderMessage = {
   displayName?: string;
   text?: string;
   attachment?: {
+    publicId?: string;
     secureUrl?: string;
     url?: string;
+    optimizedUrl?: string;
+    posterUrl?: string;
+    resourceType?: UploadResourceType;
+    bytes?: number;
+    duration?: number;
     alt?: string;
   } | null;
   createdAt?: FirestoreTime;
 };
 
-type ImagePreview = {
+type MediaPreview = {
   url: string;
   alt: string;
+  type: UploadResourceType;
+  posterUrl?: string;
 };
 
 type ManagerDraft = {
@@ -179,22 +190,24 @@ function formatCoins(value?: number) {
   return `${Math.max(0, Math.floor(value ?? 0)).toLocaleString("ru-RU")} BC`;
 }
 
-async function uploadOrderImage(file: File) {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("folder", "chat");
-  formData.append("publicId", `order-screenshots/${Date.now()}-${file.name.replace(/[^a-z0-9.]+/gi, "-")}`);
+async function uploadOrderAttachment(file: File) {
+  const resourceType = getUploadResourceType(file.type) ?? "image";
 
-  const response = await fetch("/api/cloudinary/upload", {
-    method: "POST",
-    body: formData
+  return uploadCloudinaryMediaFromClient({
+    file,
+    folder: "chat",
+    publicId: `order-${resourceType === "video" ? "videos" : "screenshots"}/${Date.now()}-${file.name.replace(/[^a-z0-9.]+/gi, "-")}`,
+    resourceType
   });
+}
 
-  if (!response.ok) {
-    throw new Error("Не удалось загрузить изображение.");
+function getAttachmentKind(attachment?: OrderMessage["attachment"]): UploadResourceType {
+  if (attachment?.resourceType === "video" || attachment?.resourceType === "image") {
+    return attachment.resourceType;
   }
 
-  return (await response.json()) as CloudinaryAsset;
+  const url = attachment?.secureUrl ?? attachment?.url ?? "";
+  return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url) ? "video" : "image";
 }
 
 async function writeOffBumpyCoinsForLead(lead: TopupLead, amountCoins: number, managerUid: string) {
@@ -292,7 +305,7 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
   const [sending, setSending] = useState(false);
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [attachmentPreviewUrl, setAttachmentPreviewUrl] = useState("");
-  const [imagePreview, setImagePreview] = useState<ImagePreview | null>(null);
+  const [mediaPreview, setMediaPreview] = useState<MediaPreview | null>(null);
   const [managerDraft, setManagerDraft] = useState<ManagerDraft>(() => draftFromLead(null));
   const [managerStatus, setManagerStatus] = useState("");
   const [clientWallet, setClientWallet] = useState<ClientWallet | null>(null);
@@ -460,16 +473,25 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
       return;
     }
 
-    if (!file.type.startsWith("image/")) {
-      setManagerStatus(isRu ? "Можно прикреплять только изображения." : "Only images can be attached.");
+    const resourceType = getUploadResourceType(file.type);
+
+    if (!resourceType) {
+      setManagerStatus(isRu ? "Можно прикрепить только изображение или короткое видео." : "Only images or short videos can be attached.");
       return;
     }
 
-    if (file.size > 6 * 1024 * 1024) {
-      setManagerStatus(isRu ? "Изображение должно быть до 6 МБ." : "Image must be 6 MB or smaller.");
+    const maxBytes = getUploadMaxBytes(resourceType);
+
+    if (file.size > maxBytes) {
+      setManagerStatus(
+        isRu
+          ? `${resourceType === "video" ? "Видео" : "Изображение"} должно быть не больше ${formatUploadSize(maxBytes)}.`
+          : `${resourceType === "video" ? "Video" : "Image"} must be ${formatUploadSize(maxBytes)} or smaller.`
+      );
       return;
     }
 
+    setManagerStatus("");
     setAttachmentFile(file);
   }
 
@@ -585,8 +607,8 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
         return;
       }
 
-      const uploadedAttachment = attachmentFile ? await uploadOrderImage(attachmentFile) : null;
-      const lastMessageText = text || (isRu ? "Скриншот" : "Screenshot");
+      const uploadedAttachment = attachmentFile ? await uploadOrderAttachment(attachmentFile) : null;
+      const lastMessageText = text || (uploadedAttachment?.resourceType === "video" ? (isRu ? "Видео" : "Video") : isRu ? "Скриншот" : "Screenshot");
 
       await setDoc(
         doc(db, "directThreads", threadId),
@@ -611,6 +633,11 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
               publicId: uploadedAttachment.publicId,
               secureUrl: uploadedAttachment.secureUrl,
               url: uploadedAttachment.url ?? uploadedAttachment.secureUrl,
+              optimizedUrl: uploadedAttachment.optimizedUrl,
+              posterUrl: uploadedAttachment.posterUrl,
+              resourceType: uploadedAttachment.resourceType,
+              bytes: uploadedAttachment.bytes,
+              duration: uploadedAttachment.duration,
               alt: attachmentFile?.name ?? "Order screenshot"
             }
           : null,
@@ -716,7 +743,7 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
             {lead.screenshotUrl ? (
               <button
                 type="button"
-                onClick={() => setImagePreview({ url: lead.screenshotUrl || "", alt: isRu ? "Скриншот заявки" : "Request screenshot" })}
+                onClick={() => setMediaPreview({ url: lead.screenshotUrl || "", alt: isRu ? "Скриншот заявки" : "Request screenshot", type: "image" })}
                 className="w-full rounded-2xl border border-relic/20 bg-relic/10 p-4 text-left text-sm font-bold text-relic transition hover:border-relic/45 hover:bg-relic/15"
               >
                 {isRu ? "Открыть прикрепленный скриншот клиента" : "Open client screenshot"}
@@ -872,7 +899,9 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
               <div ref={messagesRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-black/25 p-4">
                 {messages.map((item) => {
                   const own = item.uid === user?.uid;
-                  const attachmentUrl = item.attachment?.secureUrl ?? item.attachment?.url;
+                  const attachmentKind = getAttachmentKind(item.attachment);
+                  const attachmentUrl = item.attachment?.optimizedUrl ?? item.attachment?.secureUrl ?? item.attachment?.url;
+                  const attachmentPosterUrl = item.attachment?.posterUrl;
                   const attachmentAlt = item.attachment?.alt ?? "Order screenshot";
 
                   return (
@@ -882,10 +911,27 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
                         {attachmentUrl ? (
                           <button
                             type="button"
-                            onClick={() => setImagePreview({ url: attachmentUrl, alt: attachmentAlt })}
-                            className="mt-2 block overflow-hidden rounded-xl border border-white/10"
+                            onClick={() => setMediaPreview({ url: attachmentUrl, alt: attachmentAlt, type: attachmentKind, posterUrl: attachmentPosterUrl })}
+                            className="relative mt-2 block overflow-hidden rounded-xl border border-white/10"
                           >
-                            <img src={attachmentUrl} alt={attachmentAlt} loading="lazy" decoding="async" className="max-h-52 w-full object-cover" />
+                            {attachmentKind === "video" ? (
+                              <>
+                                {attachmentPosterUrl ? (
+                                  <img src={attachmentPosterUrl} alt={attachmentAlt} loading="lazy" decoding="async" className="max-h-52 min-h-36 w-full object-cover" />
+                                ) : (
+                                  <span className="grid h-40 min-w-56 place-items-center bg-black/45 text-relic">
+                                    <Film size={36} />
+                                  </span>
+                                )}
+                                <span className="absolute inset-0 grid place-items-center bg-black/18">
+                                  <span className="grid h-11 w-11 place-items-center rounded-full border border-white/30 bg-black/58 text-white backdrop-blur-sm">
+                                    <Play size={18} fill="currentColor" />
+                                  </span>
+                                </span>
+                              </>
+                            ) : (
+                              <img src={attachmentUrl} alt={attachmentAlt} loading="lazy" decoding="async" className="max-h-52 w-full object-cover" />
+                            )}
                           </button>
                         ) : null}
                         {item.text ? <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-white">{item.text}</p> : null}
@@ -903,10 +949,24 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
 
               {attachmentFile ? (
                 <div className="mt-3 flex items-center gap-3 rounded-2xl border border-relic/20 bg-black/35 p-3 text-xs text-zinc-300">
-                  {attachmentPreviewUrl ? <img src={attachmentPreviewUrl} alt={attachmentFile.name} loading="lazy" decoding="async" className="h-16 w-16 rounded-xl object-cover" /> : null}
+                  {attachmentPreviewUrl ? (
+                    getUploadResourceType(attachmentFile.type) === "video" ? (
+                      <video src={attachmentPreviewUrl} muted playsInline preload="metadata" className="h-16 w-16 rounded-xl object-cover" />
+                    ) : (
+                      <img src={attachmentPreviewUrl} alt={attachmentFile.name} loading="lazy" decoding="async" className="h-16 w-16 rounded-xl object-cover" />
+                    )
+                  ) : null}
                   <div className="min-w-0 flex-1">
                     <p className="break-words font-semibold text-white">{attachmentFile.name}</p>
-                    <p className="text-zinc-500">{isRu ? "Скриншот будет отправлен вместе с сообщением." : "Screenshot will be sent with the message."}</p>
+                    <p className="text-zinc-500">
+                      {getUploadResourceType(attachmentFile.type) === "video"
+                        ? isRu
+                          ? "Видео будет отправлено в адаптивном сжатом формате."
+                          : "Video will be delivered in an adaptive compressed format."
+                        : isRu
+                          ? "Скриншот будет отправлен вместе с сообщением."
+                          : "Screenshot will be sent with the message."}
+                    </p>
                   </div>
                   <button type="button" onClick={() => setAttachmentFile(null)} className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 text-zinc-400 hover:text-white">
                     <X size={15} />
@@ -917,7 +977,7 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
               <form onSubmit={sendMessage} onPaste={handlePasteImage} className="mt-4 flex items-center gap-2">
                 <label className="grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-xl border border-white/10 bg-black/35 text-relic transition hover:border-relic/35 hover:bg-relic/10">
                   <ImagePlus size={18} />
-                  <input type="file" accept="image/*" className="hidden" onChange={(event) => applySelectedFile(event.target.files?.[0])} />
+                  <input type="file" accept={CHAT_ATTACHMENT_ACCEPT} className="hidden" onChange={(event) => applySelectedFile(event.target.files?.[0])} />
                 </label>
                 <input
                   value={message}
@@ -940,18 +1000,22 @@ export function OrderRequestView({ leadId }: OrderRequestViewProps) {
         </GlassPanel>
       </div>
 
-      {imagePreview ? (
+      {mediaPreview ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/85 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
           <div className="relative max-h-[92vh] max-w-5xl overflow-hidden rounded-2xl border border-white/10 bg-[#0b101b] shadow-2xl">
             <button
               type="button"
-              onClick={() => setImagePreview(null)}
+              onClick={() => setMediaPreview(null)}
               className="absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-xl border border-white/10 bg-black/60 text-zinc-300 transition hover:text-white"
               aria-label={isRu ? "Закрыть изображение" : "Close image"}
             >
               <X size={18} />
             </button>
-            <img src={imagePreview.url} alt={imagePreview.alt} loading="eager" decoding="async" className="max-h-[92vh] w-full object-contain" />
+            {mediaPreview.type === "video" ? (
+              <video src={mediaPreview.url} poster={mediaPreview.posterUrl} controls playsInline preload="metadata" className="max-h-[92vh] w-full bg-black object-contain" />
+            ) : (
+              <img src={mediaPreview.url} alt={mediaPreview.alt} loading="eager" decoding="async" className="max-h-[92vh] w-full object-contain" />
+            )}
           </div>
         </div>
       ) : null}

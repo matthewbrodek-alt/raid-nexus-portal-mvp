@@ -13,7 +13,7 @@ import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import { calculateReferralReward } from "@/lib/referrals";
 
-type ServiceType = "donation" | "account_purchase" | "game_help";
+type ServiceType = "donation" | "account_purchase" | "game_help" | "raffle_reward";
 
 type TopupLead = {
   id: string;
@@ -52,7 +52,8 @@ type Draft = {
 const serviceLabels: Record<ServiceType, string> = {
   donation: "Донат",
   account_purchase: "Покупка аккаунта",
-  game_help: "Помощь по игре"
+  game_help: "Помощь по игре",
+  raffle_reward: "Награда розыгрыша"
 };
 
 function currentMonthValue() {

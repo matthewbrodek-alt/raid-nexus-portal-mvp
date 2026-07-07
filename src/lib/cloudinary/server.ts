@@ -34,36 +34,57 @@ function toAsset(result: {
   width?: number;
   height?: number;
   bytes?: number;
-}): CloudinaryAsset {
+  duration?: number;
+}, resourceType: "image" | "video"): CloudinaryAsset {
+  const optimizedUrl = cloudinary.url(result.public_id, {
+    resource_type: resourceType,
+    secure: true,
+    transformation: resourceType === "video" ? ["f_auto,q_auto:eco,vc_auto,w_1280,c_limit"] : ["f_auto,q_auto,w_1600,c_limit"]
+  });
+  const posterUrl =
+    resourceType === "video"
+      ? cloudinary.url(result.public_id, {
+          resource_type: "video",
+          secure: true,
+          format: "jpg",
+          transformation: ["so_0,w_720,c_limit,q_auto"]
+        })
+      : undefined;
+
   return {
     publicId: result.public_id,
     secureUrl: result.secure_url,
     url: result.url,
+    resourceType,
+    optimizedUrl,
+    posterUrl,
     format: result.format,
     width: result.width,
     height: result.height,
-    bytes: result.bytes
+    bytes: result.bytes,
+    duration: result.duration
   };
 }
 
 export async function uploadCloudinaryAsset(input: CloudinaryUploadInput): Promise<CloudinaryAsset> {
   configureCloudinary();
+  const resourceType = input.resourceType ?? "image";
 
   const result = await cloudinary.uploader.upload(input.file, {
     folder: `raid-nexus/${input.folder}`,
     public_id: input.publicId,
-    resource_type: "image",
+    resource_type: resourceType,
     tags: input.tags,
     overwrite: false
   });
 
-  return toAsset(result);
+  return toAsset(result, resourceType);
 }
 
-export async function deleteCloudinaryAsset(publicId: string) {
+export async function deleteCloudinaryAsset(publicId: string, resourceType: "image" | "video" = "image") {
   configureCloudinary();
 
   return cloudinary.uploader.destroy(publicId, {
-    resource_type: "image"
+    resource_type: resourceType
   });
 }

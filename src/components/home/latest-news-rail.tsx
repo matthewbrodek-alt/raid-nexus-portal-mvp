@@ -132,6 +132,25 @@ export function LatestNewsRail() {
     );
   }, []);
 
+  useEffect(() => {
+    if (news.length === 0 || typeof window === "undefined") {
+      return;
+    }
+
+    const newsId = new URLSearchParams(window.location.search).get("news");
+
+    if (!newsId) {
+      return;
+    }
+
+    const foundNews = news.find((item) => item.id === newsId || `news-${item.id}` === newsId);
+
+    if (foundNews) {
+      setSelectedNews(foundNews);
+      window.history.replaceState(null, "", `${window.location.pathname}${window.location.hash || ""}`);
+    }
+  }, [news]);
+
   function renderNewsList(items: NewsItem[], compact = false, afterSelect?: () => void) {
     return (
       <div className={compact ? "space-y-3" : "raid-stable-news-grid"}>
@@ -255,12 +274,8 @@ export function LatestNewsRail() {
             <div className="raid-ornate-panel mx-auto max-h-[calc(100dvh-40px)] w-full max-w-5xl overflow-y-auto bg-[#071019]">
               <div className="relative bg-black">
                 <img src={getNewsImage(selectedNews)} alt="" loading="eager" decoding="async" className="max-h-[58vh] w-full object-contain" />
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#071019] via-transparent to-black/35" />
-                <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-4 p-4 sm:p-6">
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold uppercase tracking-[0.34em] text-relic">{formatNewsDate(selectedNews, language)}</p>
-                    <h2 className="raid-title-metal mt-2 text-2xl font-black leading-tight sm:text-5xl">{getNewsTitle(selectedNews, language)}</h2>
-                  </div>
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#071019]/45 via-transparent to-black/20" />
+                <div className="absolute inset-x-0 top-0 flex items-start justify-end gap-4 p-4 sm:p-6">
                   <button
                     type="button"
                     onClick={() => setSelectedNews(null)}
@@ -272,8 +287,10 @@ export function LatestNewsRail() {
                 </div>
               </div>
               <div className="p-5 sm:p-8">
+                <p className="text-xs font-bold uppercase tracking-[0.34em] text-relic">{formatNewsDate(selectedNews, language)}</p>
+                <h2 className="raid-title-metal mt-2 max-w-4xl text-2xl font-black leading-tight sm:text-5xl">{getNewsTitle(selectedNews, language)}</h2>
                 {isAdmin ? (
-                  <div className="mb-5 flex flex-wrap gap-2 rounded-[14px] border border-relic/15 bg-black/25 p-2">
+                  <div className="mb-5 mt-5 flex flex-wrap gap-2 rounded-[14px] border border-relic/15 bg-black/25 p-2">
                     <button
                       type="button"
                       onClick={() => router.push("/admin")}

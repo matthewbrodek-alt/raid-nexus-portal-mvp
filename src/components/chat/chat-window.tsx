@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, CornerDownRight, ImagePlus, Info, Menu, MessageSquare, Pencil, Search, Send, Smile, Trash2, Users, X } from "lucide-react";
+import { ChevronDown, CornerDownRight, Film, ImagePlus, Info, Menu, MessageSquare, Pencil, Play, Search, Send, Smile, Trash2, Users, X } from "lucide-react";
 import {
   addDoc,
   collection,
@@ -23,9 +23,10 @@ import { useAuth } from "@/components/auth/auth-provider";
 import type { UserProfile } from "@/lib/auth/types";
 import { getClipboardImageFile } from "@/lib/browser/clipboard-image";
 import { normalizeCustomChatEmojis, splitCustomEmojiText, type CustomChatEmoji } from "@/lib/chat/custom-emojis";
-import type { CloudinaryAsset } from "@/lib/cloudinary/types";
+import { uploadCloudinaryMediaFromClient } from "@/lib/cloudinary/client-upload";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
+import { CHAT_ATTACHMENT_ACCEPT, formatUploadSize, getUploadMaxBytes, getUploadResourceType, type UploadResourceType } from "@/lib/media/upload-limits";
 import { getAvatarFrameClass, getNicknameClass } from "@/lib/profile-cosmetics";
 
 type MentionedUser = {
@@ -42,8 +43,14 @@ type ChatMessage = {
   nicknameStyle?: string;
   text: string;
   attachment?: {
+    publicId?: string;
     secureUrl?: string;
     url?: string;
+    optimizedUrl?: string;
+    posterUrl?: string;
+    resourceType?: UploadResourceType;
+    bytes?: number;
+    duration?: number;
     alt?: string;
   } | null;
   replyTo?: {
@@ -56,9 +63,11 @@ type ChatMessage = {
   editedAt?: { seconds?: number };
 };
 
-type ImagePreview = {
+type MediaPreview = {
   url: string;
   alt: string;
+  type: UploadResourceType;
+  posterUrl?: string;
 };
 
 type MemberMenu = {
@@ -107,22 +116,24 @@ type DirectThread = {
 
 const basicEmojis = ["\u{1F600}", "\u{1F602}", "\u{1F60D}", "\u{1F44D}", "\u{1F525}", "\u2764\uFE0F", "\u{1F64F}", "\u{1F389}", "\u{1F60E}", "\u{1F914}"];
 
-async function uploadChatImage(file: File) {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("folder", "chat");
-  formData.append("publicId", `screenshots/${Date.now()}-${file.name.replace(/[^a-z0-9.]+/gi, "-")}`);
+async function uploadChatAttachment(file: File) {
+  const resourceType = getUploadResourceType(file.type) ?? "image";
 
-  const response = await fetch("/api/cloudinary/upload", {
-    method: "POST",
-    body: formData
+  return uploadCloudinaryMediaFromClient({
+    file,
+    folder: "chat",
+    publicId: `${resourceType === "video" ? "videos" : "screenshots"}/${Date.now()}-${file.name.replace(/[^a-z0-9.]+/gi, "-")}`,
+    resourceType
   });
+}
 
-  if (!response.ok) {
-    throw new Error("Не удалось загрузить изображение.");
+function getAttachmentKind(attachment?: ChatMessage["attachment"]): UploadResourceType {
+  if (attachment?.resourceType === "video" || attachment?.resourceType === "image") {
+    return attachment.resourceType;
   }
 
-  return (await response.json()) as CloudinaryAsset;
+  const url = attachment?.secureUrl ?? attachment?.url ?? "";
+  return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url) ? "video" : "image";
 }
 
 function directThreadId(firstUid: string, secondUid: string) {
@@ -273,7 +284,8 @@ export function ChatWindow() {
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [attachmentPreviewUrl, setAttachmentPreviewUrl] = useState("");
-  const [imagePreview, setImagePreview] = useState<ImagePreview | null>(null);
+  const [attachmentError, setAttachmentError] = useState("");
+  const [mediaPreview, setMediaPreview] = useState<MediaPreview | null>(null);
   const [memberMenu, setMemberMenu] = useState<MemberMenu | null>(null);
   const [personalBlockedUids, setPersonalBlockedUids] = useState<string[]>([]);
   const [customEmojis, setCustomEmojis] = useState<CustomChatEmoji[]>([]);
@@ -899,10 +911,21 @@ export function ChatWindow() {
       return;
     }
 
-    if (!file.type.startsWith("image/")) {
+    const resourceType = getUploadResourceType(file.type);
+
+    if (!resourceType) {
+      setAttachmentError("Можно прикрепить только изображение или короткое видео.");
       return;
     }
 
+    const maxBytes = getUploadMaxBytes(resourceType);
+
+    if (file.size > maxBytes) {
+      setAttachmentError(`${resourceType === "video" ? "Видео" : "Изображение"} должно быть не больше ${formatUploadSize(maxBytes)}.`);
+      return;
+    }
+
+    setAttachmentError("");
     setAttachmentFile(file);
   }
 
@@ -927,8 +950,8 @@ export function ChatWindow() {
     setSending(true);
 
     try {
-      const uploadedAttachment = attachmentFile ? await uploadChatImage(attachmentFile) : null;
-      const lastMessageText = text || "Изображение";
+      const uploadedAttachment = attachmentFile ? await uploadChatAttachment(attachmentFile) : null;
+      const lastMessageText = text || (uploadedAttachment?.resourceType === "video" ? "Видео" : "Изображение");
       const baseMessage = {
         uid: user.uid,
         displayName: profile.displayName,
@@ -938,8 +961,14 @@ export function ChatWindow() {
         text,
         attachment: uploadedAttachment
           ? {
+              publicId: uploadedAttachment.publicId,
               secureUrl: uploadedAttachment.secureUrl,
               url: uploadedAttachment.url,
+              optimizedUrl: uploadedAttachment.optimizedUrl,
+              posterUrl: uploadedAttachment.posterUrl,
+              resourceType: uploadedAttachment.resourceType,
+              bytes: uploadedAttachment.bytes,
+              duration: uploadedAttachment.duration,
               alt: attachmentFile?.name ?? "Image"
             }
           : null,
@@ -1007,6 +1036,7 @@ export function ChatWindow() {
       setMessage("");
       setReplyTo(null);
       setAttachmentFile(null);
+      setAttachmentError("");
       setEmojiOpen(false);
     } finally {
       sendingRef.current = false;
@@ -1219,7 +1249,9 @@ export function ChatWindow() {
           >
             {visibleMessages.map((item, index) => {
               const own = item.uid === user?.uid;
-              const attachmentUrl = item.attachment?.secureUrl ?? item.attachment?.url;
+              const attachmentKind = getAttachmentKind(item.attachment);
+              const attachmentUrl = item.attachment?.optimizedUrl ?? item.attachment?.secureUrl ?? item.attachment?.url;
+              const attachmentPosterUrl = item.attachment?.posterUrl;
               const attachmentAlt = item.attachment?.alt ?? "Image";
               const authorProfile = messageAuthors[item.uid] ?? users.find((userItem) => userItem.uid === item.uid);
               const authorDisplayName = authorProfile ? getUserLabel(authorProfile) : item.displayName || "User";
@@ -1267,10 +1299,27 @@ export function ChatWindow() {
                     {attachmentUrl ? (
                       <button
                         type="button"
-                        onClick={() => setImagePreview({ url: attachmentUrl, alt: attachmentAlt })}
-                        className="mb-1.5 block overflow-hidden rounded-md border border-white/10"
+                        onClick={() => setMediaPreview({ url: attachmentUrl, alt: attachmentAlt, type: attachmentKind, posterUrl: attachmentPosterUrl })}
+                        className="relative mb-1.5 block overflow-hidden rounded-md border border-white/10"
                       >
-                        <img src={attachmentUrl} alt={attachmentAlt} loading="lazy" decoding="async" className="max-h-44 object-cover" />
+                        {attachmentKind === "video" ? (
+                          <>
+                            {attachmentPosterUrl ? (
+                              <img src={attachmentPosterUrl} alt={attachmentAlt} loading="lazy" decoding="async" className="max-h-44 min-h-32 w-full object-cover" />
+                            ) : (
+                              <span className="grid h-36 min-w-48 place-items-center bg-black/45 text-relic">
+                                <Film size={34} />
+                              </span>
+                            )}
+                            <span className="absolute inset-0 grid place-items-center bg-black/18">
+                              <span className="grid h-11 w-11 place-items-center rounded-full border border-white/30 bg-black/58 text-white backdrop-blur-sm">
+                                <Play size={18} fill="currentColor" />
+                              </span>
+                            </span>
+                          </>
+                        ) : (
+                          <img src={attachmentUrl} alt={attachmentAlt} loading="lazy" decoding="async" className="max-h-44 object-cover" />
+                        )}
                       </button>
                     ) : null}
                     {editingMessage?.id === item.id ? (
@@ -1416,22 +1465,35 @@ export function ChatWindow() {
               {attachmentFile ? (
                 <div className="mb-2 flex items-center gap-3 rounded-xl border border-relic/20 bg-black/35 p-2 text-xs text-zinc-300">
                   {attachmentPreviewUrl ? (
-                    <img src={attachmentPreviewUrl} alt={attachmentFile.name} loading="lazy" decoding="async" className="h-16 w-16 rounded-lg object-cover" />
+                    getUploadResourceType(attachmentFile.type) === "video" ? (
+                      <video src={attachmentPreviewUrl} muted playsInline preload="metadata" className="h-16 w-16 rounded-lg object-cover" />
+                    ) : (
+                      <img src={attachmentPreviewUrl} alt={attachmentFile.name} loading="lazy" decoding="async" className="h-16 w-16 rounded-lg object-cover" />
+                    )
                   ) : null}
                   <div className="min-w-0 flex-1">
                     <p className="break-words font-semibold text-white">{attachmentFile.name}</p>
-                    <p className="text-zinc-500">Будет отправлено вместе с сообщением</p>
+                    <p className="text-zinc-500">{getUploadResourceType(attachmentFile.type) === "video" ? "Видео будет отправлено в адаптивном сжатом формате" : "Будет отправлено вместе с сообщением"}</p>
                   </div>
-                  <button type="button" onClick={() => setAttachmentFile(null)} className="grid h-8 w-8 place-items-center rounded-md border border-white/10 text-zinc-500 hover:text-white">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAttachmentFile(null);
+                      setAttachmentError("");
+                    }}
+                    className="grid h-8 w-8 place-items-center rounded-md border border-white/10 text-zinc-500 hover:text-white"
+                  >
                     <X size={14} />
                   </button>
                 </div>
               ) : null}
 
+              {attachmentError ? <p className="mb-2 rounded-lg border border-blood/25 bg-blood/10 px-3 py-2 text-xs text-red-200">{attachmentError}</p> : null}
+
               <div className="flex items-center gap-2">
                 <label className="grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-md border border-white/10 bg-black/30 text-relic transition hover:bg-white/[0.06]">
                   <ImagePlus size={18} />
-                  <input type="file" accept="image/*" className="hidden" onChange={(event) => applySelectedFile(event.target.files?.[0])} />
+                  <input type="file" accept={CHAT_ATTACHMENT_ACCEPT} className="hidden" onChange={(event) => applySelectedFile(event.target.files?.[0])} />
                 </label>
                 <div className="relative">
                   <button
@@ -1799,18 +1861,22 @@ export function ChatWindow() {
         </div>
       ) : null}
 
-      {imagePreview ? (
+      {mediaPreview ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/85 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
           <div className="relative max-h-[92vh] max-w-5xl overflow-hidden rounded-lg border border-white/10 bg-[#0b101b] shadow-2xl">
             <button
               type="button"
-              onClick={() => setImagePreview(null)}
+              onClick={() => setMediaPreview(null)}
               className="absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-md border border-white/10 bg-black/60 text-zinc-300 transition hover:text-white"
               aria-label="Закрыть изображение"
             >
               <X size={18} />
             </button>
-            <img src={imagePreview.url} alt={imagePreview.alt} loading="eager" decoding="async" className="max-h-[92vh] w-full object-contain" />
+            {mediaPreview.type === "video" ? (
+              <video src={mediaPreview.url} poster={mediaPreview.posterUrl} controls playsInline preload="metadata" className="max-h-[92vh] w-full bg-black object-contain" />
+            ) : (
+              <img src={mediaPreview.url} alt={mediaPreview.alt} loading="eager" decoding="async" className="max-h-[92vh] w-full object-contain" />
+            )}
           </div>
         </div>
       ) : null}

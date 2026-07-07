@@ -2507,3 +2507,51 @@ input[type="file"]::-webkit-file-upload-button {
     inset 0 0 0 1px rgba(255, 255, 255, 0.9),
     0 1px 3px rgba(41, 61, 88, 0.16);
 }
+
+:root[data-theme="light"] input[type="checkbox"],
+:root[data-theme="light"] .legal-consent-input {
+  accent-color: #1f6fe5;
+}
+
+:root[data-theme="light"] .legal-consent-checkbox {
+  border-color: rgba(31, 111, 229, 0.22) !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  color: #1d2b3f !important;
+  box-shadow: 0 10px 26px rgba(70, 104, 145, 0.08);
+}
+
+:root[data-theme="light"] .legal-consent-checkbox span {
+  color: #1d2b3f !important;
+}
+
+:root[data-theme="light"] .legal-consent-checkbox span span {
+  color: #526273 !important;
+}
+
+:root[data-theme="light"] .raid-side-link {
+  border-color: rgba(31, 111, 229, 0.12) !important;
+  background: rgba(255, 255, 255, 0.64);
+  color: #29415f !important;
+  box-shadow: 0 8px 24px rgba(80, 130, 200, 0.1);
+}
+
+:root[data-theme="light"] .raid-side-link:hover,
+:root[data-theme="light"] .raid-side-link[data-active="true"] {
+  border-color: rgba(31, 111, 229, 0.55) !important;
+  background: linear-gradient(90deg, rgba(47, 124, 255, 0.18), rgba(255, 255, 255, 0.86));
+  color: #0d326c !important;
+  box-shadow: 0 10px 30px rgba(47, 124, 255, 0.16);
+}
+
+:root[data-theme="light"] .raid-glow-button {
+  border-color: rgba(31, 111, 229, 0.28) !important;
+  background: rgba(255, 255, 255, 0.74) !important;
+  color: #0d326c !important;
+  box-shadow: 0 10px 30px rgba(47, 124, 255, 0.12) !important;
+}
+
+:root[data-theme="light"] .raffle-entry-status {
+  border-color: rgba(16, 185, 129, 0.38) !important;
+  background: rgba(16, 185, 129, 0.14) !important;
+  color: #0f5132 !important;
+}

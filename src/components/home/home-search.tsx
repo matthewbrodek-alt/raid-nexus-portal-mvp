@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { collection, limit, onSnapshot, query, where } from "firebase/firestore";
 import { Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { getChampionRussianNameByEnglish } from "@/lib/data/champion-localization";
 import { gestalChampions } from "@/lib/data/gestal-champions";
 import { db } from "@/lib/firebase/client";
@@ -164,6 +165,43 @@ export function HomeSearch() {
   const [value, setValue] = useState("");
   const [focused, setFocused] = useState(false);
   const [dynamicItems, setDynamicItems] = useState<SearchItem[]>([]);
+  const [mounted, setMounted] = useState(false);
+  const [dropdownBounds, setDropdownBounds] = useState<{ left: number; top: number; width: number } | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!focused) {
+      return;
+    }
+
+    function updateDropdownBounds() {
+      const node = containerRef.current;
+
+      if (!node) {
+        return;
+      }
+
+      const rect = node.getBoundingClientRect();
+      setDropdownBounds({
+        left: rect.left,
+        top: rect.bottom + 10,
+        width: rect.width
+      });
+    }
+
+    updateDropdownBounds();
+    window.addEventListener("resize", updateDropdownBounds);
+    window.addEventListener("scroll", updateDropdownBounds, true);
+
+    return () => {
+      window.removeEventListener("resize", updateDropdownBounds);
+      window.removeEventListener("scroll", updateDropdownBounds, true);
+    };
+  }, [focused, value]);
 
   useEffect(() => {
     const removeDynamicItems = (prefix: string) => {
@@ -179,7 +217,7 @@ export function HomeSearch() {
             type: labels.newsType,
             title: language === "en" ? data.titleEn || data.title || labels.defaultNews : data.title || data.titleEn || labels.defaultNews,
             description: (language === "en" ? data.markdownBodyEn || data.markdownBody : data.markdownBody || data.markdownBodyEn) || labels.newsDescription,
-            href: "/#news",
+            href: `/?news=${item.id}`,
             keywords: ["news", "новости", data.title, data.titleEn, data.markdownBody, data.markdownBodyEn].filter(Boolean) as string[]
           };
         });
@@ -251,8 +289,36 @@ export function HomeSearch() {
     return items.filter((item) => matches(item, queryText)).slice(0, 8);
   }, [items, queryText]);
 
+  const dropdown =
+    focused && dropdownBounds ? (
+      <div
+        className="fixed z-[240] overflow-hidden rounded-[18px] border border-relic/24 bg-[#03090f]/96 shadow-[0_18px_48px_rgba(0,0,0,0.48)] backdrop-blur-xl"
+        style={{ left: dropdownBounds.left, top: dropdownBounds.top, width: dropdownBounds.width }}
+        onMouseDown={(event) => event.preventDefault()}
+      >
+        {results.length > 0 ? (
+          <div className="max-h-[min(360px,calc(100dvh-120px))] overflow-y-auto p-2">
+            {results.map((item) => (
+              <Link
+                key={item.id}
+                href={item.href}
+                onClick={() => setFocused(false)}
+                className="block rounded-[14px] border border-transparent px-4 py-3 transition hover:border-relic/30 hover:bg-relic/10"
+              >
+                <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-relic">{item.type}</span>
+                <span className="mt-1 block font-semibold text-white">{item.title}</span>
+                <span className="mt-1 block max-h-10 overflow-hidden text-xs leading-5 text-zinc-400">{item.description}</span>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="p-4 text-sm text-zinc-400">{labels.noResults}</div>
+        )}
+      </div>
+    ) : null;
+
   return (
-    <div className="relative w-full max-w-[540px]">
+    <div ref={containerRef} className="relative w-full max-w-[540px]">
       <label className="flex h-14 items-center gap-3 rounded-[16px] border border-relic/24 bg-black/34 px-5 text-zinc-500 shadow-[inset_0_0_20px_rgba(47,124,255,0.03)]">
         <input
           value={value}
@@ -264,32 +330,7 @@ export function HomeSearch() {
         />
         <Search size={20} />
       </label>
-
-      {focused ? (
-        <div
-          className="absolute left-0 right-0 top-[calc(100%+10px)] z-50 overflow-hidden rounded-[18px] border border-relic/24 bg-[#03090f]/96 shadow-[0_18px_48px_rgba(0,0,0,0.48)] backdrop-blur-xl"
-          onMouseDown={(event) => event.preventDefault()}
-        >
-          {results.length > 0 ? (
-            <div className="max-h-[360px] overflow-y-auto p-2">
-              {results.map((item) => (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  onClick={() => setFocused(false)}
-                  className="block rounded-[14px] border border-transparent px-4 py-3 transition hover:border-relic/30 hover:bg-relic/10"
-                >
-                  <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-relic">{item.type}</span>
-                  <span className="mt-1 block font-semibold text-white">{item.title}</span>
-                  <span className="mt-1 block max-h-10 overflow-hidden text-xs leading-5 text-zinc-400">{item.description}</span>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="p-4 text-sm text-zinc-400">{labels.noResults}</div>
-          )}
-        </div>
-      ) : null}
+      {mounted && dropdown ? createPortal(dropdown, document.body) : null}
     </div>
   );
 }

@@ -42,7 +42,7 @@ export function LegalConsentCheckbox({ checked, disabled, kind, onChange }: Lega
   return (
     <label
       htmlFor={id}
-      className="flex cursor-pointer items-start gap-3 rounded-2xl border border-relic/18 bg-black/18 p-3 text-sm leading-6 text-zinc-300 transition hover:border-relic/35"
+      className="legal-consent-checkbox flex cursor-pointer items-start gap-3 rounded-2xl border border-relic/18 bg-black/18 p-3 text-sm leading-6 text-zinc-300 transition hover:border-relic/35"
     >
       <input
         id={id}
@@ -50,7 +50,7 @@ export function LegalConsentCheckbox({ checked, disabled, kind, onChange }: Lega
         checked={checked}
         disabled={disabled}
         onChange={(event) => onChange(event.target.checked)}
-        className="mt-1 h-4 w-4 rounded border-relic/40 bg-black/40 text-relic focus:ring-relic disabled:cursor-not-allowed disabled:opacity-60"
+        className="legal-consent-input mt-1 h-4 w-4 rounded border-relic/40 bg-black/40 text-relic accent-[#2f7cff] focus:ring-relic disabled:cursor-not-allowed disabled:opacity-60"
         required
       />
       <span className="min-w-0">

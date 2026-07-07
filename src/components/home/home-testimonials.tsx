@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "@/components/auth/auth-provider";
 import { LegalConsentCheckbox } from "@/components/legal/legal-consent-checkbox";
+import { isCompletedOrder } from "@/lib/bp-status";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import { useLanguage } from "@/lib/i18n/use-language";
@@ -52,6 +53,8 @@ export function HomeTestimonials() {
   const [allReviewsOpen, setAllReviewsOpen] = useState(false);
   const [hiddenFallbackIds, setHiddenFallbackIds] = useState<string[]>([]);
   const [mounted, setMounted] = useState(false);
+  const [canLeaveReview, setCanLeaveReview] = useState(false);
+  const [reviewGateReady, setReviewGateReady] = useState(false);
   const isAdmin = profile?.role === "admin" || profile?.role === "owner";
 
   useEffect(() => {
@@ -94,6 +97,36 @@ export function HomeTestimonials() {
     );
   }, []);
 
+  useEffect(() => {
+    if (isAdmin) {
+      setCanLeaveReview(true);
+      setReviewGateReady(true);
+      return;
+    }
+
+    if (!user?.uid) {
+      setCanLeaveReview(false);
+      setReviewGateReady(true);
+      return;
+    }
+
+    setReviewGateReady(false);
+
+    const ordersQuery = query(collection(db, collections.topupLeads), where("uid", "==", user.uid), limit(60));
+
+    return onSnapshot(
+      ordersQuery,
+      (snapshot) => {
+        setCanLeaveReview(snapshot.docs.some((item) => isCompletedOrder((item.data() as { status?: string }).status)));
+        setReviewGateReady(true);
+      },
+      () => {
+        setCanLeaveReview(false);
+        setReviewGateReady(true);
+      }
+    );
+  }, [isAdmin, user?.uid]);
+
   const fallbackItems = useMemo(() => fallbackReviews[language].filter((item) => !hiddenFallbackIds.includes(item.id)), [hiddenFallbackIds, language]);
   const items = useMemo(() => (reviews.length > 0 ? reviews : fallbackItems), [fallbackItems, reviews]);
   const marqueeItems = [...items, ...items];
@@ -124,7 +157,7 @@ export function HomeTestimonials() {
   async function submitReview(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!user?.uid || !text.trim() || !legalConsent || saving) {
+    if (!user?.uid || !text.trim() || !legalConsent || saving || (!isAdmin && !canLeaveReview)) {
       return;
     }
 
@@ -257,12 +290,17 @@ export function HomeTestimonials() {
               <LegalConsentCheckbox checked={legalConsent} disabled={!user} kind="review" onChange={setLegalConsent} />
             </div>
 
-            <button disabled={saving || !user || !legalConsent} className="mt-4 w-full rounded-xl bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
+            <button disabled={saving || !user || !legalConsent || !reviewGateReady || (!isAdmin && !canLeaveReview)} className="mt-4 w-full rounded-xl bg-relic px-4 py-3 font-bold text-black disabled:opacity-60">
               {saving ? (isRu ? "Сохранение..." : "Saving...") : isRu ? "Опубликовать" : "Publish"}
             </button>
             {!user ? (
               <p className="mt-3 text-center text-xs leading-5 text-zinc-500">
                 {isRu ? "Чтобы оставить отзыв, нужно войти в личный кабинет." : "Sign in to leave a review."}
+              </p>
+            ) : null}
+            {user && !isAdmin && reviewGateReady && !canLeaveReview ? (
+              <p className="mt-3 rounded-xl border border-relic/20 bg-relic/10 px-3 py-2 text-center text-xs font-semibold leading-5 text-relic">
+                {isRu ? "Оставить отзыв можно после первой завершенной заявки." : "You can leave a review after your first completed order."}
               </p>
             ) : null}
           </form>

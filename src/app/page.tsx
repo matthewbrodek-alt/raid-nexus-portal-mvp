@@ -22,6 +22,7 @@ import { HomeEventCalendarCard } from "@/components/home/home-event-calendar-car
 import { HomeEventWidgets } from "@/components/home/home-event-widgets";
 import { HomeMobileHeader } from "@/components/home/home-mobile-header";
 import { HomeSearch } from "@/components/home/home-search";
+import { HomeStreamHelpRequest } from "@/components/home/home-stream-help-request";
 import { HOME_REVIEWS_EVENT, HomeTestimonials } from "@/components/home/home-testimonials";
 import { HomeUnreadBell } from "@/components/home/home-unread-bell";
 import { HomeUserCard } from "@/components/home/home-user-card";
@@ -174,6 +175,7 @@ export default function Home() {
           <div className="mt-3 grid gap-5 lg:mt-5 xl:grid-cols-[minmax(0,1.55fr)_430px]">
             <section id="news" className="min-w-0">
               <LatestNewsRail />
+              <HomeStreamHelpRequest />
               <HomeTestimonials />
             </section>
 

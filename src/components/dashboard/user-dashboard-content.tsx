@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BadgeCheck, Check, ClipboardCopy, Coins, FileText, MessageSquare, Palette, ScrollText, Send, Swords, Users } from "lucide-react";
+import { BadgeCheck, Check, ClipboardCopy, Coins, FileText, Gift, MessageSquare, Palette, ScrollText, Send, Swords, Users } from "lucide-react";
 import { collection, doc, limit, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -35,6 +35,25 @@ type TopupLead = {
   threadId?: string;
   paymentDetails?: string;
   managerNote?: string;
+  raffleWidgetId?: string;
+  createdAt?: { seconds?: number };
+};
+
+type RaffleWinner = {
+  uid?: string;
+  displayName?: string;
+  email?: string;
+};
+
+type EventWidget = {
+  id: string;
+  title?: string;
+  prizeFund?: string;
+  winners?: RaffleWinner[];
+  winnerUids?: string[];
+  winnerName?: string;
+  status?: string;
+  deadlineAt?: { seconds?: number };
   createdAt?: { seconds?: number };
 };
 
@@ -79,6 +98,10 @@ function leadTime(lead: TopupLead) {
 }
 
 function serviceLabel(type?: string) {
+  if (type === "raffle_reward") {
+    return "Награда розыгрыша";
+  }
+
   if (type === "account_purchase") {
     return "Покупка аккаунта";
   }
@@ -100,6 +123,8 @@ export function UserDashboardContent() {
   const [forumThreads, setForumThreads] = useState<ForumThread[]>([]);
   const [directThreads, setDirectThreads] = useState<DirectThread[]>([]);
   const [bonusTransactions, setBonusTransactions] = useState<BonusTransaction[]>([]);
+  const [eventWidgets, setEventWidgets] = useState<EventWidget[]>([]);
+  const [raffleClaimingId, setRaffleClaimingId] = useState("");
   const [origin, setOrigin] = useState("");
   const [referralNotice, setReferralNotice] = useState("");
   const [avatarStatus, setAvatarStatus] = useState("");
@@ -122,6 +147,7 @@ export function UserDashboardContent() {
     const forumQuery = query(collection(db, collections.forumThreads), where("authorId", "==", user.uid), limit(60));
     const directQuery = query(collection(db, "directThreads"), where("participants", "array-contains", user.uid), limit(80));
     const bonusQuery = query(collection(db, collections.bonusTransactions), where("uid", "==", user.uid), limit(120));
+    const eventWidgetsQuery = query(collection(db, collections.eventWidgets), where("status", "in", ["published", "archived"]), limit(80));
 
     const unsubTopups = onSnapshot(
       topupQuery,
@@ -159,12 +185,20 @@ export function UserDashboardContent() {
       },
       () => setBonusTransactions([])
     );
+    const unsubEventWidgets = onSnapshot(
+      eventWidgetsQuery,
+      (snapshot) => {
+        setEventWidgets(snapshot.docs.map((item) => ({ id: item.id, ...(item.data() as Omit<EventWidget, "id">) })));
+      },
+      () => setEventWidgets([])
+    );
 
     return () => {
       unsubTopups();
       unsubForum();
       unsubDirect();
       unsubBonus();
+      unsubEventWidgets();
     };
   }, [user?.uid]);
 
@@ -185,6 +219,25 @@ export function UserDashboardContent() {
   const activeNicknameClass = getNicknameClass(activeNicknameStyle, bpProgress.status.id);
   const activityCount = profile?.activityStats?.messagesCount ?? directThreads.length;
   const completedCount = topupLeads.filter((lead) => isCompletedOrder(lead.status)).length;
+  const claimedRaffleRewardByWidgetId = useMemo(
+    () =>
+      new Map(
+        topupLeads
+          .filter((lead) => lead.raffleWidgetId)
+          .map((lead) => [lead.raffleWidgetId as string, lead])
+      ),
+    [topupLeads]
+  );
+  const raffleWins = useMemo(() => {
+    if (!user?.uid) {
+      return [];
+    }
+
+    return eventWidgets.filter((widget) => {
+      const winnerUids = widget.winnerUids?.length ? widget.winnerUids : widget.winners?.map((winner) => winner.uid ?? "").filter(Boolean) ?? [];
+      return winnerUids.includes(user.uid);
+    });
+  }, [eventWidgets, user?.uid]);
   const referralCode = normalizeReferralCode(profile?.referralCode);
   const referralLink = makeReferralLink(origin, referralCode);
   const bumpyBalance = profile?.bumpyCoinsBalance ?? 0;
@@ -255,7 +308,7 @@ export function UserDashboardContent() {
       {
         label: "BP-статус",
         value: bpProgress.status.shortLabel,
-        detail: `${formatRub(totalSpentRub)} накоплено`
+        detail: `${formatRub(totalSpentRub)} общая сумма транзакций`
       },
       {
         label: "Заявки",
@@ -275,6 +328,39 @@ export function UserDashboardContent() {
     ],
     [activityCount, bpProgress.status.shortLabel, completedCount, directThreads.length, topupLeads, totalSpentRub]
   );
+
+  async function claimRaffleReward(widget: EventWidget) {
+    if (!user?.uid || !profile || raffleClaimingId) {
+      return;
+    }
+
+    setRaffleClaimingId(widget.id);
+
+    try {
+      const rewardRef = doc(collection(db, collections.topupLeads));
+
+      await setDoc(rewardRef, {
+        uid: user.uid,
+        email: user.email ?? "",
+        clientName: profile.displayName || user.email || "Raid Player",
+        leadId: rewardRef.id,
+        raffleWidgetId: widget.id,
+        packageId: `raffle-${widget.id}`,
+        packageName: `Награда розыгрыша: ${widget.title || "Розыгрыш"}`,
+        baseAmountRub: 0,
+        amountRub: 0,
+        paymentMethod: "manager",
+        comment: `Победитель розыгрыша. Приз: ${widget.prizeFund || "уточнить у менеджера"}`,
+        serviceType: "raffle_reward",
+        status: "new",
+        source: "raffle_reward",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    } finally {
+      setRaffleClaimingId("");
+    }
+  }
 
   async function uploadCustomAvatar(file?: File | null) {
     if (!user?.uid || !file) {
@@ -398,7 +484,7 @@ export function UserDashboardContent() {
           <div>
             <div className="flex items-end justify-between gap-3">
               <div>
-                <p className="text-sm text-zinc-400">Накоплено</p>
+                <p className="text-sm text-zinc-400">Общая сумма транзакций</p>
                 <p className="text-3xl font-black text-relic">{formatRub(totalSpentRub)}</p>
               </div>
               <p className="text-right text-sm text-zinc-400">
@@ -602,6 +688,51 @@ export function UserDashboardContent() {
           <StatCard key={stat.label} {...stat} />
         ))}
       </div>
+
+      {raffleWins.length > 0 ? (
+        <GlassPanel className="mt-6 p-5 sm:p-6">
+          <div className="mb-4 flex items-center gap-3">
+            <Gift className="text-relic" />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-relic">Розыгрыши</p>
+              <h2 className="text-xl font-bold text-white sm:text-2xl">Награды розыгрышей</h2>
+            </div>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {raffleWins.map((widget) => {
+              const claimedLead = claimedRaffleRewardByWidgetId.get(widget.id);
+              const claimed = Boolean(claimedLead);
+
+              return (
+                <div key={widget.id} className="rounded-2xl border border-relic/18 bg-black/24 p-4">
+                  <p className="text-sm font-black text-white">{widget.title || "Розыгрыш"}</p>
+                  <p className="mt-1 text-sm font-semibold text-relic">{widget.prizeFund || "Приз уточняется"}</p>
+                  <p className="mt-2 text-xs leading-5 text-zinc-500">
+                    {claimed ? "Заявка на получение награды уже создана." : "Нажмите кнопку, чтобы создать заявку менеджеру на выдачу награды."}
+                  </p>
+                  {claimed ? (
+                    <Link
+                      href={`/orders/${claimedLead?.id ?? ""}`}
+                      className="mt-3 inline-flex rounded-xl border border-emerald-400/25 bg-emerald-400/10 px-4 py-2 text-sm font-bold text-emerald-200"
+                    >
+                      Открыть заявку
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => void claimRaffleReward(widget)}
+                      disabled={raffleClaimingId === widget.id}
+                      className="mt-3 inline-flex rounded-xl bg-[#2f7cff] px-4 py-2 text-sm font-black text-white transition hover:bg-[#63a6ff] disabled:opacity-60"
+                    >
+                      {raffleClaimingId === widget.id ? "Создаем..." : "Забрать награду"}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </GlassPanel>
+      ) : null}
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
         <GlassPanel className="p-5 sm:p-6">
