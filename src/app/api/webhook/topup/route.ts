@@ -33,10 +33,6 @@ async function forwardJson(endpoint: string, payload: unknown) {
 export async function POST(request: Request) {
   const topupWebhookUrl = process.env.TOPUP_WEBHOOK_URL;
 
-  if (!topupWebhookUrl) {
-    return NextResponse.json({ error: "Top-up webhook is not configured." }, { status: 500 });
-  }
-
   const body = (await request.json().catch(() => null)) as TopupLeadPayload | null;
   const telegram = body?.telegram?.trim();
   const packageId = body?.packageId?.trim();
@@ -68,11 +64,15 @@ export async function POST(request: Request) {
     receivedAt: new Date().toISOString()
   };
 
+  if (!topupWebhookUrl) {
+    return NextResponse.json({ ok: true, forwarded: false });
+  }
+
   const topupResponse = await forwardJson(topupWebhookUrl, payload);
 
   if (!topupResponse.ok) {
     return NextResponse.json({ error: "Top-up webhook rejected the request." }, { status: 502 });
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, forwarded: true });
 }

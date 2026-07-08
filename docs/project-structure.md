@@ -3,7 +3,6 @@
 ```text
 raid-nexus-portal-mvp/
   .env.example
-  .env.production.example
   .gitignore
   README.md
   firebase.json
@@ -16,12 +15,7 @@ raid-nexus-portal-mvp/
     firestore-schema.md
     github-vercel-deploy-ru.md
     deployment-and-operations-ru.md
-    file-inventory.md
-    n8n-setup.md
     project-structure.md
-  n8n/
-    workflows/
-      raid-portal-automation.json
   next.config.ts
   package.json
   postcss.config.mjs
@@ -128,7 +122,7 @@ src/app/admin/page.tsx                  # created
 src/app/admin/heroes/page.tsx
 src/app/admin/news/page.tsx
 src/app/admin/moderation/page.tsx
-src/app/api/n8n/topup/route.ts
+src/app/api/webhook/topup/route.ts
 src/app/api/crm/tables/route.ts
 ```
 

@@ -1,109 +1,84 @@
-# GitHub и бесплатный тестовый домен
+# GitHub и Vercel
 
-## Что выбрать для проверки
+## Что загружать в GitHub
 
-Рекомендованный вариант для этого проекта: **GitHub + Vercel Hobby**.
+Загружай исходники проекта, не архив.
 
-Почему:
+Нужно загрузить:
 
-- Next.js App Router на Vercel деплоится почти без настройки.
-- После подключения GitHub каждый `push` в `main` автоматически обновляет сайт.
-- Vercel дает бесплатный тестовый домен вида `project-name.vercel.app`.
-- Firebase остается backend-частью для Auth и Firestore.
-- Cloudinary используется для изображений и медиа вместо Firebase Storage.
-
-Firebase App Hosting тоже поддерживает Next.js и GitHub, но по официальной документации требует Blaze-план. Для первого бесплатного теста проще Vercel.
-
-## Что загружать на GitHub
-
-Загружай не архив, а распакованную папку проекта.
-
-На GitHub должны попасть:
-
-```text
-docs/
-n8n/
-scripts/
-src/
-.env.example
-.env.production.example
-.gitignore
-eslint.config.mjs
-firebase.json
-firestore.rules
-next-env.d.ts
-next.config.ts
-package.json
-postcss.config.mjs
-README.md
-tailwind.config.ts
-tsconfig.json
-```
+- `src/`
+- `public/`
+- `docs/`
+- `scripts/`
+- `.env.example`
+- `.gitignore`
+- `package.json`
+- `package-lock.json`
+- `next.config.ts`
+- `tailwind.config.ts`
+- `tsconfig.json`
+- `postcss.config.mjs`
+- `eslint.config.mjs`
+- `firebase.json`
+- `firestore.rules`
+- `storage.rules`
+- `README.md`
 
 Не загружать:
 
-```text
-.env.local
-.next/
-node_modules/
-raid-nexus-portal-mvp.zip
-```
+- `.env`
+- `.env.local`
+- `.env.*.local`
+- `.next/`
+- `.vercel/`
+- `node_modules/`
+- архивы `.zip`, `.rar`, `.7z`
 
-## Команды для GitHub
+## Vercel
 
-```powershell
-git init
-git add .
-git commit -m "Initial Raid portal MVP"
-git branch -M main
-git remote add origin https://github.com/YOUR_LOGIN/YOUR_REPO.git
-git push -u origin main
-```
+1. Создай проект в Vercel из GitHub-репозитория.
+2. Framework должен определиться как `Next.js`.
+3. В Environment Variables добавь реальные значения из локального `.env.local`.
+4. Нажми Deploy.
 
-Если Git уже был создан, начинай с:
+Обязательные переменные:
 
-```powershell
-git status
-git add .
-git commit -m "Prepare auth roles and deploy config"
-git push
-```
+- `NEXT_PUBLIC_SITE_URL`
+- `NEXT_PUBLIC_FIREBASE_API_KEY`
+- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+- `NEXT_PUBLIC_FIREBASE_APP_ID`
+- `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+- `GAME_DATA_ENCRYPTION_KEY`
 
-## Настройка Firebase перед тестом
+Опционально:
 
-1. Firebase Console -> Authentication -> Sign-in method.
-2. Включи `Email/Password`.
-3. Firebase Console -> Firestore Database -> Create database.
-4. Rules можно загрузить из файла:
+- `TOPUP_WEBHOOK_URL` - внешний webhook для дублирования заявок. Если пустой, сайт работает через внутреннюю Firebase-панель заявок.
+- `SOCIAL_AUTH_STATE_SECRET`
+- `FIREBASE_SERVICE_ACCOUNT_EMAIL`
+- `FIREBASE_SERVICE_ACCOUNT_PRIVATE_KEY`
+- `TELEGRAM_BOT_TOKEN`
+- `VK_CLIENT_ID`
+- `VK_CLIENT_SECRET`
+- `DISCORD_CLIENT_ID`
+- `DISCORD_CLIENT_SECRET`
 
-```text
-firestore.rules
-```
+## Проверка
 
-## Настройка Vercel
+После деплоя проверь:
 
-1. Открой Vercel.
-2. `Add New` -> `Project`.
-3. Выбери GitHub-репозиторий.
-4. Framework должен определиться как `Next.js`.
-5. В `Environment Variables` добавь значения из `.env.local`.
-6. Секретные переменные добавляй без `NEXT_PUBLIC_`: `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `N8N_TOPUP_WEBHOOK_URL`, `GAME_DATA_ENCRYPTION_KEY`.
-7. Публичный Cloudinary cloud name добавь как `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`.
-8. Нажми `Deploy`.
-9. После деплоя сайт будет доступен по бесплатному домену Vercel.
+- `/`
+- `/login`
+- `/register`
+- `/dashboard`
+- `/admin`
+- `/donate`
+- `/marketplace`
+- `/heroes`
+- `/chat`
+- `/raffle`
 
-## Проверка после деплоя
-
-1. Открой `https://your-project.vercel.app/register`.
-2. Зарегистрируй обычного пользователя.
-3. Проверь `/dashboard`.
-4. Назначь первому администратору `role: "owner"` вручную в Firebase Console.
-5. Перезайди этим пользователем и проверь `/admin`.
-6. Добавь второго админа через форму.
-7. Войди вторым админом и проверь `/admin`.
-
-## Источники
-
-- Vercel Git deployments: https://vercel.com/docs/deployments/git
-- Vercel environment variables: https://vercel.com/docs/projects/environment-variables
-- Firebase App Hosting: https://firebase.google.com/docs/app-hosting/get-started
+Если Firebase Auth ругается на домен, добавь домен Vercel или свой домен в Firebase Console -> Authentication -> Settings -> Authorized domains.

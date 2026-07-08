@@ -28,7 +28,7 @@ This allows the project to grow from MVP into a larger product with controlled f
 3. Add icon mapping in `src/app/page.tsx` if it appears on the landing page.
 4. Add Firestore collection if the module owns data.
 5. Add AI capability to `src/lib/ai/site-context.ts`.
-6. Add n8n workflow node if external automation is required.
+6. Add an external webhook integration only if external automation is required.
 
 Example:
 
@@ -76,7 +76,7 @@ Current blocks:
 - `Pulse`: lead, moderation, hero DB and CRM status.
 - `Content Forge`: news, hero calendar and Hero DB content pipeline.
 - `Moderation Radar`: prioritized chat/forum queue.
-- `n8n Command Chain`: automation status and workflow reference.
+- External automation hooks are optional and should be configured through server-side environment variables.
 - `CRM Tables`: external operations sync status.
 
 Future additions:

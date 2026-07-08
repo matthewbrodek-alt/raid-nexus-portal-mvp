@@ -247,7 +247,7 @@ status ASC, heroNames ARRAY_CONTAINS, priceUsd ASC
 
 ### `topupLeads/{leadId}`
 
-Top-up requests sent to manager and n8n.
+Top-up requests created by users and handled by managers.
 
 ```ts
 {
@@ -260,7 +260,7 @@ Top-up requests sent to manager and n8n.
   comment?: string;
   status: "new" | "contacted" | "waitingPayment" | "paid" | "done" | "cancelled";
   source: "portal" | "telegram" | "manager";
-  n8nExecutionId?: string;
+  externalExecutionId?: string;
   managerId?: string;
   crmDealId?: string;
   createdAt: Timestamp;
