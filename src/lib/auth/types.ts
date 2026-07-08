@@ -1,5 +1,6 @@
 export type UserRole = "user" | "admin" | "owner";
 export type UserTheme = "dark" | "light";
+export type LinkedSocialProvider = "telegram" | "vk" | "discord";
 
 export type UserProfile = {
   uid: string;
@@ -31,6 +32,19 @@ export type UserProfile = {
   bumpyCoinsBalance?: number;
   bumpyCoinsEarnedTotal?: number;
   bumpyCoinsSpentTotal?: number;
+  socialAuth?: Partial<
+    Record<
+      LinkedSocialProvider,
+      {
+        avatarUrl?: string;
+        connectedAt?: string;
+        displayName?: string;
+        email?: string;
+        providerUserId: string;
+        username?: string;
+      }
+    >
+  >;
   notificationSeenState?: {
     threadById?: Record<string, number>;
     topupById?: Record<string, number>;

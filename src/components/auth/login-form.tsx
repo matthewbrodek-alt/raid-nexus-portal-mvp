@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   browserLocalPersistence,
   browserSessionPersistence,
@@ -15,9 +15,11 @@ import { auth } from "@/lib/firebase/client";
 import { sendPortalEmailVerification } from "@/lib/auth/email-verification";
 import { normalizeEmail } from "@/lib/auth/role-utils";
 import { GlassPanel } from "@/components/ui/glass-panel";
+import { SocialAuthButtons } from "@/components/auth/social-auth-buttons";
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
@@ -97,6 +99,12 @@ export function LoginForm() {
           {loading ? "Входим..." : "Войти"}
         </button>
       </form>
+      {searchParams.get("socialError") ? (
+        <p className="mt-4 rounded-md border border-ember/30 bg-ember/10 p-3 text-sm text-ember">
+          {searchParams.get("socialError")}
+        </p>
+      ) : null}
+      <SocialAuthButtons mode="login" />
       <p className="mt-5 text-sm text-zinc-400">
         Нет аккаунта?{" "}
         <Link href="/register" className="font-semibold text-relic">

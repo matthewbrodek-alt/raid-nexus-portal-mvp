@@ -12,6 +12,7 @@ import { collections } from "@/lib/firebase/collections";
 import { makeReferralCode, normalizeReferralCode } from "@/lib/referrals";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { LegalConsentCheckbox } from "@/components/legal/legal-consent-checkbox";
+import { SocialAuthButtons } from "@/components/auth/social-auth-buttons";
 
 export function RegisterForm() {
   const [displayName, setDisplayName] = useState("");
@@ -196,6 +197,7 @@ export function RegisterForm() {
           {loading ? "Создаем аккаунт..." : "Зарегистрироваться"}
         </button>
       </form>
+      <SocialAuthButtons mode="register" />
       <p className="mt-5 text-sm text-zinc-400">
         Уже есть аккаунт?{" "}
         <Link href="/login" className="font-semibold text-relic">

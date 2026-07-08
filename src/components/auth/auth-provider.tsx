@@ -23,13 +23,14 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 async function loadOrCreateProfile(user: User): Promise<UserProfile> {
   const userRef = doc(db, collections.users, user.uid);
   const existingProfile = await getDoc(userRef);
-  const email = normalizeEmail(user.email);
-  const displayName = user.displayName || email.split("@")[0] || "Raid Player";
-  const invitedAdminRef = doc(db, collections.adminInvites, emailToDocId(email));
-  const invitedAdmin = email ? await getDoc(invitedAdminRef) : null;
+  const authEmail = normalizeEmail(user.email);
+  const displayName = user.displayName || authEmail.split("@")[0] || "Raid Player";
+  const invitedAdminRef = doc(db, collections.adminInvites, emailToDocId(authEmail));
+  const invitedAdmin = authEmail ? await getDoc(invitedAdminRef) : null;
 
   if (existingProfile.exists()) {
     const profile = existingProfile.data() as UserProfile;
+    const email = authEmail || normalizeEmail(profile.email);
     let nextRole = profile.role;
     const savedDisplayName = profile.displayName || displayName;
     const referralCode = profile.referralCode || makeReferralCode(savedDisplayName, user.uid);
@@ -93,6 +94,7 @@ async function loadOrCreateProfile(user: User): Promise<UserProfile> {
     };
   }
 
+  const email = authEmail || `${user.uid}@social.bumpypay.local`.toLowerCase();
   const role: UserRole = invitedAdmin?.exists() && invitedAdmin.data().status === "pending" ? "admin" : "user";
   const referralCode = makeReferralCode(displayName, user.uid);
   const profile: UserProfile = {
