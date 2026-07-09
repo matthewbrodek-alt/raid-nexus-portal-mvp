@@ -108,7 +108,7 @@ export function RafflePanel() {
   const winnerNames = useMemo(() => getWinnerNames(raffle), [raffle]);
   const winnerTickerText = winnerNames.join(" • ");
   const href = raffle?.id ? `/raffle?event=${raffle.id}` : "/raffle";
-  const backgroundImage = isLight ? imageUrl("/images/raffle/raffle-panel-light.PNG") : imageUrl("/images/raffle/raffle-panel-dark.PNG");
+  const backgroundImage = isLight ? imageUrl("/images/raffle/raffle-panel-light-optimized.jpg") : imageUrl("/images/raffle/raffle-panel-dark-optimized.jpg");
 
   return (
     <section
@@ -205,6 +205,7 @@ export function RafflePanel() {
 
           <Link
             href={href}
+            prefetch={false}
             className="raid-raffle-cta inline-flex min-h-9 items-center justify-center gap-2 rounded-xl bg-[#6d2cff] px-4 py-2 text-xs font-black text-white shadow-[0_0_30px_rgba(109,44,255,0.38)] transition hover:bg-[#7c3dff]"
           >
             {labels.cta}

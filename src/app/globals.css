@@ -186,7 +186,7 @@ body::before {
   position: fixed;
   inset: 0;
   z-index: -2;
-  background: url("/images/raid-castle-bg.png") center top / cover no-repeat;
+  background: url("/images/raid-castle-bg-optimized.jpg") center top / cover no-repeat;
   pointer-events: none;
 }
 
@@ -1590,7 +1590,7 @@ b {
   content: "";
   position: absolute;
   inset: 0;
-  background: var(--raid-bg-image, url("/images/raid-castle-bg.png")) center top / cover no-repeat;
+  background: var(--raid-bg-image, url("/images/raid-castle-bg-optimized.jpg")) center top / cover no-repeat;
 }
 
 .raid-static-background::after {
@@ -1741,7 +1741,7 @@ b {
   background:
     linear-gradient(180deg, rgba(2, 5, 9, 0.08), rgba(2, 5, 9, 0.42)),
     radial-gradient(circle at 50% 0%, rgba(99, 166, 255, 0.2), transparent 28%),
-    url("/images/raid-castle-bg.png") center top / cover no-repeat !important;
+    url("/images/raid-castle-bg-optimized.jpg") center top / cover no-repeat !important;
   background-blend-mode: normal, screen, normal;
 }
 
@@ -2000,7 +2000,7 @@ b {
   background:
     radial-gradient(circle at 72% 26%, rgba(165, 206, 255, 0.34), transparent 34%),
     linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(228, 240, 255, 0.72)),
-    url("/images/raid-castle-bg.png") center / cover no-repeat !important;
+    url("/images/raid-castle-bg-optimized.jpg") center / cover no-repeat !important;
   background-blend-mode: normal, normal, soft-light;
 }
 
@@ -2046,7 +2046,7 @@ b {
   background-image:
     radial-gradient(circle at 70% 18%, rgba(255, 255, 255, 0.62), transparent 30%),
     linear-gradient(135deg, rgba(255, 255, 255, 0.84), rgba(217, 234, 255, 0.74)),
-    url("/images/raid-castle-bg.png") !important;
+    url("/images/raid-castle-bg-optimized.jpg") !important;
   background-blend-mode: normal, normal, soft-light;
 }
 
@@ -2247,7 +2247,7 @@ input[type="file"]::-webkit-file-upload-button {
   background:
     linear-gradient(90deg, rgba(3, 7, 12, 0.98), rgba(3, 7, 12, 0.68) 42%, rgba(3, 7, 12, 0.28)),
     linear-gradient(180deg, rgba(3, 7, 12, 0.28), rgba(3, 7, 12, 0.88)),
-    url("/images/raid-castle-bg.png") center / cover no-repeat;
+    url("/images/raid-castle-bg-optimized.jpg") center / cover no-repeat;
 }
 
 .raid-news-cycle {

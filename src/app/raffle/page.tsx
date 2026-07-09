@@ -350,7 +350,7 @@ export default function RafflePage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#05070b] text-pale">
-      <div className="fixed inset-0 bg-[url('/images/raid-castle-bg.png')] bg-cover bg-center opacity-58" />
+      <div className="fixed inset-0 bg-[url('/images/raid-castle-bg-optimized.jpg')] bg-cover bg-center opacity-58" />
       <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(99,166,255,0.12),transparent_24%),linear-gradient(180deg,rgba(5,7,11,0.48),#05070b_82%)]" />
 
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-5 sm:px-6 lg:px-8">

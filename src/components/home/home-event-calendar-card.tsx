@@ -103,7 +103,7 @@ export function HomeEventCalendarCard() {
             {imageUrl ? (
               <img src={imageUrl} alt={data?.image?.alt ?? title} className="h-64 w-full object-contain transition duration-300 group-hover:scale-[1.015] sm:h-72" />
             ) : (
-              <div className="grid h-64 place-items-center bg-[url('/images/raid-castle-bg.png')] bg-cover bg-center text-center sm:h-72">
+              <div className="grid h-64 place-items-center bg-[url('/images/raid-castle-bg-optimized.jpg')] bg-cover bg-center text-center sm:h-72">
                 <div className="absolute inset-0 bg-black/62" />
                 <div className="relative px-6 text-zinc-300">
                   <ImagePlus className="mx-auto mb-3 text-relic" size={32} />

@@ -286,7 +286,7 @@ export function MarketplaceBoard() {
       <div className="mb-6 overflow-hidden rounded-[28px] border border-relic/25 bg-[#050a12]/90 shadow-[0_0_70px_rgba(0,0,0,0.58)]">
         <div
           className="relative min-h-[330px] bg-cover bg-center p-5 sm:p-7 lg:p-8"
-          style={{ backgroundImage: "linear-gradient(90deg, rgba(5,7,11,0.94), rgba(7,13,23,0.78) 48%, rgba(47,124,255,0.08)), url('/images/raid-castle-bg.png')" }}
+          style={{ backgroundImage: "linear-gradient(90deg, rgba(5,7,11,0.94), rgba(7,13,23,0.78) 48%, rgba(47,124,255,0.08)), url('/images/raid-castle-bg-optimized.jpg')" }}
         >
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_18%,rgba(99,166,255,0.16),transparent_34%),linear-gradient(180deg,transparent,rgba(0,0,0,0.4))]" />
           <div className="relative z-10 grid gap-6 xl:grid-cols-[1fr_420px]">

@@ -1433,7 +1433,7 @@ export function AdminContentForge({ mode = "content" }: AdminContentForgeProps) 
 
             <div className="max-h-[360px] space-y-2 overflow-y-auto pr-1">
               {managedNews.map((item) => {
-                const imageUrl = item.coverImage?.secureUrl ?? item.coverImage?.url ?? "/images/raid-castle-bg.png";
+                const imageUrl = item.coverImage?.secureUrl ?? item.coverImage?.url ?? "/images/raid-castle-bg-optimized.jpg";
                 const isPublished = item.status === "published";
 
                 return (

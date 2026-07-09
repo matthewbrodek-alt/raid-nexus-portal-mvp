@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   ChevronRight,
@@ -16,22 +17,47 @@ import {
 } from "lucide-react";
 import { RaidLogo } from "@/components/brand/raid-logo";
 import { HomeBackgroundVideo } from "@/components/home/home-background-video";
-import { HomeBroadcast } from "@/components/home/home-broadcast";
 import { HomeCommunityLinks } from "@/components/home/home-community-links";
-import { HomeEventCalendarCard } from "@/components/home/home-event-calendar-card";
-import { HomeEventWidgets } from "@/components/home/home-event-widgets";
 import { HomeMobileHeader } from "@/components/home/home-mobile-header";
 import { HomeSearch } from "@/components/home/home-search";
-import { HomeStreamHelpRequest } from "@/components/home/home-stream-help-request";
-import { HOME_REVIEWS_EVENT, HomeTestimonials } from "@/components/home/home-testimonials";
 import { HomeUnreadBell } from "@/components/home/home-unread-bell";
 import { HomeUserCard } from "@/components/home/home-user-card";
 import { LatestNewsRail } from "@/components/home/latest-news-rail";
-import { RafflePanel } from "@/components/home/raffle-panel";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { LegalFooterLinks } from "@/components/legal/legal-footer-links";
 import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { useLanguage, type Language } from "@/lib/i18n/use-language";
+
+const HOME_REVIEWS_EVENT = "bp-open-home-reviews";
+
+const RafflePanel = dynamic(() => import("@/components/home/raffle-panel").then((module) => module.RafflePanel), {
+  loading: () => <div className="raid-ornate-panel min-h-[220px] animate-pulse" />,
+  ssr: false
+});
+
+const HomeEventCalendarCard = dynamic(() => import("@/components/home/home-event-calendar-card").then((module) => module.HomeEventCalendarCard), {
+  loading: () => <div className="raid-ornate-panel min-h-[260px] animate-pulse" />,
+  ssr: false
+});
+
+const HomeBroadcast = dynamic(() => import("@/components/home/home-broadcast").then((module) => module.HomeBroadcast), {
+  loading: () => <div className="raid-ornate-panel min-h-[240px] animate-pulse" />,
+  ssr: false
+});
+
+const HomeEventWidgets = dynamic(() => import("@/components/home/home-event-widgets").then((module) => module.HomeEventWidgets), {
+  ssr: false
+});
+
+const HomeStreamHelpRequest = dynamic(() => import("@/components/home/home-stream-help-request").then((module) => module.HomeStreamHelpRequest), {
+  loading: () => <div className="raid-ornate-panel mt-4 min-h-[180px] animate-pulse" />,
+  ssr: false
+});
+
+const HomeTestimonials = dynamic(() => import("@/components/home/home-testimonials").then((module) => module.HomeTestimonials), {
+  loading: () => <div className="raid-ornate-panel mt-4 hidden min-h-[96px] animate-pulse lg:block" />,
+  ssr: false
+});
 
 const sidebarLinks = [
   { label: { ru: "Главная", en: "Home" }, href: "/", icon: HomeIcon, active: true },
@@ -99,6 +125,7 @@ export default function Home() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    prefetch={false}
                     data-active={item.active ? "true" : "false"}
                     className="raid-side-link flex h-14 items-center gap-5 border border-transparent px-4 text-sm font-semibold tracking-[0.04em] text-zinc-400 transition hover:border-relic/35 hover:text-relic"
                   >
@@ -138,6 +165,7 @@ export default function Home() {
           <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] gap-2 lg:hidden">
             <Link
               href="/topup"
+              prefetch={false}
               className="raid-donate-pulse raid-glow-button flex min-h-11 items-center justify-center gap-2 border border-relic/45 bg-black/55 px-3 py-3 text-center text-[11px] font-black uppercase tracking-[0.08em] text-relic shadow-[0_0_30px_rgba(47,124,255,0.16)]"
             >
               <Crown size={17} />
@@ -156,6 +184,7 @@ export default function Home() {
           <header className="hidden h-24 items-center gap-5 lg:flex">
             <Link
               href="/topup"
+              prefetch={false}
               className="raid-donate-pulse raid-glow-button flex min-h-[56px] min-w-[360px] items-center justify-center gap-3 border border-relic/45 bg-black/48 px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-relic shadow-[0_0_30px_rgba(47,124,255,0.16)]"
             >
               <Crown size={20} />
@@ -188,7 +217,7 @@ export default function Home() {
 
           <footer className="mt-8 flex flex-wrap items-center justify-between gap-4 py-5 text-xs tracking-[0.12em] text-zinc-500">
             <LegalFooterLinks />
-            <Link href="/dashboard" className="inline-flex items-center gap-2 text-relic transition hover:text-[#b8d7ff]">
+            <Link href="/dashboard" prefetch={false} className="inline-flex items-center gap-2 text-relic transition hover:text-[#b8d7ff]">
               {labels.footerAccount}
               <ChevronRight size={16} />
             </Link>

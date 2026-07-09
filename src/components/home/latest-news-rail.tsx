@@ -2,6 +2,7 @@
 
 import { Clock3, Edit3, EyeOff, Trash2, X } from "lucide-react";
 import { deleteDoc, doc, collection, limit, onSnapshot, query, updateDoc, where } from "firebase/firestore";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -58,8 +59,18 @@ const copy: Record<
   }
 };
 
-function getNewsImage(item: NewsItem) {
-  return item.coverImage?.secureUrl ?? item.coverImage?.url ?? "/images/raid-castle-bg.png";
+function optimizeCloudinaryImage(url: string, width: number) {
+  if (!url.includes("res.cloudinary.com") || !url.includes("/image/upload/")) {
+    return url;
+  }
+
+  return url.replace("/image/upload/", `/image/upload/f_auto,q_auto,w_${width},c_fill/`);
+}
+
+function getNewsImage(item: NewsItem, width = 520) {
+  const imageUrl = item.coverImage?.secureUrl ?? item.coverImage?.url ?? "/images/raid-castle-bg-optimized.jpg";
+
+  return optimizeCloudinaryImage(imageUrl, width);
 }
 
 function getNewsTitle(item: NewsItem, language: Language) {
@@ -154,41 +165,52 @@ export function LatestNewsRail() {
   function renderNewsList(items: NewsItem[], compact = false, afterSelect?: () => void) {
     return (
       <div className={compact ? "space-y-3" : "raid-stable-news-grid"}>
-        {items.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => {
-              setSelectedNews(item);
-              afterSelect?.();
-            }}
-            className={`group w-full text-left transition hover:bg-relic/[0.07] ${
-              compact
-                ? "grid grid-cols-[86px_1fr_auto] items-center gap-4 rounded-[12px] border border-relic/10 bg-black/28 p-4"
-                : "flex h-[390px] min-h-[390px] flex-col overflow-hidden rounded-[12px] border border-relic/10 bg-black/32 p-3 sm:h-[416px] sm:min-h-[416px]"
-            }`}
-            aria-label={`${labels.openNewsLabel}: ${getNewsTitle(item, language)}`}
-          >
-            <span className={`block overflow-hidden rounded-[8px] border border-relic/12 bg-black/40 ${compact ? "h-[76px] w-[76px]" : "aspect-square w-full"}`}>
-              <img src={getNewsImage(item)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
-            </span>
-            <span className={`raid-word-wrap min-w-0 ${compact ? "" : "mt-3 block flex-1"}`}>
-              <span className={`raid-word-wrap block font-[var(--font-display)] font-light tracking-[0.01em] text-white transition group-hover:text-[#b8d7ff] ${compact ? "truncate text-lg sm:text-xl" : "line-clamp-3 text-base leading-snug sm:text-lg"}`}>
-                {getNewsTitle(item, language)}
+        {items.map((item, index) => {
+          const isPriorityImage = !compact && index === 0;
+
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => {
+                setSelectedNews(item);
+                afterSelect?.();
+              }}
+              className={`group w-full text-left transition hover:bg-relic/[0.07] ${
+                compact
+                  ? "grid grid-cols-[86px_1fr_auto] items-center gap-4 rounded-[12px] border border-relic/10 bg-black/28 p-4"
+                  : "flex h-[390px] min-h-[390px] flex-col overflow-hidden rounded-[12px] border border-relic/10 bg-black/32 p-3 sm:h-[416px] sm:min-h-[416px]"
+              }`}
+              aria-label={`${labels.openNewsLabel}: ${getNewsTitle(item, language)}`}
+            >
+              <span className={`relative block overflow-hidden rounded-[8px] border border-relic/12 bg-black/40 ${compact ? "h-[76px] w-[76px]" : "aspect-square w-full"}`}>
+                <Image
+                  src={getNewsImage(item, compact ? 160 : 520)}
+                  alt=""
+                  fill
+                  sizes={compact ? "76px" : "(max-width: 640px) 52vw, (max-width: 1280px) 24vw, 260px"}
+                  className="object-cover"
+                  {...(isPriorityImage ? { priority: true, fetchPriority: "high" as const } : { loading: "lazy" as const })}
+                />
               </span>
-              <span
-                data-compact={compact ? "true" : "false"}
-                className={`raid-word-wrap raid-news-preview mt-1 block text-sm text-zinc-400 ${compact ? "text-sm" : "text-xs sm:text-sm"}`}
-              >
-                {getNewsPreviewText(item, language) || labels.emptyDescription}
+              <span className={`raid-word-wrap min-w-0 ${compact ? "" : "mt-3 block flex-1"}`}>
+                <span className={`raid-word-wrap block font-[var(--font-display)] font-light tracking-[0.01em] text-white transition group-hover:text-[#b8d7ff] ${compact ? "truncate text-lg sm:text-xl" : "line-clamp-3 text-base leading-snug sm:text-lg"}`}>
+                  {getNewsTitle(item, language)}
+                </span>
+                <span
+                  data-compact={compact ? "true" : "false"}
+                  className={`raid-word-wrap raid-news-preview mt-1 block text-sm text-zinc-400 ${compact ? "text-sm" : "text-xs sm:text-sm"}`}
+                >
+                  {getNewsPreviewText(item, language) || labels.emptyDescription}
+                </span>
               </span>
-            </span>
-            <span className={`items-center gap-2 text-xs text-zinc-500 ${compact ? "hidden sm:inline-flex" : "mt-3 inline-flex"}`}>
-              <Clock3 size={15} />
-              {formatNewsDate(item, language)}
-            </span>
-          </button>
-        ))}
+              <span className={`items-center gap-2 text-xs text-zinc-500 ${compact ? "hidden sm:inline-flex" : "mt-3 inline-flex"}`}>
+                <Clock3 size={15} />
+                {formatNewsDate(item, language)}
+              </span>
+            </button>
+          );
+        })}
       </div>
     );
   }
@@ -273,7 +295,7 @@ export function LatestNewsRail() {
           <div className="flex min-h-full items-center justify-center">
             <div className="raid-ornate-panel mx-auto max-h-[calc(100dvh-40px)] w-full max-w-5xl overflow-y-auto bg-[#071019]">
               <div className="relative bg-black">
-                <img src={getNewsImage(selectedNews)} alt="" loading="eager" decoding="async" className="max-h-[58vh] w-full object-contain" />
+                <img src={getNewsImage(selectedNews, 1200)} alt="" loading="eager" decoding="async" className="max-h-[58vh] w-full object-contain" />
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#071019]/45 via-transparent to-black/20" />
                 <div className="absolute inset-x-0 top-0 flex items-start justify-end gap-4 p-4 sm:p-6">
                   <button
