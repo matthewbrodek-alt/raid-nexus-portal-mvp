@@ -62,8 +62,26 @@ const copy: Record<
 
 const fallbackNewsImage = "/images/raid-castle-bg-optimized.jpg";
 
+function isRenderableNewsImage(url: string | undefined): url is string {
+  if (!url) {
+    return false;
+  }
+
+  if (url.startsWith("/")) {
+    return true;
+  }
+
+  if (!url.startsWith("https://")) {
+    return false;
+  }
+
+  return url.includes("res.cloudinary.com") && url.includes("/image/upload/") && url.includes("f_auto");
+}
+
 function getNewsImage(item: NewsItem) {
-  return item.coverImage?.optimizedUrl ?? item.coverImage?.secureUrl ?? item.coverImage?.url ?? fallbackNewsImage;
+  const imageUrl = item.coverImage?.optimizedUrl ?? item.coverImage?.secureUrl ?? item.coverImage?.url;
+
+  return isRenderableNewsImage(imageUrl) ? imageUrl : fallbackNewsImage;
 }
 
 function getNewsTitle(item: NewsItem, language: Language) {
