@@ -19,6 +19,7 @@ type NewsItem = {
   publishedAt?: { seconds?: number };
   createdAt?: { seconds?: number };
   coverImage?: {
+    optimizedUrl?: string;
     secureUrl?: string;
     url?: string;
   } | null;
@@ -59,20 +60,10 @@ const copy: Record<
   }
 };
 
-function optimizeCloudinaryImage(url: string, width: number, height?: number) {
-  if (!url.includes("res.cloudinary.com") || !url.includes("/image/upload/")) {
-    return url;
-  }
+const fallbackNewsImage = "/images/raid-castle-bg-optimized.jpg";
 
-  const transformation = height ? `f_auto,q_auto,w_${width},h_${height},c_fill` : `f_auto,q_auto,w_${width},c_limit`;
-
-  return url.replace("/image/upload/", `/image/upload/${transformation}/`);
-}
-
-function getNewsImage(item: NewsItem, width = 520, height?: number) {
-  const imageUrl = item.coverImage?.secureUrl ?? item.coverImage?.url ?? "/images/raid-castle-bg-optimized.jpg";
-
-  return optimizeCloudinaryImage(imageUrl, width, height);
+function getNewsImage(item: NewsItem) {
+  return item.coverImage?.optimizedUrl ?? item.coverImage?.secureUrl ?? item.coverImage?.url ?? fallbackNewsImage;
 }
 
 function getNewsTitle(item: NewsItem, language: Language) {
@@ -126,6 +117,7 @@ export function LatestNewsRail() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [allNewsOpen, setAllNewsOpen] = useState(false);
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
+  const [failedImages, setFailedImages] = useState<Record<string, true>>({});
   const visibleNews = news.slice(0, 5);
   const isAdmin = profile?.role === "admin" || profile?.role === "owner";
 
@@ -169,6 +161,7 @@ export function LatestNewsRail() {
       <div className={compact ? "space-y-3" : "raid-stable-news-grid"}>
         {items.map((item, index) => {
           const isPriorityImage = !compact && index === 0;
+          const imageSrc = failedImages[item.id] ? fallbackNewsImage : getNewsImage(item);
 
           return (
             <button
@@ -187,11 +180,12 @@ export function LatestNewsRail() {
             >
               <span className={`relative block overflow-hidden rounded-[8px] border border-relic/12 bg-black/40 ${compact ? "h-[76px] w-[76px]" : "aspect-square w-full"}`}>
                 <Image
-                  src={getNewsImage(item, compact ? 160 : 520, compact ? 160 : 520)}
+                  src={imageSrc}
                   alt=""
                   fill
                   sizes={compact ? "76px" : "(max-width: 640px) 52vw, (max-width: 1280px) 24vw, 260px"}
                   className="object-cover"
+                  onError={() => setFailedImages((current) => ({ ...current, [item.id]: true }))}
                   {...(isPriorityImage ? { priority: true, fetchPriority: "high" as const } : { loading: "lazy" as const })}
                 />
               </span>
@@ -297,7 +291,14 @@ export function LatestNewsRail() {
           <div className="flex min-h-full items-center justify-center">
             <div className="raid-ornate-panel mx-auto max-h-[calc(100dvh-40px)] w-full max-w-5xl overflow-y-auto bg-[#071019]">
               <div className="relative bg-black">
-                <img src={getNewsImage(selectedNews, 1200)} alt="" loading="eager" decoding="async" className="max-h-[58vh] w-full object-contain" />
+                <img
+                  src={failedImages[selectedNews.id] ? fallbackNewsImage : getNewsImage(selectedNews)}
+                  alt=""
+                  loading="eager"
+                  decoding="async"
+                  className="max-h-[58vh] w-full object-contain"
+                  onError={() => setFailedImages((current) => ({ ...current, [selectedNews.id]: true }))}
+                />
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#071019]/45 via-transparent to-black/20" />
                 <div className="absolute inset-x-0 top-0 flex items-start justify-end gap-4 p-4 sm:p-6">
                   <button
