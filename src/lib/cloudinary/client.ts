@@ -20,6 +20,7 @@ export function getCloudinaryImageUrl(publicId: string, options?: { width?: numb
     .join(",");
 
   const path = transformations ? `${transformations}/` : "";
+  const encodedPublicId = publicId.split("/").map(encodeURIComponent).join("/");
 
-  return `https://res.cloudinary.com/${cloudName}/image/upload/${path}${publicId}`;
+  return `https://res.cloudinary.com/${cloudName}/image/upload/${path}${encodedPublicId}`;
 }

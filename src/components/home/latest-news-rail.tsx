@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
+import { getCloudinaryImageUrl } from "@/lib/cloudinary/client";
 import { db } from "@/lib/firebase/client";
 import { collections } from "@/lib/firebase/collections";
 import { useLanguage, type Language } from "@/lib/i18n/use-language";
@@ -19,6 +20,7 @@ type NewsItem = {
   publishedAt?: { seconds?: number };
   createdAt?: { seconds?: number };
   coverImage?: {
+    publicId?: string;
     optimizedUrl?: string;
     secureUrl?: string;
     url?: string;
@@ -62,6 +64,10 @@ const copy: Record<
 
 const fallbackNewsImage = "/images/raid-castle-bg-optimized.jpg";
 
+function isCloudinaryNewsImage(url: string | undefined): url is string {
+  return Boolean(url?.startsWith("https://res.cloudinary.com/") && url.includes("/image/upload/"));
+}
+
 function isRenderableNewsImage(url: string | undefined): url is string {
   if (!url) {
     return false;
@@ -75,10 +81,21 @@ function isRenderableNewsImage(url: string | undefined): url is string {
     return false;
   }
 
-  return url.includes("res.cloudinary.com") && url.includes("/image/upload/") && url.includes("f_auto");
+  return isCloudinaryNewsImage(url) && url.includes("f_auto");
 }
 
-function getNewsImage(item: NewsItem) {
+function getNewsImage(item: NewsItem, width = 520, height?: number) {
+  if (item.coverImage?.publicId) {
+    const generatedUrl = getCloudinaryImageUrl(item.coverImage.publicId, {
+      width,
+      ...(height ? { height, crop: "fill" } : { crop: "limit" })
+    });
+
+    if (generatedUrl) {
+      return generatedUrl;
+    }
+  }
+
   const imageUrl = item.coverImage?.optimizedUrl ?? item.coverImage?.secureUrl ?? item.coverImage?.url;
 
   return isRenderableNewsImage(imageUrl) ? imageUrl : fallbackNewsImage;
@@ -179,7 +196,7 @@ export function LatestNewsRail() {
       <div className={compact ? "space-y-3" : "raid-stable-news-grid"}>
         {items.map((item, index) => {
           const isPriorityImage = !compact && index === 0;
-          const imageSrc = failedImages[item.id] ? fallbackNewsImage : getNewsImage(item);
+          const imageSrc = failedImages[item.id] ? fallbackNewsImage : getNewsImage(item, compact ? 160 : 520, compact ? 160 : 520);
 
           return (
             <button
@@ -203,6 +220,7 @@ export function LatestNewsRail() {
                   fill
                   sizes={compact ? "76px" : "(max-width: 640px) 52vw, (max-width: 1280px) 24vw, 260px"}
                   className="object-cover"
+                  unoptimized={isCloudinaryNewsImage(imageSrc)}
                   onError={() => setFailedImages((current) => ({ ...current, [item.id]: true }))}
                   {...(isPriorityImage ? { priority: true, fetchPriority: "high" as const } : { loading: "lazy" as const })}
                 />
@@ -310,7 +328,7 @@ export function LatestNewsRail() {
             <div className="raid-ornate-panel mx-auto max-h-[calc(100dvh-40px)] w-full max-w-5xl overflow-y-auto bg-[#071019]">
               <div className="relative bg-black">
                 <img
-                  src={failedImages[selectedNews.id] ? fallbackNewsImage : getNewsImage(selectedNews)}
+                  src={failedImages[selectedNews.id] ? fallbackNewsImage : getNewsImage(selectedNews, 1200)}
                   alt=""
                   loading="eager"
                   decoding="async"
