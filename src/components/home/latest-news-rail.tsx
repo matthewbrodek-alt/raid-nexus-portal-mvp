@@ -59,18 +59,20 @@ const copy: Record<
   }
 };
 
-function optimizeCloudinaryImage(url: string, width: number) {
+function optimizeCloudinaryImage(url: string, width: number, height?: number) {
   if (!url.includes("res.cloudinary.com") || !url.includes("/image/upload/")) {
     return url;
   }
 
-  return url.replace("/image/upload/", `/image/upload/f_auto,q_auto,w_${width},c_fill/`);
+  const transformation = height ? `f_auto,q_auto,w_${width},h_${height},c_fill` : `f_auto,q_auto,w_${width},c_limit`;
+
+  return url.replace("/image/upload/", `/image/upload/${transformation}/`);
 }
 
-function getNewsImage(item: NewsItem, width = 520) {
+function getNewsImage(item: NewsItem, width = 520, height?: number) {
   const imageUrl = item.coverImage?.secureUrl ?? item.coverImage?.url ?? "/images/raid-castle-bg-optimized.jpg";
 
-  return optimizeCloudinaryImage(imageUrl, width);
+  return optimizeCloudinaryImage(imageUrl, width, height);
 }
 
 function getNewsTitle(item: NewsItem, language: Language) {
@@ -185,7 +187,7 @@ export function LatestNewsRail() {
             >
               <span className={`relative block overflow-hidden rounded-[8px] border border-relic/12 bg-black/40 ${compact ? "h-[76px] w-[76px]" : "aspect-square w-full"}`}>
                 <Image
-                  src={getNewsImage(item, compact ? 160 : 520)}
+                  src={getNewsImage(item, compact ? 160 : 520, compact ? 160 : 520)}
                   alt=""
                   fill
                   sizes={compact ? "76px" : "(max-width: 640px) 52vw, (max-width: 1280px) 24vw, 260px"}
